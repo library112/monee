@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.8 · page refresh fix</title>
+<title>monee · 가계부 · ver.8 · modal fix</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -172,6 +172,56 @@ button,input,select{font:inherit}button{cursor:pointer}
 .modal{width:min(620px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border-radius:18px}
 .modal-back{overscroll-behavior:contain}
 .modal-back .modal{overscroll-behavior:contain}
+
+/* Popup form responsive fix */
+.modal .form-grid{min-width:0}
+.modal .field{min-width:0}
+.modal .field input,
+.modal .field select{min-width:0;max-width:100%;box-sizing:border-box}
+.modal .form-grid > .primary.full{
+  width:min(100%,360px);
+  min-width:0;
+  max-width:360px;
+  justify-self:center;
+  margin:12px auto 0;
+  position:sticky;
+  bottom:0;
+  z-index:2;
+  box-shadow:0 -8px 14px rgba(255,255,255,.92);
+}
+.modal-actions{
+  position:sticky;
+  bottom:0;
+  z-index:2;
+  justify-content:center;
+  margin:12px -2px -2px;
+  padding:10px 2px 2px;
+  background:#fff;
+}
+@media(max-width:600px){
+  .modal-back{align-items:flex-start;padding:12px;box-sizing:border-box}
+  .modal{
+    width:100%;
+    max-width:100%;
+    max-height:calc(100vh - 24px);
+    padding:18px;
+    border-radius:18px;
+  }
+  .modal .form-grid{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  .modal .field.full{grid-column:1}
+  .modal .form-grid > .primary.full{
+    grid-column:1;
+    width:min(100%,340px);
+    max-width:340px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .modal-actions .primary,
+  .modal-actions .secondary-btn{width:130px}
+}
 #settings.active ~ .floating-action{display:none}
 
 @media(max-width:650px){
