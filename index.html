@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.5</title>
+<title>monee · 가계부 · ver.6</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -180,6 +180,10 @@ button,input,select{font:inherit}button{cursor:pointer}
   .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget{padding:8px 7px;font-size:10px}
   .modal-actions .primary,.modal-actions .secondary-btn{width:130px}
 }
+
+/* ver.6: 페이지 전환 시 이전 페이지의 스크롤 위치가 남지 않도록 */
+html,body{scroll-behavior:auto!important;overflow-anchor:none!important}
+.layout,.main,.page{overflow-anchor:none}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -335,24 +339,24 @@ const $=id=>document.getElementById(id);
 const money=n=>'₩'+Number(n||0).toLocaleString('ko-KR');
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const monthDate=()=>`${viewYear}-${String(viewMonth+1).padStart(2,'0')}-01`;
-history.scrollRestoration='manual';
 const resetPageScroll=()=>{
-  window.scrollTo(0,0);
-  const s=document.scrollingElement||document.documentElement;
-  s.scrollTop=0;
-  document.documentElement.scrollTop=0;
-  document.body.scrollTop=0;
+ try{history.scrollRestoration='manual'}catch(e){}
+ const nodes=[document.documentElement,document.body,document.scrollingElement,document.querySelector('.layout'),document.querySelector('.main')].filter(Boolean);
+ nodes.forEach(el=>{try{el.scrollTop=0;el.scrollLeft=0}catch(e){}});
+ try{window.scrollTo(0,0)}catch(e){}
 };
 const showPage=id=>{
+ resetPageScroll();
+ document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+ $('pageTitle').textContent={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';
+ $('floatingAction').style.display=id==='settings'?'none':'grid';
+ requestAnimationFrame(()=>{
   resetPageScroll();
-  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
-  $('pageTitle').textContent={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';
-  $('floatingAction').style.display=id==='settings'?'none':'grid';
-  requestAnimationFrame(()=>{
-    resetPageScroll();
-    requestAnimationFrame(resetPageScroll);
-  });
+  setTimeout(resetPageScroll,0);
+  setTimeout(resetPageScroll,60);
+  setTimeout(resetPageScroll,180);
+ });
 };
 function updateMonthLabel(){$('monthLabel').textContent=viewYear+'년 '+monthNames[viewMonth]}
 function categoryById(id){return budgetCategories.find(c=>c.id===id)}
