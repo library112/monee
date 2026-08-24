@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.6</title>
+<title>monee · 가계부 · ver.8</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -47,6 +47,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{padding:20px}.asset-total{font-size:40px;font-weight:800;letter-spacing:-.05em}.asset-sub{font-size:11px;color:var(--muted);margin-top:4px}.asset-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.asset-card{background:#f4f7fa;border-radius:12px;padding:13px}.asset-card span{font-size:10px;color:var(--muted)}.asset-card b{display:block;font-size:18px;margin-top:5px}.asset-list{display:flex;flex-direction:column;gap:8px}.asset-row{background:#fafcff;border:1px solid #e4eaf0;border-radius:12px;padding:12px;display:flex;justify-content:space-between}.asset-row b{font-size:12px}.asset-row span{font-size:11px;color:#718096}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{padding:14px;border:1px solid var(--line);border-radius:12px}.metric span{font-size:10px;color:var(--muted)}.metric b{font-size:20px;margin-top:6px;display:block}.insight{margin-top:12px;background:#edf3f9;border-radius:12px;padding:13px;font-size:11px;line-height:1.5}.goal-list{display:flex;flex-direction:column;gap:10px}.goal{padding:14px;border:1px solid var(--line);border-radius:12px}.goal-top{display:flex;justify-content:space-between;font-size:11px}.goal-track{height:9px;background:#e9ece8;border-radius:999px;margin:9px 0 5px;overflow:hidden}.goal-track i{display:block;height:100%;background:var(--green);border-radius:999px}.goal-foot{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}.settings-list{display:flex;flex-direction:column;gap:8px}.setting{display:flex;justify-content:space-between;align-items:center;padding:13px;background:#fafcff;border:1px solid var(--line);border-radius:12px}.setting strong{font-size:12px}.setting span{display:block;font-size:9px;color:var(--muted);margin-top:2px}.setting button{padding:8px 11px;border:0;border-radius:9px;background:#eef3f8;color:#536057;font-size:10px}
 /* Modal */
 .modal-back{position:fixed;inset:0;background:rgba(25,30,27,.36);display:none;align-items:center;justify-content:center;z-index:2000;overscroll-behavior:contain;touch-action:none}.modal-back.show{display:flex}.modal{width:min(620px,calc(100% - 24px));max-height:min(90vh,760px);overflow:auto;background:#fff;border-radius:18px;padding:18px;overscroll-behavior:contain;touch-action:auto}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.modal-head h3{margin:0;font-size:18px}.x{width:34px;height:34px;border:0;border-radius:50%;background:#edf2f6}.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}.seg button{border:0;border-radius:10px;padding:11px;background:#eef3f8;color:#7e857f;font-weight:700}.seg button.active{background:#e7eef6;color:#57799a}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field.full{grid-column:1/-1}.field label{display:block;font-size:10px;color:var(--muted);margin:0 0 5px 2px}.field input,.field select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fbfcfa}.primary{width:100%;border:0;border-radius:11px;padding:12px;background:var(--green);color:#fff;font-weight:700;text-align:center}
+.modal .form-grid > .primary.full{width:40%;min-width:200px;max-width:420px;justify-self:center}
 @media(max-width:950px){
   .layout{grid-template-columns:1fr}
   .sidebar{position:fixed;left:0;right:0;top:0;z-index:40;height:118px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr;align-items:center;padding:10px 14px;background:rgba(240,243,239,.97);backdrop-filter:blur(12px);border-right:0;border-bottom:1px solid #dfe5df;box-shadow:0 6px 20px rgba(54,67,59,.06)}
@@ -69,6 +70,14 @@ button,input,select{font:inherit}button{cursor:pointer}
   .main{padding:18px 12px 82px}
 }
 @media(max-width:430px){
+  .floating-action{
+    width:40px!important;
+    height:40px!important;
+    border-radius:50%!important;
+    right:18px!important;
+    bottom:96px!important;
+  }
+  .main{padding-bottom:140px!important}
   .sidebar{height:112px;padding:8px 10px}.brand-mark{font-size:22px}.brand-tag{font-size:8px}
   .nav button{font-size:10px;padding:6px 2px}
   .main{padding-top:18px}
@@ -93,6 +102,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 /* v5: mobile bottom navigation */
 @media (max-width: 950px){
   body{padding-bottom:92px}
+  .main{padding-bottom:140px!important}
   .sidebar{
     position:fixed!important;
     left:0;right:0;bottom:0;top:auto!important;
@@ -135,10 +145,15 @@ button,input,select{font:inherit}button{cursor:pointer}
     right:18px!important;
     bottom:96px!important;
     z-index:1100!important;
-    width:58px!important;height:58px!important;
-    border-radius:18px!important;
+    width:40px!important;height:40px!important;
+    border-radius:50%!important;
     background:var(--green)!important;
-    box-shadow:0 12px 28px rgba(82,112,145,.25)!important;
+    color:#fff!important;
+    font-size:23px!important;
+    line-height:1!important;
+    box-shadow:0 10px 22px rgba(82,112,145,.25)!important;
+    display:grid!important;
+    place-items:center!important;
   }
   .main{padding-top:18px!important}
 }
@@ -180,10 +195,6 @@ button,input,select{font:inherit}button{cursor:pointer}
   .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget{padding:8px 7px;font-size:10px}
   .modal-actions .primary,.modal-actions .secondary-btn{width:130px}
 }
-
-/* ver.6: 페이지 전환 시 이전 페이지의 스크롤 위치가 남지 않도록 */
-html,body{scroll-behavior:auto!important;overflow-anchor:none!important}
-.layout,.main,.page{overflow-anchor:none}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -339,24 +350,12 @@ const $=id=>document.getElementById(id);
 const money=n=>'₩'+Number(n||0).toLocaleString('ko-KR');
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const monthDate=()=>`${viewYear}-${String(viewMonth+1).padStart(2,'0')}-01`;
-const resetPageScroll=()=>{
- try{history.scrollRestoration='manual'}catch(e){}
- const nodes=[document.documentElement,document.body,document.scrollingElement,document.querySelector('.layout'),document.querySelector('.main')].filter(Boolean);
- nodes.forEach(el=>{try{el.scrollTop=0;el.scrollLeft=0}catch(e){}});
- try{window.scrollTo(0,0)}catch(e){}
-};
 const showPage=id=>{
- resetPageScroll();
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  $('pageTitle').textContent={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';
  $('floatingAction').style.display=id==='settings'?'none':'grid';
- requestAnimationFrame(()=>{
-  resetPageScroll();
-  setTimeout(resetPageScroll,0);
-  setTimeout(resetPageScroll,60);
-  setTimeout(resetPageScroll,180);
- });
+ requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
 };
 function updateMonthLabel(){$('monthLabel').textContent=viewYear+'년 '+monthNames[viewMonth]}
 function categoryById(id){return budgetCategories.find(c=>c.id===id)}
