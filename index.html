@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.8</title>
+<title>monee · 가계부 · ver.8 · layout fix</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -21,7 +21,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .nav{display:flex;flex-direction:column;gap:6px}.nav button{border:0;background:transparent;border-radius:12px;padding:13px 14px;text-align:left;font-size:14px;color:#64748b;display:flex;align-items:center;gap:11px}.nav button.active{background:var(--blue-soft);color:var(--blue-dark);font-weight:700}.nav .icon{width:20px;text-align:center;font-size:18px}
 .record{margin-top:20px;background:var(--green);color:#fff;border:0;border-radius:12px;padding:13px;font-size:14px;font-weight:700;box-shadow:0 8px 16px rgba(82,112,145,.18)}
 .sidebar-summary{margin-top:auto;background:#fff;border:1px solid #e1e8f0;border-radius:14px;padding:14px}.sidebar-summary h4{margin:0 0 12px;font-size:12px}.side-metric{margin:10px 0}.side-metric span{font-size:10px;color:var(--muted);display:block}.side-metric b{display:block;font-size:16px;margin-top:4px}.side-progress{height:6px;background:#e8ece7;border-radius:999px;overflow:hidden;margin-top:9px}.side-progress i{display:block;height:100%;width:50%;background:var(--green);border-radius:999px}
-.main{padding:18px 28px 44px;max-width:1400px;width:100%;margin:auto}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;height:36px;min-height:36px;position:sticky;top:0;z-index:100;background:var(--bg)}.page-title{min-width:0;flex:1}.page-title h1{margin:0;font-size:28px;letter-spacing:-.05em;white-space:nowrap}.month-control{flex-shrink:0;white-space:nowrap}.page-title p{margin:3px 0 0;font-size:14px;color:#3e413e}.month-control{display:flex;align-items:center;border:1px solid #dfe5df;background:#fff;border-radius:10px;overflow:hidden}.month-control button{width:38px;height:36px;border:0;background:#fff;color:#6c746e}.month-control span{padding:0 16px;font-size:13px;font-weight:600}
+.main{padding:18px 28px 44px;max-width:1400px;width:100%;margin:0 auto;align-self:start}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;min-height:36px}.page-title{min-width:0;flex:1}.page-title h1{margin:0;font-size:28px;letter-spacing:-.05em;white-space:nowrap}.month-control{flex-shrink:0;white-space:nowrap}.page-title p{margin:3px 0 0;font-size:14px;color:#3e413e}.month-control{display:flex;align-items:center;border:1px solid #dfe5df;background:#fff;border-radius:10px;overflow:hidden}.month-control button{width:38px;height:36px;border:0;background:#fff;color:#6c746e}.month-control span{padding:0 16px;font-size:13px;font-weight:600}
 .page{display:none}.page.active{display:block}
 .card{background:var(--card);border:1px solid #e1e8f0;border-radius:16px;box-shadow:var(--shadow)}
 .budget-overview{padding:20px;margin-bottom:14px}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.section-head h2{margin:0;font-size:18px;letter-spacing:-.04em}.section-head .hint{font-size:11px;color:var(--muted)}
@@ -86,7 +86,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .floating-action{position:fixed;right:24px;bottom:96px;z-index:60;width:40px;height:40px;border-radius:50%;border:0;background:var(--green);color:#fff;font-size:23px;line-height:1;box-shadow:0 10px 22px rgba(82,112,145,.25);display:grid;place-items:center}
 .edit-inline{border:0;background:var(--blue-soft);color:var(--blue-dark);border-radius:10px;padding:7px 11px;font-size:10px;font-weight:700}
 .pace-combined{min-height:300px}.pace-head{display:flex;justify-content:space-between;align-items:flex-start}.pace-status{margin-top:5px;color:#58799d;font-size:11px;font-weight:700}.days-compact{text-align:right}.days-compact b{font-size:30px;color:#58799d}.days-compact span{display:block;color:var(--muted);font-size:9px}.pace-main{text-align:center;margin-top:2px}.pace-center{margin-top:-12px}.pace-center b{display:block;font-size:11px}.pace-center span{display:block;color:var(--muted);font-size:10px;margin-top:4px}.pace-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.pace-bottom>div{background:#f4f7fa;border-radius:12px;padding:10px}.pace-bottom span{display:block;color:var(--muted);font-size:9px}.pace-bottom b{display:block;margin-top:4px;color:#58799d;font-size:15px}
-@media(max-width:950px){.floating-action{right:16px;bottom:96px;width:40px;height:40px;border-radius:50%;font-size:23px}.sidebar{height:96px}.main{padding-top:18px}.nav{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:950px){.floating-action{right:16px;bottom:96px;width:40px;height:40px;border-radius:50%;font-size:23px}.sidebar{height:96px}.main{padding-top:18px;margin:0 auto;align-self:start}.nav{grid-template-columns:repeat(4,1fr)}}
 
 .more.expanded{background:#eef4ef;color:#58799d}.month-control button{cursor:pointer}.month-control button:disabled{opacity:.35;cursor:default}.extra-transactions .tx-row{border-top:1px solid #edf2f6}
 
@@ -155,7 +155,7 @@ button,input,select{font:inherit}button{cursor:pointer}
     display:grid!important;
     place-items:center!important;
   }
-  .main{padding-top:18px!important}
+  .main{padding-top:18px!important;margin:0 auto!important;align-self:start!important}
 }
 @media (min-width:951px){
   .floating-action{right:28px;bottom:28px}
