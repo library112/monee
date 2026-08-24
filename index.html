@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.8 · goal box fix</title>
+<title>monee · 가계부 · ver.8 · drag fix</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -93,7 +93,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .modal-help{margin:4px 0 0;color:var(--muted);font-size:9px;line-height:1.4}.budget-edit-modal{padding-bottom:20px;max-height:88vh;overflow:auto} .budget-edit-list{display:flex;flex-direction:column;gap:8px}
 .budget-edit-row{display:grid;grid-template-columns:28px 44px minmax(90px,1fr) 130px 36px;gap:8px;align-items:center;background:#f7faff;border:1px solid var(--line);border-radius:11px;padding:8px;transition:box-shadow .15s ease,opacity .15s ease}
 .budget-edit-row.dragging{opacity:.45;box-shadow:0 8px 20px rgba(82,112,145,.14)}
-.drag-handle{display:grid;place-items:center;width:28px;height:34px;border-radius:8px;color:#8a98a8;background:#eef3f8;font-size:16px;cursor:grab;user-select:none}
+.drag-handle{display:grid;place-items:center;width:28px;height:34px;border-radius:8px;color:#8a98a8;background:#eef3f8;font-size:16px;cursor:grab;user-select:none;touch-action:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .drag-handle:active{cursor:grabbing}
 .budget-edit-row .emoji-input{width:44px;height:34px;padding:0;text-align:center;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:18px;outline:0}
 .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;outline:0;font-size:11px}
@@ -617,6 +617,9 @@ function renderBudgetEditor(){
   </div>`).join('')||'<div class="empty">항목이 없습니다.</div>';
 
  let dragged=null;
+ let pointerDragging=false;
+ let pointerId=null;
+
  list.querySelectorAll('.budget-edit-row').forEach(row=>{
    row.addEventListener('dragstart',e=>{dragged=row;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
    row.addEventListener('dragend',()=>{row.classList.remove('dragging');dragged=null;});
@@ -626,6 +629,19 @@ function renderBudgetEditor(){
      const rect=row.getBoundingClientRect();
      list.insertBefore(dragged,e.clientY<rect.top+rect.height/2?row:row.nextSibling);
    });
+
+   // 모바일: 왼쪽 ⋮⋮ 핸들을 누른 채 위/아래로 드래그
+   const handle=row.querySelector('.drag-handle');
+   handle.addEventListener('pointerdown',e=>{
+     if(e.pointerType==='mouse' && e.button!==0)return;
+     e.preventDefault();
+     dragged=row;
+     pointerDragging=true;
+     pointerId=e.pointerId;
+     row.classList.add('dragging');
+     try{handle.setPointerCapture(e.pointerId)}catch(_){}
+   });
+
    row.querySelector('.delete-category').onclick=async()=>{
      const id=row.dataset.id;
      if(!confirm('이 항목을 삭제할까요? 기존 거래의 카테고리는 기타로 남을 수 있어요.'))return;
@@ -635,6 +651,30 @@ function renderBudgetEditor(){
      await loadAll();renderBudgetEditor();
    };
  });
+
+ list.addEventListener('pointermove',e=>{
+   if(!pointerDragging||!dragged||e.pointerId!==pointerId)return;
+   e.preventDefault();
+
+   const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.budget-edit-row');
+   if(!target||target===dragged||!list.contains(target))return;
+
+   const rect=target.getBoundingClientRect();
+   const before=e.clientY < rect.top + rect.height/2;
+   list.insertBefore(dragged,before?target:target.nextSibling);
+ });
+
+ const finishPointerDrag=e=>{
+   if(!pointerDragging||e.pointerId!==pointerId)return;
+   pointerDragging=false;
+   pointerId=null;
+   if(dragged){
+     dragged.classList.remove('dragging');
+     dragged=null;
+   }
+ };
+ list.addEventListener('pointerup',finishPointerDrag);
+ list.addEventListener('pointercancel',finishPointerDrag);
 }
 async function saveBudgetCategories(){
  const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
