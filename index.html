@@ -335,12 +335,21 @@ const $=id=>document.getElementById(id);
 const money=n=>'₩'+Number(n||0).toLocaleString('ko-KR');
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const monthDate=()=>`${viewYear}-${String(viewMonth+1).padStart(2,'0')}-01`;
+history.scrollRestoration='manual';
+const resetPageScroll=()=>{
+ window.scrollTo({top:0,left:0,behavior:'instant'});
+ const scroller=document.scrollingElement||document.documentElement;
+ scroller.scrollTop=0;
+ document.documentElement.scrollTop=0;
+ document.body.scrollTop=0;
+};
 const showPage=id=>{
+ resetPageScroll();
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  $('pageTitle').textContent={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';
  $('floatingAction').style.display=id==='settings'?'none':'grid';
- requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
+ requestAnimationFrame(()=>{resetPageScroll();requestAnimationFrame(resetPageScroll);});
 };
 function updateMonthLabel(){$('monthLabel').textContent=viewYear+'년 '+monthNames[viewMonth]}
 function categoryById(id){return budgetCategories.find(c=>c.id===id)}
