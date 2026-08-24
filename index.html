@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.3</title>
+<title>monee · 가계부 · ver.4</title>
 <style>
 :root{
   --bg:#f6f7f4;--sidebar:#f0f3ef;--card:#fff;--ink:#20221f;--muted:#8a8f8a;
@@ -293,22 +293,101 @@ function categoryById(id){return budgetCategories.find(c=>c.id===id)}
 function currentMonthTransactions(){const prefix=`${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;return transactions.filter(t=>t.transaction_date?.startsWith(prefix))}
 function computeBudgetRows(){return budgetCategories.map(c=>{const spent=currentMonthTransactions().filter(t=>t.type==='expense'&&t.category_id===c.id).reduce((s,t)=>s+Number(t.amount),0);return {...c,spent}})}
 async function seedDemo(){
- const {count}=await supabaseClient.from('categories').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id);
- if((count||0)>0)return;
- const categoryRows=[...cats.map(name=>({user_id:currentUser.id,name,type:'expense'})),...incomeCats.map(name=>({user_id:currentUser.id,name,type:'income'}))];
- const {data:catData,error:catErr}=await supabaseClient.from('categories').insert(categoryRows).select(); if(catErr)throw catErr;
- const byName=Object.fromEntries(catData.map(c=>[c.type+':'+c.name,c]));
- const aug='2026-08-01';
- const budgetValues=[['식비',600000],['교통',250000],['쇼핑',300000],['여가/문화',200000],['주거/통신',700000],['고정비',300000],['건강/의료',100000],['기타',50000]];
- await supabaseClient.from('budgets').insert(budgetValues.map(([name,amount])=>({user_id:currentUser.id,year:2026,month:8,category_id:byName['expense:'+name].id,amount})));
- const sampleTx=[
-  ['2026-08-15','expense',12000,'식비','카드','점심 식사'],['2026-08-15','expense',1400,'교통','현금','지하철 이용'],['2026-08-14','expense',4500,'여가/문화','카드','스타벅스 카페라떼'],['2026-08-14','expense',23000,'쇼핑','카드','올리브영'],['2026-08-14','expense',700000,'주거/통신','계좌이체','월세'],['2026-08-13','expense',18500,'식비','카드','저녁 식사'],['2026-08-12','expense',9800,'교통','카드','택시'],['2026-08-11','expense',34000,'건강/의료','카드','운동용품'],['2026-08-25','income',2850000,'월급','현금','8월 급여']
- ];
- await supabaseClient.from('transactions').insert(sampleTx.map(([date,type,amount,name,method,memo])=>({user_id:currentUser.id,transaction_date:date,type,amount,category_id:byName[type+':'+name].id,payment_method:type==='income'?'현금':method,memo})));
- await supabaseClient.from('assets').insert([
-  {user_id:currentUser.id,name:'생활비 계좌',asset_type:'현금성',amount:2430000},{user_id:currentUser.id,name:'비상금 통장',asset_type:'현금성',amount:3000000},{user_id:currentUser.id,name:'적금',asset_type:'저축',amount:5700000},{user_id:currentUser.id,name:'증권 계좌',asset_type:'투자',amount:4500000},{user_id:currentUser.id,name:'현금',asset_type:'현금성',amount:290000}
- ]);
- await supabaseClient.from('goals').insert([{user_id:currentUser.id,name:'여행자금',target_amount:3000000,current_amount:1240000},{user_id:currentUser.id,name:'비상금',target_amount:5000000,current_amount:4500000},{user_id:currentUser.id,name:'노트북',target_amount:2000000,current_amount:700000}]);
+  // 기존 카테고리가 있더라도 예산 데이터가 비어 있으면 예산을 생성할 수 있도록
+  // 카테고리와 예산을 독립적으로 확인합니다.
+  const {data:existingCats,error:catLoadErr}=await supabaseClient
+    .from('categories').select('*').eq('user_id',currentUser.id);
+  if(catLoadErr)throw catLoadErr;
+
+  let catData=existingCats||[];
+  const existingNames=new Set(catData.map(c=>c.type+':'+c.name));
+  const missingCats=[
+    ...cats.filter(name=>!existingNames.has('expense:'+name))
+      .map(name=>({user_id:currentUser.id,name,type:'expense'})),
+    ...incomeCats.filter(name=>!existingNames.has('income:'+name))
+      .map(name=>({user_id:currentUser.id,name,type:'income'}))
+  ];
+
+  if(missingCats.length){
+    const {data:insertedCats,error}=await supabaseClient
+      .from('categories').insert(missingCats).select();
+    if(error)throw error;
+    catData=[...catData,...(insertedCats||[])];
+  }
+
+  const byName=Object.fromEntries(catData.map(c=>[c.type+':'+c.name,c]));
+  const {data:existingBudgets,error:budgetLoadErr}=await supabaseClient
+    .from('budgets').select('*')
+    .eq('user_id',currentUser.id)
+    .eq('year',viewYear)
+    .eq('month',viewMonth+1);
+  if(budgetLoadErr)throw budgetLoadErr;
+
+  const budgetValues=[
+    ['식비',600000],['교통',250000],['쇼핑',300000],['여가/문화',200000],
+    ['주거/통신',700000],['고정비',300000],['건강/의료',100000],['기타',50000]
+  ];
+  const existingBudgetCatIds=new Set((existingBudgets||[]).map(b=>b.category_id));
+  const missingBudgets=budgetValues
+    .filter(([name])=>byName['expense:'+name] && !existingBudgetCatIds.has(byName['expense:'+name].id))
+    .map(([name,amount])=>({
+      user_id:currentUser.id,year:viewYear,month:viewMonth+1,
+      category_id:byName['expense:'+name].id,amount
+    }));
+
+  if(missingBudgets.length){
+    const {error}=await supabaseClient.from('budgets').insert(missingBudgets);
+    if(error)throw error;
+  }
+
+  // 완전히 처음 사용하는 계정일 때만 데모 거래/자산/목표를 한 번 생성합니다.
+  const [txCheck,assetCheck,goalCheck]=await Promise.all([
+    supabaseClient.from('transactions').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id),
+    supabaseClient.from('assets').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id),
+    supabaseClient.from('goals').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id)
+  ]);
+  for(const r of [txCheck,assetCheck,goalCheck])if(r.error)throw r.error;
+
+  const isFreshAccount=catData.length===cats.length+incomeCats.length &&
+    (txCheck.count||0)===0 && (assetCheck.count||0)===0 && (goalCheck.count||0)===0;
+
+  if(isFreshAccount){
+    const sampleTx=[
+      ['2026-08-15','expense',12000,'식비','카드','점심 식사'],
+      ['2026-08-15','expense',1400,'교통','현금','지하철 이용'],
+      ['2026-08-14','expense',4500,'여가/문화','카드','스타벅스 카페라떼'],
+      ['2026-08-14','expense',23000,'쇼핑','카드','올리브영'],
+      ['2026-08-14','expense',700000,'주거/통신','계좌이체','월세'],
+      ['2026-08-13','expense',18500,'식비','카드','저녁 식사'],
+      ['2026-08-12','expense',9800,'교통','카드','택시'],
+      ['2026-08-11','expense',34000,'건강/의료','카드','운동용품'],
+      ['2026-08-25','income',2850000,'월급','현금','8월 급여']
+    ];
+    const {error:txErr}=await supabaseClient.from('transactions').insert(
+      sampleTx.map(([date,type,amount,name,method,memo])=>({
+        user_id:currentUser.id,transaction_date:date,type,amount,
+        category_id:byName[type+':'+name].id,
+        payment_method:type==='income'?'현금':method,memo
+      }))
+    );
+    if(txErr)throw txErr;
+
+    const {error:assetErr}=await supabaseClient.from('assets').insert([
+      {user_id:currentUser.id,name:'생활비 계좌',asset_type:'현금성',amount:2430000},
+      {user_id:currentUser.id,name:'비상금 통장',asset_type:'현금성',amount:3000000},
+      {user_id:currentUser.id,name:'적금',asset_type:'저축',amount:5700000},
+      {user_id:currentUser.id,name:'증권 계좌',asset_type:'투자',amount:4500000},
+      {user_id:currentUser.id,name:'현금',asset_type:'현금성',amount:290000}
+    ]);
+    if(assetErr)throw assetErr;
+
+    const {error:goalErr}=await supabaseClient.from('goals').insert([
+      {user_id:currentUser.id,name:'여행자금',target_amount:3000000,current_amount:1240000},
+      {user_id:currentUser.id,name:'비상금',target_amount:5000000,current_amount:4500000},
+      {user_id:currentUser.id,name:'노트북',target_amount:2000000,current_amount:700000}
+    ]);
+    if(goalErr)throw goalErr;
+  }
 }
 async function loadAll(){
  const [c,t,b,a,g]=await Promise.all([
@@ -350,7 +429,23 @@ async function saveTransaction(e){e.preventDefault();const amount=Number($('amou
 async function saveAsset(e){e.preventDefault();const id=$('assetId').value;const payload={user_id:currentUser.id,name:$('assetName').value.trim(),asset_type:$('assetType').value,amount:Number($('assetAmount').value)||0};const q=id?supabaseClient.from('assets').update(payload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('assets').insert(payload);const {error}=await q;if(error)return alert(error.message);closeModal('assetModal');e.target.reset();$('assetId').value='';await loadAll()}
 async function saveGoal(e){e.preventDefault();const id=$('goalId').value;const payload={user_id:currentUser.id,name:$('goalName').value.trim(),target_amount:Number($('goalTarget').value)||0,current_amount:Number($('goalCurrent').value)||0};const q=id?supabaseClient.from('goals').update(payload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('goals').insert(payload);const {error}=await q;if(error)return alert(error.message);closeModal('goalModal');e.target.reset();$('goalId').value='';await loadAll()}
 async function login(e){e.preventDefault();$('loginMessage').textContent='';$('loginBtn').disabled=true;const {error}=await supabaseClient.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error)$('loginMessage').textContent='로그인에 실패했어요. 이메일 또는 비밀번호를 확인해 주세요.';$('loginBtn').disabled=false}
-async function startApp(user){currentUser=user;$('authGate').classList.add('hidden');$('settingsUserEmail').textContent=user.email||'';try{await seedDemo();await loadAll()}catch(e){console.error(e);alert('데이터를 불러오지 못했어요. Supabase 설정과 RLS를 확인해 주세요.')}}
+let appStarting=false;
+async function startApp(user){
+  if(appStarting && currentUser?.id===user.id)return;
+  appStarting=true;
+  currentUser=user;
+  $('authGate').classList.add('hidden');
+  $('settingsUserEmail').textContent=user.email||'';
+  try{
+    await seedDemo();
+    await loadAll();
+  }catch(e){
+    console.error(e);
+    alert('데이터를 불러오지 못했어요.\n\n오류: '+(e?.message||String(e)));
+  }finally{
+    appStarting=false;
+  }
+}
 $('loginForm').addEventListener('submit',login);$('settingsLogoutBtn').addEventListener('click',()=>supabaseClient.auth.signOut());
 function setModalLock(locked){document.body.classList.toggle('modal-open',locked)}
 function openModal(id){$(id).classList.add('show');setModalLock(true)}
