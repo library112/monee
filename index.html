@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.11 · grouped budget rows</title>
+<title>monee · 가계부 · ver.13 · grouped budget rows</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -38,17 +38,13 @@ button,input,select{font:inherit}button{cursor:pointer}
 .summary-rate>b{font-size:12px;margin:0;color:#57799a;text-align:right}
 .summary-progress{grid-column:1/-1;height:8px;background:#e8eef4;border-radius:999px;overflow:hidden;margin-top:5px}
 .summary-progress i{display:block;height:100%;width:0;background:#6686a8;border-radius:999px;transition:width .2s ease}
-.budget-section-title{
-  padding:9px 8px 7px;
-  margin-top:4px;
-  border-bottom:1px solid var(--line);
-  color:var(--blue-dark);
-  font-size:13px;
-  font-weight:800;
-  background:var(--blue-soft);
-}
+.budget-table-label{padding:0 8px 8px;color:#787f79;font-size:13px;border-bottom:1px solid var(--line)}
+.budget-section-title{display:grid;grid-template-columns:1.05fr 2.25fr 2.35fr;align-items:center;padding:9px 8px 8px;margin-top:8px;border-bottom:1px solid var(--line);color:var(--blue-dark);font-size:13px;font-weight:800;background:var(--blue-soft);border-radius:4px 4px 0 0}
 .budget-section-title:first-child{margin-top:0}
-.budget-table .th,.budget-table .tr{display:grid;grid-template-columns:1.05fr 2.25fr .75fr .85fr .75fr;align-items:center}.budget-table .th{padding:6px 8px;font-size:11px;color:#787f79;border-bottom:1px solid var(--line)}.budget-table .tr{padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;text-align:center}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:18px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
+.budget-section-name{min-width:0}
+.budget-column-heads{grid-column:3;display:grid;grid-template-columns:.75fr .85fr .75fr;align-items:center;color:#787f79;font-size:11px;font-weight:500;text-align:center}
+.budget-column-heads span{white-space:nowrap}
+.budget-table .tr{display:grid;grid-template-columns:1.05fr 2.25fr .75fr .85fr .75fr;align-items:center;padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;text-align:center}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:18px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
 .lower-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1fr;gap:14px}.lower-card{padding:18px;min-height:300px}.mini-title{font-size:16px;margin:0 0 16px;letter-spacing:-.04em}.bars{height:170px;display:flex;align-items:flex-end;gap:12px;padding:4px 8px}.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}.month-bar-wrap{height:135px;display:flex;align-items:flex-end}.month-bar{width:24px;background:#c7d7e7;border-radius:6px 6px 2px 2px}.month-bar.current{background:#5f7fa6}.bar-label{font-size:10px;color:#7d847e}.bar-value{font-size:9px;color:#7d847e}.compare{margin-top:10px;padding:10px 11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px}
 .gauge-wrap{display:flex;justify-content:center;margin-top:2px}.gauge{width:210px;height:110px;overflow:hidden;position:relative}.gauge svg{width:100%;height:100%}.gauge-center{text-align:center;margin-top:-18px}.gauge-center b{display:block;font-size:18px}.gauge-center span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.pace-copy{text-align:center;margin:14px 0 0;font-size:11px;line-height:1.55}.good{margin-top:14px;padding:11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px;text-align:center}
 .days{text-align:center;padding-top:12px}.days-number{font-size:52px;color:#58799d;font-weight:800;letter-spacing:-.06em}.days-unit{font-size:14px;color:#58799d;font-weight:700}.days-date{font-size:11px;color:#8b918c;margin-top:-4px}.divider{height:1px;background:var(--line);margin:20px 0}.daily-label{text-align:center;color:#777e78;font-size:11px}.daily-amount{text-align:center;color:#58799d;font-size:23px;font-weight:800;margin-top:7px}.daily-note{text-align:center;color:#999f9a;font-size:10px;margin-top:6px;line-height:1.4}
@@ -74,7 +70,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 }
 @media(max-width:650px){
   .topbar{align-items:center;gap:8px}.page-title h1{font-size:24px}.month-control{margin-top:0}.month-control span{padding:0 10px;font-size:12px}.month-control button{width:32px}
-  .budget-table .th,.budget-table .tr{grid-template-columns:1.15fr 1.7fr .7fr .8fr .65fr}
+  .budget-section-title,.budget-table .tr{grid-template-columns:1.15fr 1.7fr 2.15fr}.budget-column-heads{grid-template-columns:.7fr .8fr .65fr;font-size:10px}.budget-table .tr{grid-template-columns:1.15fr 1.7fr .7fr .8fr .65fr}
   .tx-row{grid-template-columns:65px 25px 1fr 85px}.tx-cat,.tx-method{display:none}
   .summary-grid{gap:8px}.summary-box{padding:11px}.summary-box b{font-size:16px}
   .main{padding:18px 12px 82px}
@@ -144,12 +140,16 @@ button,input,select{font:inherit}button{cursor:pointer}
     color:#7d8995!important;
     font-size:11px!important;
     font-weight:700!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
   }
   .sidebar .nav button.active{
     background:#e7eef6!important;
     color:#57779a!important;
   }
-  .sidebar .nav .icon{display:none!important}
+  .sidebar .nav .icon{display:block!important;width:auto!important;font-size:22px!important;line-height:1!important;margin-bottom:4px!important;font-weight:400!important}
   .floating-action{
     position:fixed!important;
     right:18px!important;
@@ -330,10 +330,10 @@ const supabaseClient = window.supabase.createClient(
   <aside class="sidebar">
     <div class="brand"><div class="brand-mark">monee</div><div class="brand-tag">내 돈을 더 똑똑하게</div></div>
     <nav class="nav">
-      <button class="active" data-page="budget"><span class="icon">▣</span>예산</button>
-      <button data-page="assets"><span class="icon">⌂</span>자산</button>
-      <button data-page="goals"><span class="icon">◎</span>목표</button>
-      <button data-page="settings"><span class="icon">⚙️</span>설정</button>
+      <button class="active" data-page="budget"><span class="icon">◔</span><span>예산</span></button>
+      <button data-page="assets"><span class="icon">◇</span><span>자산</span></button>
+      <button data-page="goals"><span class="icon">◎</span><span>목표</span></button>
+      <button data-page="settings"><span class="icon">⚙</span><span>설정</span></button>
     </nav>
         <div class="sidebar-summary">
       <h4>이번 달 한눈에</h4>
@@ -353,7 +353,7 @@ const supabaseClient = window.supabase.createClient(
 
     <section id="budget" class="page active">
       <article class="card budget-overview">
-        <div class="section-head"><h2>이번 달 예산 ⓘ</h2><span class="hint" id="budgetHint">카테고리별 사용 현황을 한눈에 확인해요.</span></div>
+        <div class="section-head"><h2>이번 달 예산</h2><span class="hint" id="budgetHint">카테고리별 사용 현황을 한눈에 확인해요.</span></div>
         <div class="summary-grid">
           <div class="summary-box summary-main"><div><span>전체 예산</span><b id="totalBudgetValue">₩2,500,000</b></div></div>
           <div class="summary-box summary-main"><div><span>남은 예산</span><b id="remainValue">₩1,252,500</b></div></div>
@@ -361,7 +361,7 @@ const supabaseClient = window.supabase.createClient(
           <div class="summary-box summary-wide"><div class="summary-wide-label"><span>비고정지출</span><b id="variableSpentValue">₩0</b></div><div class="summary-rate"><span>사용률</span><b id="variableRateValue">0.0%</b><div class="summary-progress"><i id="variableProgress" style="width:0%"></i></div></div></div>
         </div>
         <div class="budget-table" id="budgetTable">
-          <div class="th"><div>항목별 예산</div><div></div><div>예산</div><div>사용액</div><div>남은 금액</div></div>
+          <div class="budget-table-label">항목별 예산</div>
           <div id="budgetRows"></div>
         </div>
         <div class="table-note">💡 설정에서 항목을 추가·삭제하거나 이름과 예산을 자유롭게 수정할 수 있어요.</div>
@@ -638,7 +638,7 @@ function renderBudget(){
  };
  const sectionHtml=(title,items)=>{
    if(!items.length)return '';
-   return `<div class="budget-section-title">${title}</div>${items.map(budgetRowHtml).join('')}`;
+   return `<div class="budget-section-title"><div class="budget-section-name">${title}</div><div class="budget-column-heads"><span>예산</span><span>사용액</span><span>남은 금액</span></div></div>${items.map(budgetRowHtml).join('')}`;
  };
  $('budgetRows').innerHTML=rows.length
    ? sectionHtml('고정지출',fixedRows)+sectionHtml('비고정지출',variableRows)
