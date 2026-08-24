@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.10 · expense grouping & delete fix</title>
+<title>monee · 가계부 · ver.11 · grouped budget rows</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -38,6 +38,16 @@ button,input,select{font:inherit}button{cursor:pointer}
 .summary-rate>b{font-size:12px;margin:0;color:#57799a;text-align:right}
 .summary-progress{grid-column:1/-1;height:8px;background:#e8eef4;border-radius:999px;overflow:hidden;margin-top:5px}
 .summary-progress i{display:block;height:100%;width:0;background:#6686a8;border-radius:999px;transition:width .2s ease}
+.budget-section-title{
+  padding:9px 8px 7px;
+  margin-top:4px;
+  border-bottom:1px solid var(--line);
+  color:var(--blue-dark);
+  font-size:13px;
+  font-weight:800;
+  background:var(--blue-soft);
+}
+.budget-section-title:first-child{margin-top:0}
 .budget-table .th,.budget-table .tr{display:grid;grid-template-columns:1.05fr 2.25fr .75fr .85fr .75fr;align-items:center}.budget-table .th{padding:6px 8px;font-size:11px;color:#787f79;border-bottom:1px solid var(--line)}.budget-table .tr{padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;text-align:center}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:18px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
 .lower-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1fr;gap:14px}.lower-card{padding:18px;min-height:300px}.mini-title{font-size:16px;margin:0 0 16px;letter-spacing:-.04em}.bars{height:170px;display:flex;align-items:flex-end;gap:12px;padding:4px 8px}.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}.month-bar-wrap{height:135px;display:flex;align-items:flex-end}.month-bar{width:24px;background:#c7d7e7;border-radius:6px 6px 2px 2px}.month-bar.current{background:#5f7fa6}.bar-label{font-size:10px;color:#7d847e}.bar-value{font-size:9px;color:#7d847e}.compare{margin-top:10px;padding:10px 11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px}
 .gauge-wrap{display:flex;justify-content:center;margin-top:2px}.gauge{width:210px;height:110px;overflow:hidden;position:relative}.gauge svg{width:100%;height:100%}.gauge-center{text-align:center;margin-top:-18px}.gauge-center b{display:block;font-size:18px}.gauge-center span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.pace-copy{text-align:center;margin:14px 0 0;font-size:11px;line-height:1.55}.good{margin-top:14px;padding:11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px;text-align:center}
@@ -613,7 +623,23 @@ function renderBudget(){
  $('fixedSpentValue').textContent=money(fixedSpent);$('fixedRateValue').textContent=fixedRate.toFixed(1)+'%';$('fixedProgress').style.width=fixedRate+'%';
  $('variableSpentValue').textContent=money(variableSpent);$('variableRateValue').textContent=variableRate.toFixed(1)+'%';$('variableProgress').style.width=variableRate+'%';
  $('sideBudget').textContent=money(total);$('sideSpent').textContent=money(spent);$('sideRemain').textContent=money(remain);$('sideRate').textContent=rate.toFixed(1)+'%';$('sideProgress').style.width=Math.min(100,rate)+'%';
- $('budgetRows').innerHTML=rows.length?rows.map(c=>{const pct=c.budget?Math.min(100,Math.round(c.spent/c.budget*100)):0;return `<div class="tr"><div class="cat-label"><span class="cat-icon">${catIcon(c)}</span><span class="cat-name">${escapeText(c.name)}</span></div><div class="bar-wrap"><div class="bar-track"><i class="bar-fill ${pct>=70?'warn':''}" style="width:${pct}%"></i></div></div><div class="num">${money(c.budget)}</div><div class="num red">${money(c.spent)}</div><div class="num green">${money(Math.max(0,c.budget-c.spent))}</div></div>`}).join(''):'<div class="empty-budget-row">아직 예산 항목이 없어요. 설정에서 추가해 주세요.</div>';
+ const budgetRowHtml=c=>{
+   const pct=c.budget?Math.min(100,Math.round(c.spent/c.budget*100)):0;
+   return `<div class="tr">
+     <div class="cat-label"><span class="cat-icon">${catIcon(c)}</span><span class="cat-name">${escapeText(c.name)}</span></div>
+     <div class="bar-wrap"><div class="bar-track"><i class="bar-fill ${pct>=70?'warn':''}" style="width:${pct}%"></i></div></div>
+     <div class="num">${money(c.budget)}</div>
+     <div class="num red">${money(c.spent)}</div>
+     <div class="num green">${money(Math.max(0,c.budget-c.spent))}</div>
+   </div>`;
+ };
+ const sectionHtml=(title,items)=>{
+   if(!items.length)return '';
+   return `<div class="budget-section-title">${title}</div>${items.map(budgetRowHtml).join('')}`;
+ };
+ $('budgetRows').innerHTML=rows.length
+   ? sectionHtml('고정지출',fixedRows)+sectionHtml('비고정지출',variableRows)
+   : '<div class="empty-budget-row">아직 예산 항목이 없어요. 설정에서 추가해 주세요.</div>';
  const recent=transactions.filter(t=>t.type==='expense').slice(0,8);$('moreTransactions').style.display=recent.length>5?'block':'none';
  const rowsHtml=recent.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon">${catIcon(cat)}</div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');$('extraTransactions').innerHTML=recent.slice(5).map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}</div><div class="tx-icon">${catIcon(cat)}</div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');
  const recentContainer=document.querySelector('#budget .recent');const old=document.querySelectorAll('#budget .recent .tx-row');old.forEach(x=>x.remove());$('extraTransactions').before(document.createRange().createContextualFragment(rowsHtml));
