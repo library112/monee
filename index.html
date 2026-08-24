@@ -4,36 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.4</title>
+<title>monee · 가계부 · ver.5</title>
 <style>
 :root{
-  --bg:#f6f7f4;--sidebar:#f0f3ef;--card:#fff;--ink:#20221f;--muted:#8a8f8a;
-  --line:#e7ebe5;--green:#5f7fa6;--green-soft:#dcebe1;--red:#cf635f;--orange:#e69a3f;
-  --shadow:0 8px 26px rgba(54,67,59,.06);
+  --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
+  --line:#e1e8f0;--green:#6686a8;--green-soft:#e7eef6;--red:#cf635f;--orange:#e69a3f;
+  --blue-dark:#57779a;--blue-soft:#e7eef6;--blue-pale:#f3f7fb;
+  --shadow:0 8px 26px rgba(63,88,116,.08);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}.modal-open{overflow:hidden!important;overscroll-behavior:none!important}
 button,input,select{font:inherit}button{cursor:pointer}
 .layout{min-height:100vh;display:grid;grid-template-columns:220px minmax(0,1fr)}
-.sidebar{background:var(--sidebar);border-right:1px solid #e2e8e1;padding:28px 18px 20px;display:flex;flex-direction:column}
-.brand{padding:0 13px 26px}.brand-mark{font-size:32px;font-weight:800;letter-spacing:-.06em}.brand-tag{font-size:11px;color:#768079;margin-top:4px}
-.nav{display:flex;flex-direction:column;gap:6px}.nav button{border:0;background:transparent;border-radius:12px;padding:13px 14px;text-align:left;font-size:14px;color:#626a64;display:flex;align-items:center;gap:11px}.nav button.active{background:#e7eef6;color:#57779a;font-weight:700}.nav .icon{width:20px;text-align:center;font-size:18px}
-.record{margin-top:20px;background:#6686a8;color:#fff;border:0;border-radius:12px;padding:13px;font-size:14px;font-weight:700;box-shadow:0 8px 16px rgba(76,148,103,.18)}
-.sidebar-summary{margin-top:auto;background:#fff;border:1px solid #e7ebe6;border-radius:14px;padding:14px}.sidebar-summary h4{margin:0 0 12px;font-size:12px}.side-metric{margin:10px 0}.side-metric span{font-size:10px;color:var(--muted);display:block}.side-metric b{display:block;font-size:16px;margin-top:4px}.side-progress{height:6px;background:#e8ece7;border-radius:999px;overflow:hidden;margin-top:9px}.side-progress i{display:block;height:100%;width:50%;background:var(--green);border-radius:999px}
-.main{padding:28px 28px 44px;max-width:1400px;width:100%;margin:auto}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:96px}.page-title{min-width:0;flex:1}.page-title h1{margin:0;font-size:28px;letter-spacing:-.05em;white-space:nowrap}.month-control{flex-shrink:0;white-space:nowrap}.page-title p{margin:3px 0 0;font-size:14px;color:#3e413e}.month-control{display:flex;align-items:center;border:1px solid #dfe5df;background:#fff;border-radius:10px;overflow:hidden}.month-control button{width:38px;height:36px;border:0;background:#fff;color:#6c746e}.month-control span{padding:0 16px;font-size:13px;font-weight:600}
+.sidebar{background:var(--sidebar);border-right:1px solid #dfe7ef;padding:28px 18px 20px;display:flex;flex-direction:column}
+.brand{padding:0 13px 26px}.brand-mark{font-size:32px;font-weight:800;letter-spacing:-.06em}.brand-tag{font-size:11px;color:#718096;margin-top:4px}
+.nav{display:flex;flex-direction:column;gap:6px}.nav button{border:0;background:transparent;border-radius:12px;padding:13px 14px;text-align:left;font-size:14px;color:#64748b;display:flex;align-items:center;gap:11px}.nav button.active{background:var(--blue-soft);color:var(--blue-dark);font-weight:700}.nav .icon{width:20px;text-align:center;font-size:18px}
+.record{margin-top:20px;background:var(--green);color:#fff;border:0;border-radius:12px;padding:13px;font-size:14px;font-weight:700;box-shadow:0 8px 16px rgba(82,112,145,.18)}
+.sidebar-summary{margin-top:auto;background:#fff;border:1px solid #e1e8f0;border-radius:14px;padding:14px}.sidebar-summary h4{margin:0 0 12px;font-size:12px}.side-metric{margin:10px 0}.side-metric span{font-size:10px;color:var(--muted);display:block}.side-metric b{display:block;font-size:16px;margin-top:4px}.side-progress{height:6px;background:#e8ece7;border-radius:999px;overflow:hidden;margin-top:9px}.side-progress i{display:block;height:100%;width:50%;background:var(--green);border-radius:999px}
+.main{padding:18px 28px 44px;max-width:1400px;width:100%;margin:auto}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;min-height:36px}.page-title{min-width:0;flex:1}.page-title h1{margin:0;font-size:28px;letter-spacing:-.05em;white-space:nowrap}.month-control{flex-shrink:0;white-space:nowrap}.page-title p{margin:3px 0 0;font-size:14px;color:#3e413e}.month-control{display:flex;align-items:center;border:1px solid #dfe5df;background:#fff;border-radius:10px;overflow:hidden}.month-control button{width:38px;height:36px;border:0;background:#fff;color:#6c746e}.month-control span{padding:0 16px;font-size:13px;font-weight:600}
 .page{display:none}.page.active{display:block}
-.card{background:var(--card);border:1px solid #e7ebe6;border-radius:16px;box-shadow:var(--shadow)}
+.card{background:var(--card);border:1px solid #e1e8f0;border-radius:16px;box-shadow:var(--shadow)}
 .budget-overview{padding:20px;margin-bottom:14px}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.section-head h2{margin:0;font-size:18px;letter-spacing:-.04em}.section-head .hint{font-size:11px;color:var(--muted)}
-.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:96px}.summary-box{border:1px solid #e5e9e4;border-radius:12px;padding:14px;min-height:88px;display:flex;justify-content:space-between;align-items:center}.summary-box span{display:block;color:#626a63;font-size:12px}.summary-box b{display:block;font-size:18px;margin-top:6px}.summary-box.green b{color:#4d945f}.summary-box.red b{color:#20221f}.summary-box.orange b{color:var(--green)}.summary-box .mini-ring{width:42px;height:42px;border-radius:50%;background:conic-gradient(var(--green) 0 49.9%,#e8ece8 49.9% 100%);position:relative}.mini-ring:after{content:"";position:absolute;inset:7px;background:#fff;border-radius:50%}
-.budget-table .th,.budget-table .tr{display:grid;grid-template-columns:1.05fr 2.25fr .75fr .85fr .75fr;align-items:center}.budget-table .th{padding:6px 8px;font-size:11px;color:#787f79;border-bottom:1px solid var(--line)}.budget-table .tr{padding:10px 8px;border-bottom:1px solid #edf0ec;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:8px;font-size:12px}.cat-icon{width:24px}.bar-wrap{padding-right:18px}.bar-track{height:9px;background:#e7ebe7;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px}.num.red{color:var(--red)}.num.green{color:#4d945f}.rate{font-size:12px}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
-.lower-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1fr;gap:14px}.lower-card{padding:18px;min-height:300px}.mini-title{font-size:16px;margin:0 0 16px;letter-spacing:-.04em}.bars{height:170px;display:flex;align-items:flex-end;gap:12px;padding:4px 8px}.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}.month-bar-wrap{height:135px;display:flex;align-items:flex-end}.month-bar{width:24px;background:#c7dccd;border-radius:6px 6px 2px 2px}.month-bar.current{background:#4e8e62}.bar-label{font-size:10px;color:#7d847e}.bar-value{font-size:9px;color:#7d847e}.compare{margin-top:10px;padding:10px 11px;border-radius:10px;background:#edf5ef;color:#4d765a;font-size:10px}
-.gauge-wrap{display:flex;justify-content:center;margin-top:2px}.gauge{width:210px;height:110px;overflow:hidden;position:relative}.gauge svg{width:100%;height:100%}.gauge-center{text-align:center;margin-top:-18px}.gauge-center b{display:block;font-size:18px}.gauge-center span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.pace-copy{text-align:center;margin:14px 0 0;font-size:11px;line-height:1.55}.good{margin-top:14px;padding:11px;border-radius:10px;background:#edf5ef;color:#486a53;font-size:10px;text-align:center}
-.days{text-align:center;padding-top:12px}.days-number{font-size:52px;color:#4d8e63;font-weight:800;letter-spacing:-.06em}.days-unit{font-size:14px;color:#4d8e63;font-weight:700}.days-date{font-size:11px;color:#8b918c;margin-top:-4px}.divider{height:1px;background:var(--line);margin:20px 0}.daily-label{text-align:center;color:#777e78;font-size:11px}.daily-amount{text-align:center;color:#47895e;font-size:23px;font-weight:800;margin-top:7px}.daily-note{text-align:center;color:#999f9a;font-size:10px;margin-top:6px;line-height:1.4}
-.recent{margin-top:14px;padding:18px}.tx-row{display:grid;grid-template-columns:80px 28px 1fr 1fr 110px 105px;align-items:center;gap:10px;padding:11px 5px;border-top:1px solid #edf0ec;font-size:11px}.tx-row:first-child{border-top:0}.tx-date{color:#777e78}.tx-icon{font-size:17px}.tx-name{font-weight:600}.tx-cat,.tx-method{color:#777e78}.tx-amount{text-align:right;color:var(--red);font-weight:700}.more{margin-top:10px;border:0;background:#faf9f6;border-radius:9px;padding:10px;width:100%;color:#606760;font-size:11px}
+ .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+.summary-box{border:1px solid #e2e8f0;border-radius:12px;padding:14px;min-height:88px;display:flex;justify-content:space-between;align-items:center;background:#fff}
+.summary-main{min-height:88px}
+.summary-box span{display:block;color:#64748b;font-size:12px}
+.summary-box b{display:block;font-size:18px;margin-top:6px;color:#57799d}
+.summary-wide{grid-column:1/-1;min-height:58px;padding:11px 14px;gap:18px}
+.summary-wide-label{min-width:110px}
+.summary-wide-label b{font-size:16px}
+.summary-rate{flex:1;min-width:0;display:grid;grid-template-columns:auto auto;align-items:center;column-gap:10px}
+.summary-rate>span{font-size:10px;color:#7b8794}
+.summary-rate>b{font-size:12px;margin:0;color:#57799a;text-align:right}
+.summary-progress{grid-column:1/-1;height:8px;background:#e8eef4;border-radius:999px;overflow:hidden;margin-top:5px}
+.summary-progress i{display:block;height:100%;width:0;background:#6686a8;border-radius:999px;transition:width .2s ease}
+.budget-table .th,.budget-table .tr{display:grid;grid-template-columns:1.05fr 2.25fr .75fr .85fr .75fr;align-items:center}.budget-table .th{padding:6px 8px;font-size:11px;color:#787f79;border-bottom:1px solid var(--line)}.budget-table .tr{padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;text-align:center}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:18px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
+.lower-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1fr;gap:14px}.lower-card{padding:18px;min-height:300px}.mini-title{font-size:16px;margin:0 0 16px;letter-spacing:-.04em}.bars{height:170px;display:flex;align-items:flex-end;gap:12px;padding:4px 8px}.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}.month-bar-wrap{height:135px;display:flex;align-items:flex-end}.month-bar{width:24px;background:#c7d7e7;border-radius:6px 6px 2px 2px}.month-bar.current{background:#5f7fa6}.bar-label{font-size:10px;color:#7d847e}.bar-value{font-size:9px;color:#7d847e}.compare{margin-top:10px;padding:10px 11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px}
+.gauge-wrap{display:flex;justify-content:center;margin-top:2px}.gauge{width:210px;height:110px;overflow:hidden;position:relative}.gauge svg{width:100%;height:100%}.gauge-center{text-align:center;margin-top:-18px}.gauge-center b{display:block;font-size:18px}.gauge-center span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.pace-copy{text-align:center;margin:14px 0 0;font-size:11px;line-height:1.55}.good{margin-top:14px;padding:11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px;text-align:center}
+.days{text-align:center;padding-top:12px}.days-number{font-size:52px;color:#58799d;font-weight:800;letter-spacing:-.06em}.days-unit{font-size:14px;color:#58799d;font-weight:700}.days-date{font-size:11px;color:#8b918c;margin-top:-4px}.divider{height:1px;background:var(--line);margin:20px 0}.daily-label{text-align:center;color:#777e78;font-size:11px}.daily-amount{text-align:center;color:#58799d;font-size:23px;font-weight:800;margin-top:7px}.daily-note{text-align:center;color:#999f9a;font-size:10px;margin-top:6px;line-height:1.4}
+.recent{margin-top:14px;padding:18px}.tx-row{display:grid;grid-template-columns:80px 28px 1fr 1fr 110px 105px;align-items:center;gap:10px;padding:11px 5px;border-top:1px solid #edf2f6;font-size:11px}.tx-row:first-child{border-top:0}.tx-date{color:#777e78}.tx-icon{font-size:17px}.tx-name{font-weight:600}.tx-cat,.tx-method{color:#777e78}.tx-amount{text-align:right;color:var(--red);font-weight:700}.more{margin-top:10px;border:0;background:#faf9f6;border-radius:9px;padding:10px;width:100%;color:#606760;font-size:11px}
 /* Other pages */
-.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{padding:20px}.asset-total{font-size:40px;font-weight:800;letter-spacing:-.05em}.asset-sub{font-size:11px;color:var(--muted);margin-top:4px}.asset-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.asset-card{background:#f5f7f3;border-radius:12px;padding:13px}.asset-card span{font-size:10px;color:var(--muted)}.asset-card b{display:block;font-size:18px;margin-top:5px}.asset-list{display:flex;flex-direction:column;gap:8px}.asset-row{background:#fafbf8;border:1px solid #e9eee8;border-radius:12px;padding:12px;display:flex;justify-content:space-between}.asset-row b{font-size:12px}.asset-row span{font-size:11px;color:#6f766f}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{padding:14px;border:1px solid var(--line);border-radius:12px}.metric span{font-size:10px;color:var(--muted)}.metric b{font-size:20px;margin-top:6px;display:block}.insight{margin-top:12px;background:#edf5ef;border-radius:12px;padding:13px;font-size:11px;line-height:1.5}.goal-list{display:flex;flex-direction:column;gap:10px}.goal{padding:14px;border:1px solid var(--line);border-radius:12px}.goal-top{display:flex;justify-content:space-between;font-size:11px}.goal-track{height:9px;background:#e9ece8;border-radius:999px;margin:9px 0 5px;overflow:hidden}.goal-track i{display:block;height:100%;background:#6686a8;border-radius:999px}.goal-foot{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}.settings-list{display:flex;flex-direction:column;gap:8px}.setting{display:flex;justify-content:space-between;align-items:center;padding:13px;background:#fafbf8;border:1px solid var(--line);border-radius:12px}.setting strong{font-size:12px}.setting span{display:block;font-size:9px;color:var(--muted);margin-top:2px}.setting button{padding:8px 11px;border:0;border-radius:9px;background:#eef1ec;color:#536057;font-size:10px}
+.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{padding:20px}.asset-total{font-size:40px;font-weight:800;letter-spacing:-.05em}.asset-sub{font-size:11px;color:var(--muted);margin-top:4px}.asset-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.asset-card{background:#f4f7fa;border-radius:12px;padding:13px}.asset-card span{font-size:10px;color:var(--muted)}.asset-card b{display:block;font-size:18px;margin-top:5px}.asset-list{display:flex;flex-direction:column;gap:8px}.asset-row{background:#fafcff;border:1px solid #e4eaf0;border-radius:12px;padding:12px;display:flex;justify-content:space-between}.asset-row b{font-size:12px}.asset-row span{font-size:11px;color:#718096}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{padding:14px;border:1px solid var(--line);border-radius:12px}.metric span{font-size:10px;color:var(--muted)}.metric b{font-size:20px;margin-top:6px;display:block}.insight{margin-top:12px;background:#edf3f9;border-radius:12px;padding:13px;font-size:11px;line-height:1.5}.goal-list{display:flex;flex-direction:column;gap:10px}.goal{padding:14px;border:1px solid var(--line);border-radius:12px}.goal-top{display:flex;justify-content:space-between;font-size:11px}.goal-track{height:9px;background:#e9ece8;border-radius:999px;margin:9px 0 5px;overflow:hidden}.goal-track i{display:block;height:100%;background:var(--green);border-radius:999px}.goal-foot{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}.settings-list{display:flex;flex-direction:column;gap:8px}.setting{display:flex;justify-content:space-between;align-items:center;padding:13px;background:#fafcff;border:1px solid var(--line);border-radius:12px}.setting strong{font-size:12px}.setting span{display:block;font-size:9px;color:var(--muted);margin-top:2px}.setting button{padding:8px 11px;border:0;border-radius:9px;background:#eef3f8;color:#536057;font-size:10px}
 /* Modal */
-.modal-back{position:fixed;inset:0;background:rgba(25,30,27,.36);display:none;align-items:center;justify-content:center;z-index:2000;overscroll-behavior:contain;touch-action:none}.modal-back.show{display:flex}.modal{width:min(620px,calc(100% - 24px));max-height:min(90vh,760px);overflow:auto;background:#fff;border-radius:18px;padding:18px;overscroll-behavior:contain;touch-action:auto}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.modal-head h3{margin:0;font-size:18px}.x{width:34px;height:34px;border:0;border-radius:50%;background:#edf0ec}.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}.seg button{border:0;border-radius:10px;padding:11px;background:#f0f2ef;color:#7e857f;font-weight:700}.seg button.active{background:#dce9e0;color:#3c7b52}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field.full{grid-column:1/-1}.field label{display:block;font-size:10px;color:var(--muted);margin:0 0 5px 2px}.field input,.field select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fbfcfa}.primary{width:100%;border:0;border-radius:11px;padding:12px;background:#6686a8;color:#fff;font-weight:700;text-align:center}
+.modal-back{position:fixed;inset:0;background:rgba(25,30,27,.36);display:none;align-items:center;justify-content:center;z-index:2000;overscroll-behavior:contain;touch-action:none}.modal-back.show{display:flex}.modal{width:min(620px,calc(100% - 24px));max-height:min(90vh,760px);overflow:auto;background:#fff;border-radius:18px;padding:18px;overscroll-behavior:contain;touch-action:auto}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.modal-head h3{margin:0;font-size:18px}.x{width:34px;height:34px;border:0;border-radius:50%;background:#edf2f6}.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}.seg button{border:0;border-radius:10px;padding:11px;background:#eef3f8;color:#7e857f;font-weight:700}.seg button.active{background:#e7eef6;color:#57799a}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field.full{grid-column:1/-1}.field label{display:block;font-size:10px;color:var(--muted);margin:0 0 5px 2px}.field input,.field select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fbfcfa}.primary{width:100%;border:0;border-radius:11px;padding:12px;background:var(--green);color:#fff;font-weight:700;text-align:center}
 @media(max-width:950px){
   .layout{grid-template-columns:1fr}
   .sidebar{position:fixed;left:0;right:0;top:0;z-index:40;height:118px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr;align-items:center;padding:10px 14px;background:rgba(240,243,239,.97);backdrop-filter:blur(12px);border-right:0;border-bottom:1px solid #dfe5df;box-shadow:0 6px 20px rgba(54,67,59,.06)}
@@ -43,7 +56,7 @@ button,input,select{font:inherit}button{cursor:pointer}
   .nav .icon{width:auto;font-size:14px}
   .record{position:fixed;right:14px;bottom:16px;z-index:50;width:58px;height:58px;border-radius:18px;font-size:0;margin:0;padding:0}.record:before{content:'+';font-size:24px}
   .sidebar-summary{display:none}
-  .main{padding:136px 18px 36px}
+  .main{padding:18px 18px 36px}
   .summary-grid{grid-template-columns:repeat(2,1fr)}
   .lower-grid{grid-template-columns:1fr}
   .panel-grid{grid-template-columns:1fr}
@@ -53,22 +66,29 @@ button,input,select{font:inherit}button{cursor:pointer}
   .budget-table .th,.budget-table .tr{grid-template-columns:1.15fr 1.7fr .7fr .8fr .65fr}
   .tx-row{grid-template-columns:65px 25px 1fr 85px}.tx-cat,.tx-method{display:none}
   .summary-grid{gap:8px}.summary-box{padding:11px}.summary-box b{font-size:16px}
-  .main{padding:136px 12px 82px}
+  .main{padding:18px 12px 82px}
 }
 @media(max-width:430px){
   .sidebar{height:112px;padding:8px 10px}.brand-mark{font-size:22px}.brand-tag{font-size:8px}
   .nav button{font-size:10px;padding:6px 2px}
-  .main{padding-top:130px}
+  .main{padding-top:18px}
 }
 
-.floating-action{position:fixed;right:24px;bottom:96px;z-index:60;width:40px;height:40px;border-radius:50%;border:0;background:#6686a8;color:#fff;font-size:23px;line-height:1;box-shadow:0 10px 22px rgba(82,112,145,.25);display:grid;place-items:center}
-.edit-inline{border:0;background:#e7eef6;color:#57779a;border-radius:10px;padding:7px 11px;font-size:10px;font-weight:700}
-.pace-combined{min-height:300px}.pace-head{display:flex;justify-content:space-between;align-items:flex-start}.pace-status{margin-top:5px;color:#4d8e63;font-size:11px;font-weight:700}.days-compact{text-align:right}.days-compact b{font-size:30px;color:#4d8e63}.days-compact span{display:block;color:var(--muted);font-size:9px}.pace-main{text-align:center;margin-top:2px}.pace-center{margin-top:-12px}.pace-center b{display:block;font-size:11px}.pace-center span{display:block;color:var(--muted);font-size:10px;margin-top:4px}.pace-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.pace-bottom>div{background:#f5f7f3;border-radius:12px;padding:10px}.pace-bottom span{display:block;color:var(--muted);font-size:9px}.pace-bottom b{display:block;margin-top:4px;color:#47895e;font-size:15px}
-@media(max-width:950px){.floating-action{right:16px;bottom:96px;width:40px;height:40px;border-radius:50%;font-size:23px}.sidebar{height:96px}.main{padding-top:112px}.nav{grid-template-columns:repeat(4,1fr)}}
+.floating-action{position:fixed;right:24px;bottom:96px;z-index:60;width:40px;height:40px;border-radius:50%;border:0;background:var(--green);color:#fff;font-size:23px;line-height:1;box-shadow:0 10px 22px rgba(82,112,145,.25);display:grid;place-items:center}
+.edit-inline{border:0;background:var(--blue-soft);color:var(--blue-dark);border-radius:10px;padding:7px 11px;font-size:10px;font-weight:700}
+.pace-combined{min-height:300px}.pace-head{display:flex;justify-content:space-between;align-items:flex-start}.pace-status{margin-top:5px;color:#58799d;font-size:11px;font-weight:700}.days-compact{text-align:right}.days-compact b{font-size:30px;color:#58799d}.days-compact span{display:block;color:var(--muted);font-size:9px}.pace-main{text-align:center;margin-top:2px}.pace-center{margin-top:-12px}.pace-center b{display:block;font-size:11px}.pace-center span{display:block;color:var(--muted);font-size:10px;margin-top:4px}.pace-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.pace-bottom>div{background:#f4f7fa;border-radius:12px;padding:10px}.pace-bottom span{display:block;color:var(--muted);font-size:9px}.pace-bottom b{display:block;margin-top:4px;color:#58799d;font-size:15px}
+@media(max-width:950px){.floating-action{right:16px;bottom:96px;width:40px;height:40px;border-radius:50%;font-size:23px}.sidebar{height:96px}.main{padding-top:18px}.nav{grid-template-columns:repeat(4,1fr)}}
 
-.more.expanded{background:#eef4ef;color:#4c9467}.month-control button{cursor:pointer}.month-control button:disabled{opacity:.35;cursor:default}.extra-transactions .tx-row{border-top:1px solid #edf0ec}
+.more.expanded{background:#eef4ef;color:#58799d}.month-control button{cursor:pointer}.month-control button:disabled{opacity:.35;cursor:default}.extra-transactions .tx-row{border-top:1px solid #edf2f6}
 
-.modal-help{margin:4px 0 0;color:var(--muted);font-size:9px;line-height:1.4}.budget-edit-modal{padding-bottom:20px;max-height:88vh;overflow:auto}.budget-edit-list{display:flex;flex-direction:column;gap:8px}.budget-edit-row{display:grid;grid-template-columns:42px 1fr 130px 36px;gap:8px;align-items:center;background:#f7f9f6;border:1px solid var(--line);border-radius:11px;padding:8px}.budget-edit-row .emoji{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:#eef2ed;font-size:16px}.budget-edit-row input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;outline:0;font-size:11px}.delete-category{width:34px;height:34px;border:0;border-radius:9px;background:#f5e9e8;color:#bd6d68;font-size:16px}.add-category-btn{width:100%;margin-top:10px;padding:10px;border:1px dashed #b9c9da;background:#f3f7fb;color:#57779a;border-radius:10px;font-size:11px;font-weight:700}.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.secondary-btn{border:0;border-radius:11px;padding:12px;background:#edf1f5;color:#66778a;font-weight:700}.budget-table .empty-budget-row{padding:18px;text-align:center;color:var(--muted);font-size:11px}.cat-label .cat-name{font-size:12px}
+.modal-help{margin:4px 0 0;color:var(--muted);font-size:9px;line-height:1.4}.budget-edit-modal{padding-bottom:20px;max-height:88vh;overflow:auto} .budget-edit-list{display:flex;flex-direction:column;gap:8px}
+.budget-edit-row{display:grid;grid-template-columns:28px 44px minmax(90px,1fr) 130px 36px;gap:8px;align-items:center;background:#f7faff;border:1px solid var(--line);border-radius:11px;padding:8px;transition:box-shadow .15s ease,opacity .15s ease}
+.budget-edit-row.dragging{opacity:.45;box-shadow:0 8px 20px rgba(82,112,145,.14)}
+.drag-handle{display:grid;place-items:center;width:28px;height:34px;border-radius:8px;color:#8a98a8;background:#eef3f8;font-size:16px;cursor:grab;user-select:none}
+.drag-handle:active{cursor:grabbing}
+.budget-edit-row .emoji-input{width:44px;height:34px;padding:0;text-align:center;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:18px;outline:0}
+.budget-edit-row input.edit-name,.budget-edit-row input.edit-budget{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;outline:0;font-size:11px}
+.category-editor-help{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.45}.delete-category{width:34px;height:34px;border:0;border-radius:9px;background:#f5e9e8;color:#bd6d68;font-size:16px}.add-category-btn{width:100%;margin-top:10px;padding:10px;border:1px dashed #b9c9da;background:#f3f7fb;color:#57779a;border-radius:10px;font-size:11px;font-weight:700}.modal-actions{display:flex;justify-content:center;gap:8px;margin-top:10px}.modal-actions .primary,.modal-actions .secondary-btn{width:140px;flex:none}.secondary-btn{border:0;border-radius:11px;padding:12px;background:#edf1f5;color:#66778a;font-weight:700}.budget-table .empty-budget-row{padding:18px;text-align:center;color:var(--muted);font-size:11px}.cat-label .cat-name{font-size:12px}
 
 /* v5: mobile bottom navigation */
 @media (max-width: 950px){
@@ -117,7 +137,7 @@ button,input,select{font:inherit}button{cursor:pointer}
     z-index:1100!important;
     width:58px!important;height:58px!important;
     border-radius:18px!important;
-    background:#6686a8!important;
+    background:var(--green)!important;
     box-shadow:0 12px 28px rgba(82,112,145,.25)!important;
   }
   .main{padding-top:18px!important}
@@ -127,11 +147,11 @@ button,input,select{font:inherit}button{cursor:pointer}
 }
 
 
-.auth-gate{position:fixed;inset:0;z-index:9999;background:rgba(246,247,244,.98);display:flex;align-items:center;justify-content:center;padding:24px}.auth-gate.hidden{display:none}.auth-card{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:34px;box-shadow:0 18px 60px rgba(55,75,95,.12)}.auth-brand{font-size:48px!important;line-height:1}.auth-tag{margin:8px 0 28px;color:var(--muted);font-size:15px}.auth-card h2{margin:0 0 8px;font-size:28px}.auth-help{color:var(--muted);margin:0 0 24px}.auth-form{grid-template-columns:1fr}.login-message{min-height:22px;margin-top:12px;color:#b75552;font-size:14px}.account-setting{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding:14px;background:#fafbf8;border:1px solid var(--line);border-radius:12px}.account-setting strong{font-size:12px}.account-setting span{display:block;font-size:9px;color:var(--muted);margin-top:3px;word-break:break-all}.account-setting button{padding:8px 11px;border:0;border-radius:9px;background:#f8eceb;color:#b75552;font-size:10px;font-weight:700}.asset-actions,.goal-actions{display:flex;gap:6px;align-items:center}.row-action{border:0;background:#eef3f8;color:#58799d;border-radius:8px;padding:5px 8px;cursor:pointer;font-size:12px}.row-action.delete{color:#b75552;background:#f8eceb}.empty-state{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}.asset-row{display:flex;align-items:center;gap:10px}.asset-row b{flex:1}.asset-row span{font-weight:700}.asset-row .asset-actions{margin-left:auto}.goal{position:relative}.goal-actions{position:absolute;right:0;top:0}.goal-top{padding-right:90px}.more{cursor:pointer}
+.auth-gate{position:fixed;inset:0;z-index:9999;background:rgba(246,247,244,.98);display:flex;align-items:center;justify-content:center;padding:24px}.auth-gate.hidden{display:none}.auth-card{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:34px;box-shadow:0 18px 60px rgba(55,75,95,.12)}.auth-brand{font-size:48px!important;line-height:1}.auth-tag{margin:8px 0 28px;color:var(--muted);font-size:15px}.auth-card h2{margin:0 0 8px;font-size:28px}.auth-help{color:var(--muted);margin:0 0 24px}.auth-form{grid-template-columns:1fr}.login-message{min-height:22px;margin-top:12px;color:#b75552;font-size:14px}.account-setting{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding:14px;background:#fafcff;border:1px solid var(--line);border-radius:12px}.account-setting strong{font-size:12px}.account-setting span{display:block;font-size:9px;color:var(--muted);margin-top:3px;word-break:break-all}.account-setting button{padding:8px 11px;border:0;border-radius:9px;background:#f8eceb;color:#b75552;font-size:10px;font-weight:700}.asset-actions,.goal-actions{display:flex;gap:6px;align-items:center}.row-action{border:0;background:#eef3f8;color:#58799d;border-radius:8px;padding:5px 8px;cursor:pointer;font-size:12px}.row-action.delete{color:#b75552;background:#f8eceb}.empty-state{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}.asset-row{display:flex;align-items:center;gap:10px}.asset-row b{flex:1}.asset-row span{font-weight:700}.asset-row .asset-actions{margin-left:auto}.goal{position:relative}.goal-actions{position:absolute;right:0;top:0}.goal-top{padding-right:90px}.more{cursor:pointer}
 
 /* ver.2 UI refinements */
-.topbar{min-height:72px}
-.page-title{padding-left:10px}
+.topbar{min-height:36px}
+.page-title{padding-left:0}
 .month-control{white-space:nowrap}
 .modal-back.show{align-items:center;justify-content:center;overflow:hidden}
 .modal{width:min(620px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border-radius:18px}
@@ -139,6 +159,27 @@ button,input,select{font:inherit}button{cursor:pointer}
 .modal-back .modal{overscroll-behavior:contain}
 #settings.active ~ .floating-action{display:none}
 
+@media(max-width:650px){
+  .summary-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px}
+  .summary-main{min-height:82px;padding:11px}
+  .summary-wide{min-height:58px;padding:10px 11px}
+  .summary-wide-label{min-width:82px}
+  .summary-wide-label b{font-size:14px}
+  .summary-rate{column-gap:7px}
+  .summary-rate>b{font-size:11px}
+  .budget-table .th,.budget-table .tr{grid-template-columns:1.15fr 1.45fr .7fr .75fr .9fr}
+  .budget-table .th{font-size:10px;padding:6px 4px}
+  .budget-table .tr{padding:9px 4px}
+  .cat-label{gap:3px;font-size:11px}
+  .cat-icon{width:18px;min-width:18px}
+  .cat-name{font-size:11px}
+  .num{font-size:10px}
+  .budget-edit-row{grid-template-columns:24px 40px minmax(72px,1fr) 92px 32px;gap:5px;padding:6px}
+  .drag-handle{width:24px;height:32px;font-size:14px}
+  .budget-edit-row .emoji-input{width:40px;height:32px;font-size:17px}
+  .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget{padding:8px 7px;font-size:10px}
+  .modal-actions .primary,.modal-actions .secondary-btn{width:130px}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -197,10 +238,10 @@ const supabaseClient = window.supabase.createClient(
       <article class="card budget-overview">
         <div class="section-head"><h2>이번 달 예산 ⓘ</h2><span class="hint" id="budgetHint">카테고리별 사용 현황을 한눈에 확인해요.</span></div>
         <div class="summary-grid">
-          <div class="summary-box green"><div><span>전체 예산</span><b id="totalBudgetValue">₩2,500,000</b></div></div>
-          <div class="summary-box"><div><span>사용액</span><b id="spentValue">₩1,247,500</b></div></div>
-          <div class="summary-box green"><div><span>남은 예산</span><b id="remainValue">₩1,252,500</b></div></div>
-          <div class="summary-box green"><div><span>사용률</span><b>49.9%</b></div><i class="mini-ring"></i></div>
+          <div class="summary-box summary-main"><div><span>전체 예산</span><b id="totalBudgetValue">₩2,500,000</b></div></div>
+          <div class="summary-box summary-main"><div><span>남은 예산</span><b id="remainValue">₩1,252,500</b></div></div>
+          <div class="summary-box summary-wide"><div class="summary-wide-label"><span>고정지출</span><b id="fixedSpentValue">₩0</b></div><div class="summary-rate"><span>사용률</span><b id="fixedRateValue">0.0%</b><div class="summary-progress"><i id="fixedProgress" style="width:0%"></i></div></div></div>
+          <div class="summary-box summary-wide"><div class="summary-wide-label"><span>비고정지출</span><b id="variableSpentValue">₩0</b></div><div class="summary-rate"><span>사용률</span><b id="variableRateValue">0.0%</b><div class="summary-progress"><i id="variableProgress" style="width:0%"></i></div></div></div>
         </div>
         <div class="budget-table" id="budgetTable">
           <div class="th"><div>항목별 예산</div><div></div><div>예산</div><div>사용액</div><div>남은 금액</div></div>
@@ -266,7 +307,7 @@ const supabaseClient = window.supabase.createClient(
 
 <div class="modal-back" id="modal"><div class="modal"><div class="modal-head"><h3>기록하기</h3><button class="x" id="closeModal">×</button></div><div class="seg"><button class="active" id="expenseTab">지출</button><button id="incomeTab">수입</button></div><form id="entryForm" class="form-grid"><div class="field"><label>날짜</label><input id="date" type="date" value="2026-08-23"></div><div class="field"><label>금액</label><input id="amount" type="number" placeholder="0" required></div><div class="field"><label>카테고리</label><select id="category"></select></div><div class="field" id="methodBox"><label>결제수단</label><select id="method"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></div><div class="field full"><label>내용 / 메모</label><input id="memo" maxlength="100" placeholder="메모를 남겨보세요"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
 
-<div class="modal-back" id="budgetEditModal"><div class="modal budget-edit-modal"><div class="modal-head"><div><h3>항목별 월 예산 수정</h3><p class="modal-help">항목 이름과 예산을 수정하거나, 새로운 항목을 추가·삭제할 수 있어요.</p></div><button class="x" data-close-modal="budgetEditModal">×</button></div>
+<div class="modal-back" id="budgetEditModal"><div class="modal budget-edit-modal"><div class="modal-head"><div><h3>항목별 월 예산 수정</h3><p class="modal-help">항목 이름·아이콘·예산을 수정할 수 있고, 왼쪽 ⋮⋮를 드래그해서 순서를 바꿀 수 있어요.</p></div><button class="x" data-close-modal="budgetEditModal">×</button></div>
 <div class="budget-edit-list" id="budgetEditList"></div>
 <button class="add-category-btn" id="addBudgetCategory" type="button">＋ 항목 추가</button>
 <div class="modal-actions"><button class="secondary-btn" data-close-modal="budgetEditModal" type="button">취소</button><button class="primary" id="saveBudgetCategories" type="button">저장하기</button></div>
@@ -279,15 +320,28 @@ const supabaseClient = window.supabase.createClient(
 (function(){
 const cats=['식비','교통','쇼핑','여가/문화','주거/통신','고정비','건강/의료','기타'];
 const incomeCats=['월급','기타'];
-const catIcons={'식비':'🍚','교통':'🚗','쇼핑':'🛍️','여가/문화':'☕','주거/통신':'🏠','고정비':'▣','건강/의료':'♡','기타':'•••'};
+const defaultCatIcons={'식비':'🍚','교통':'🚗','쇼핑':'🛍️','여가/문화':'☕','주거/통신':'🏠','고정비':'▣','건강/의료':'♡','기타':'•••'};
 let entryType='expense', currentUser=null, budgetCategories=[], transactions=[], assets=[], goals=[];
+let categoryPrefsSupported=false;
+const categoryPrefsKey=()=>`monee-category-prefs-${currentUser?.id||'guest'}`;
+let localCategoryPrefs={};
+function loadLocalCategoryPrefs(){try{localCategoryPrefs=JSON.parse(localStorage.getItem(categoryPrefsKey())||'{}')||{}}catch(e){localCategoryPrefs={}}}
+function saveLocalCategoryPrefs(){try{localStorage.setItem(categoryPrefsKey(),JSON.stringify(localCategoryPrefs))}catch(e){}}
+function catIcon(c){return c?.icon||localCategoryPrefs[c?.id]?.icon||defaultCatIcons[c?.name]||'•'}
+function catOrder(c){const v=Number(c?.sort_order);return Number.isFinite(v)?v:(localCategoryPrefs[c?.id]?.sort_order??999999)}
 let viewYear=2026, viewMonth=7;
 const monthNames=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const $=id=>document.getElementById(id);
 const money=n=>'₩'+Number(n||0).toLocaleString('ko-KR');
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const monthDate=()=>`${viewYear}-${String(viewMonth+1).padStart(2,'0')}-01`;
-const showPage=id=>{document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));$('pageTitle').textContent={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';$('floatingAction').style.display=id==='settings'?'none':'grid';};
+const showPage=id=>{
+ document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+ $('pageTitle').textContent={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';
+ $('floatingAction').style.display=id==='settings'?'none':'grid';
+ requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
+};
 function updateMonthLabel(){$('monthLabel').textContent=viewYear+'년 '+monthNames[viewMonth]}
 function categoryById(id){return budgetCategories.find(c=>c.id===id)}
 function currentMonthTransactions(){const prefix=`${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;return transactions.filter(t=>t.transaction_date?.startsWith(prefix))}
@@ -398,17 +452,31 @@ async function loadAll(){
   supabaseClient.from('goals').select('*').eq('user_id',currentUser.id).order('created_at')
  ]);
  for(const r of [c,t,b,a,g])if(r.error)throw r.error;
- budgetCategories=c.data.filter(x=>x.type==='expense').map(c=>({...c,budget:0,spent:0,budgetId:null}));
+ loadLocalCategoryPrefs();
+ categoryPrefsSupported=(c.data||[]).some(x=>Object.prototype.hasOwnProperty.call(x,'icon')||Object.prototype.hasOwnProperty.call(x,'sort_order'));
+ budgetCategories=c.data.filter(x=>x.type==='expense').map(c=>({...c,budget:0,spent:0,budgetId:null}))
+   .sort((a,b)=>catOrder(a)-catOrder(b));
  const budgets=b.data;budgetCategories.forEach(c=>{const x=budgets.find(b=>b.category_id===c.id&&Number(b.year)===viewYear&&Number(b.month)===viewMonth+1);c.budget=Number(x?.amount||0);c.budgetId=x?.id||null;});
  transactions=t.data||[];assets=a.data||[];goals=g.data||[];
  renderAll();
 }
 function renderBudget(){
- updateMonthLabel(); const rows=computeBudgetRows();const total=rows.reduce((s,c)=>s+c.budget,0),spent=rows.reduce((s,c)=>s+c.spent,0),remain=Math.max(0,total-spent),rate=total?Math.round(spent/total*1000)/10:0;
- $('totalBudgetValue').textContent=money(total);$('spentValue').textContent=money(spent);$('remainValue').textContent=money(remain);$('sideBudget').textContent=money(total);$('sideSpent').textContent=money(spent);$('sideRemain').textContent=money(remain);$('sideRate').textContent=rate.toFixed(1)+'%';$('sideProgress').style.width=Math.min(100,rate)+'%';
- $('budgetRows').innerHTML=rows.length?rows.map(c=>{const pct=c.budget?Math.min(100,Math.round(c.spent/c.budget*100)):0;return `<div class="tr"><div class="cat-label"><span class="cat-icon">${catIcons[c.name]||'•'}</span><span class="cat-name">${escapeText(c.name)}</span></div><div class="bar-wrap"><div class="bar-track"><i class="bar-fill ${pct>=70?'warn':''}" style="width:${pct}%"></i></div></div><div class="num">${money(c.budget)}</div><div class="num red">${money(c.spent)}</div><div class="num green">${money(Math.max(0,c.budget-c.spent))}</div></div>`}).join(''):'<div class="empty-budget-row">아직 예산 항목이 없어요. 설정에서 추가해 주세요.</div>';
+ updateMonthLabel();
+ const rows=computeBudgetRows();
+ const total=rows.reduce((s,c)=>s+c.budget,0),spent=rows.reduce((s,c)=>s+c.spent,0),remain=Math.max(0,total-spent),rate=total?Math.round(spent/total*1000)/10:0;
+ const isFixedCategory=c=>/고정|주거|통신/.test(c.name);
+ const fixedRows=rows.filter(isFixedCategory),variableRows=rows.filter(c=>!isFixedCategory(c));
+ const fixedBudget=fixedRows.reduce((s,c)=>s+c.budget,0),fixedSpent=fixedRows.reduce((s,c)=>s+c.spent,0);
+ const variableBudget=variableRows.reduce((s,c)=>s+c.budget,0),variableSpent=variableRows.reduce((s,c)=>s+c.spent,0);
+ const fixedRate=fixedBudget?Math.min(100,Math.round(fixedSpent/fixedBudget*1000)/10):0;
+ const variableRate=variableBudget?Math.min(100,Math.round(variableSpent/variableBudget*1000)/10):0;
+ $('totalBudgetValue').textContent=money(total);$('remainValue').textContent=money(remain);
+ $('fixedSpentValue').textContent=money(fixedSpent);$('fixedRateValue').textContent=fixedRate.toFixed(1)+'%';$('fixedProgress').style.width=fixedRate+'%';
+ $('variableSpentValue').textContent=money(variableSpent);$('variableRateValue').textContent=variableRate.toFixed(1)+'%';$('variableProgress').style.width=variableRate+'%';
+ $('sideBudget').textContent=money(total);$('sideSpent').textContent=money(spent);$('sideRemain').textContent=money(remain);$('sideRate').textContent=rate.toFixed(1)+'%';$('sideProgress').style.width=Math.min(100,rate)+'%';
+ $('budgetRows').innerHTML=rows.length?rows.map(c=>{const pct=c.budget?Math.min(100,Math.round(c.spent/c.budget*100)):0;return `<div class="tr"><div class="cat-label"><span class="cat-icon">${catIcon(c)}</span><span class="cat-name">${escapeText(c.name)}</span></div><div class="bar-wrap"><div class="bar-track"><i class="bar-fill ${pct>=70?'warn':''}" style="width:${pct}%"></i></div></div><div class="num">${money(c.budget)}</div><div class="num red">${money(c.spent)}</div><div class="num green">${money(Math.max(0,c.budget-c.spent))}</div></div>`}).join(''):'<div class="empty-budget-row">아직 예산 항목이 없어요. 설정에서 추가해 주세요.</div>';
  const recent=transactions.filter(t=>t.type==='expense').slice(0,8);$('moreTransactions').style.display=recent.length>5?'block':'none';
- const rowsHtml=recent.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon">${catIcons[cat?.name]||'•'}</div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');$('extraTransactions').innerHTML=recent.slice(5).map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}</div><div class="tx-icon">${catIcons[cat?.name]||'•'}</div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');
+ const rowsHtml=recent.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon">${catIcon(cat)}</div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');$('extraTransactions').innerHTML=recent.slice(5).map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}</div><div class="tx-icon">${catIcon(cat)}</div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');
  const recentContainer=document.querySelector('#budget .recent');const old=document.querySelectorAll('#budget .recent .tx-row');old.forEach(x=>x.remove());$('extraTransactions').before(document.createRange().createContextualFragment(rowsHtml));
  renderTrend();renderPace();
 }
@@ -423,8 +491,73 @@ function setModalLock(locked){document.body.style.overflow=locked?'hidden':''}fu
 async function deleteAsset(id){if(!confirm('이 자산을 삭제할까요?'))return;const {error}=await supabaseClient.from('assets').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
 function openGoal(id){const g=goals.find(x=>x.id===id);$('goalId').value=g?.id||'';$('goalName').value=g?.name||'';$('goalTarget').value=g?.target_amount||'';$('goalCurrent').value=g?.current_amount||'';$('goalModalTitle').textContent=g?'목표 수정':'새 목표 만들기';openModal('goalModal')}
 async function deleteGoal(id){if(!confirm('이 목표를 삭제할까요?'))return;const {error}=await supabaseClient.from('goals').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
-function renderBudgetEditor(){const month=monthDate();$('budgetEditList').innerHTML=budgetCategories.map(c=>`<div class="budget-edit-row" data-id="${c.id}"><div class="emoji">${catIcons[c.name]||'•'}</div><input class="edit-name" value="${escapeText(c.name)}"><input class="edit-budget" type="number" min="0" step="10000" value="${c.budget}"><button class="delete-category" type="button" data-delete-index="${c.id}">×</button></div>`).join('')||'<div class="empty">항목이 없습니다.</div>';document.querySelectorAll('.delete-category').forEach(b=>b.onclick=async()=>{const id=b.dataset.deleteIndex;if(!confirm('이 항목을 삭제할까요? 기존 거래의 카테고리는 기타로 남을 수 있어요.'))return;const {error}=await supabaseClient.from('categories').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll();renderBudgetEditor()})}
-async function saveBudgetCategories(){const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];for(const row of rows){const id=row.dataset.id,name=row.querySelector('.edit-name').value.trim(),amount=Math.max(0,Number(row.querySelector('.edit-budget').value)||0);if(!name)continue;const old=budgetCategories.find(c=>c.id===id);if(name!==old.name){const {error}=await supabaseClient.from('categories').update({name}).eq('id',id).eq('user_id',currentUser.id);if(error){alert(error.message);return}}const {data:existing}=await supabaseClient.from('budgets').select('id').eq('id',old.budgetId||'').maybeSingle();let q;if(old.budgetId){q=supabaseClient.from('budgets').update({amount}).eq('id',old.budgetId).eq('user_id',currentUser.id)}else{q=supabaseClient.from('budgets').insert({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:id,amount})}const {error:e}=await q;if(e){alert(e.message);return}}closeModal('budgetEditModal');await loadAll()}
+function renderBudgetEditor(){
+ const list=$('budgetEditList');
+ list.innerHTML=budgetCategories.map(c=>`
+  <div class="budget-edit-row" data-id="${c.id}" draggable="true">
+   <div class="drag-handle" title="드래그해서 순서 변경">⋮⋮</div>
+   <input class="emoji-input" maxlength="2" value="${escapeText(catIcon(c))}" aria-label="아이콘">
+   <input class="edit-name" value="${escapeText(c.name)}" aria-label="항목명">
+   <input class="edit-budget" type="number" min="0" step="10000" value="${c.budget}" aria-label="월 예산">
+   <button class="delete-category" type="button" data-delete-index="${c.id}" aria-label="항목 삭제">×</button>
+  </div>`).join('')||'<div class="empty">항목이 없습니다.</div>';
+
+ let dragged=null;
+ list.querySelectorAll('.budget-edit-row').forEach(row=>{
+   row.addEventListener('dragstart',e=>{dragged=row;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+   row.addEventListener('dragend',()=>{row.classList.remove('dragging');dragged=null;});
+   row.addEventListener('dragover',e=>{
+     e.preventDefault();
+     if(!dragged||dragged===row)return;
+     const rect=row.getBoundingClientRect();
+     list.insertBefore(dragged,e.clientY<rect.top+rect.height/2?row:row.nextSibling);
+   });
+   row.querySelector('.delete-category').onclick=async()=>{
+     const id=row.dataset.id;
+     if(!confirm('이 항목을 삭제할까요? 기존 거래의 카테고리는 기타로 남을 수 있어요.'))return;
+     const {error}=await supabaseClient.from('categories').delete().eq('id',id).eq('user_id',currentUser.id);
+     if(error)return alert(error.message);
+     delete localCategoryPrefs[id];saveLocalCategoryPrefs();
+     await loadAll();renderBudgetEditor();
+   };
+ });
+}
+async function saveBudgetCategories(){
+ const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
+ for(let index=0;index<rows.length;index++){
+   const row=rows[index],id=row.dataset.id;
+   const name=row.querySelector('.edit-name').value.trim();
+   const icon=(row.querySelector('.emoji-input').value.trim()||'•').slice(0,2);
+   const amount=Math.max(0,Number(row.querySelector('.edit-budget').value)||0);
+   const old=budgetCategories.find(c=>c.id===id);
+   if(!name||!old)continue;
+
+   if(categoryPrefsSupported){
+     const {error}=await supabaseClient.from('categories')
+       .update({name,icon,sort_order:index})
+       .eq('id',id).eq('user_id',currentUser.id);
+     if(error){
+       categoryPrefsSupported=false;
+       localCategoryPrefs[id]={...(localCategoryPrefs[id]||{}),icon,sort_order:index};
+     }
+   }else{
+     localCategoryPrefs[id]={...(localCategoryPrefs[id]||{}),icon,sort_order:index};
+     if(name!==old.name){
+       const {error}=await supabaseClient.from('categories').update({name}).eq('id',id).eq('user_id',currentUser.id);
+       if(error){alert(error.message);return;}
+     }
+   }
+
+   const q=old.budgetId
+     ? supabaseClient.from('budgets').update({amount}).eq('id',old.budgetId).eq('user_id',currentUser.id)
+     : supabaseClient.from('budgets').insert({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:id,amount});
+   const {error:e2}=await q;
+   if(e2){alert(e2.message);return;}
+ }
+ saveLocalCategoryPrefs();
+ closeModal('budgetEditModal');
+ await loadAll();
+}
 async function saveTransaction(e){e.preventDefault();const amount=Number($('amount').value)||0;if(amount<=0)return;const name=$('category').value;const type=entryType;const cat=type==='income'?null:budgetCategories.find(c=>c.name===name);let incomeCatId=null;if(type==='income'){const {data}=await supabaseClient.from('categories').select('id').eq('user_id',currentUser.id).eq('type','income').eq('name',name).single();incomeCatId=data?.id}const {error}=await supabaseClient.from('transactions').insert({user_id:currentUser.id,transaction_date:$('date').value||new Date().toISOString().slice(0,10),type,amount,category_id:cat?.id||incomeCatId,payment_method:type==='income'?'현금':$('method').value,memo:$('memo').value.trim()});if(error)return alert(error.message);closeModal('modal');e.target.reset();$('date').value=new Date().toISOString().slice(0,10);fillCategories();await loadAll()}
 async function saveAsset(e){e.preventDefault();const id=$('assetId').value;const payload={user_id:currentUser.id,name:$('assetName').value.trim(),asset_type:$('assetType').value,amount:Number($('assetAmount').value)||0};const q=id?supabaseClient.from('assets').update(payload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('assets').insert(payload);const {error}=await q;if(error)return alert(error.message);closeModal('assetModal');e.target.reset();$('assetId').value='';await loadAll()}
 async function saveGoal(e){e.preventDefault();const id=$('goalId').value;const payload={user_id:currentUser.id,name:$('goalName').value.trim(),target_amount:Number($('goalTarget').value)||0,current_amount:Number($('goalCurrent').value)||0};const q=id?supabaseClient.from('goals').update(payload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('goals').insert(payload);const {error}=await q;if(error)return alert(error.message);closeModal('goalModal');e.target.reset();$('goalId').value='';await loadAll()}
@@ -456,10 +589,24 @@ $('floatingAction').onclick=()=>{const active=document.querySelector('.page.acti
 $('closeModal').onclick=()=>closeModal('modal');document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));document.querySelectorAll('.modal-back').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)closeModal(back.id)}));
 $('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories()};
 $('entryForm').addEventListener('submit',saveTransaction);$('assetForm').addEventListener('submit',saveAsset);$('goalForm').addEventListener('submit',saveGoal);
-$('editBudgetSetting').onclick=()=>{renderBudgetEditor();openModal('budgetEditModal')};$('addBudgetCategory').onclick=async()=>{const name=prompt('새 예산 항목 이름을 입력해 주세요.','새 항목');if(!name?.trim())return;const {data,error}=await supabaseClient.from('categories').insert({user_id:currentUser.id,name:name.trim(),type:'expense'}).select().single();if(error)return alert(error.message);await supabaseClient.from('budgets').insert({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:data.id,amount:0});await loadAll();renderBudgetEditor()};$('saveBudgetCategories').onclick=saveBudgetCategories;
+$('editBudgetSetting').onclick=()=>{renderBudgetEditor();openModal('budgetEditModal')};
+$('addBudgetCategory').onclick=async()=>{
+ const name=prompt('새 예산 항목 이름을 입력해 주세요.','새 항목');
+ if(!name?.trim())return;
+ const nextOrder=budgetCategories.length;
+ const payload={user_id:currentUser.id,name:name.trim(),type:'expense'};
+ if(categoryPrefsSupported){payload.icon='•';payload.sort_order=nextOrder}
+ const {data,error}=await supabaseClient.from('categories').insert(payload).select().single();
+ if(error)return alert(error.message);
+ if(!categoryPrefsSupported){localCategoryPrefs[data.id]={icon:'•',sort_order:nextOrder};saveLocalCategoryPrefs()}
+ const {error:budgetError}=await supabaseClient.from('budgets').insert({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:data.id,amount:0});
+ if(budgetError)return alert(budgetError.message);
+ await loadAll();renderBudgetEditor();
+};
+$('saveBudgetCategories').onclick=saveBudgetCategories;
 $('moreTransactions').onclick=function(){const box=$('extraTransactions');const open=box.style.display!=='none';box.style.display=open?'none':'block';this.textContent=open?'더 보기⌄':'접기⌃'};
-$('assetEditBtn').onclick=()=>openAsset();$('saveBackup').onclick=()=>{const data={transactions,assets,goals,budgetCategories,exportedAt:new Date().toISOString()};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='monee-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
-fillCategories();$('floatingAction').style.display='grid';
+$('assetEditBtn').onclick=()=>openAsset();$('saveBackup').onclick=()=>{const data={transactions,assets,goals,budgetCategories,categoryPrefs:localCategoryPrefs,exportedAt:new Date().toISOString()};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='monee-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
+loadLocalCategoryPrefs();fillCategories();$('floatingAction').style.display='grid';
 supabaseClient.auth.getSession().then(({data})=>{if(data.session)startApp(data.session.user);else $('authGate').classList.remove('hidden')});supabaseClient.auth.onAuthStateChange((_event,session)=>{if(session)startApp(session.user);else{$('authGate').classList.remove('hidden');$('settingsUserEmail').textContent=''}});
 })();
 </script>
