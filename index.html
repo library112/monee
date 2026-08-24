@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.8 · modal fix</title>
+<title>monee · 가계부 · ver.8 · modal date fix</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -172,6 +172,27 @@ button,input,select{font:inherit}button{cursor:pointer}
 .modal{width:min(620px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border-radius:18px}
 .modal-back{overscroll-behavior:contain}
 .modal-back .modal{overscroll-behavior:contain}
+
+
+/* Mobile date field width fix */
+.modal .field input[type="date"]{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  appearance:none;
+  -webkit-appearance:none;
+}
+@media(max-width:600px){
+  .modal .field input[type="date"]{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    padding-left:16px;
+    padding-right:16px;
+  }
+}
 
 /* Popup form responsive fix */
 .modal .form-grid{min-width:0}
