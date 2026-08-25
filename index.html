@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.14 · lucide icons + partial budget save</title>
+<title>monee · 가계부 · ver.15 · lucide icons + 16 categories + partial budget save</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -445,8 +445,8 @@ const categoryPrefsKey=()=>`monee-category-prefs-${currentUser?.id||'guest'}`;
 let localCategoryPrefs={};
 function loadLocalCategoryPrefs(){try{localCategoryPrefs=JSON.parse(localStorage.getItem(categoryPrefsKey())||'{}')||{}}catch(e){localCategoryPrefs={}}}
 function saveLocalCategoryPrefs(){try{localStorage.setItem(categoryPrefsKey(),JSON.stringify(localCategoryPrefs))}catch(e){}}
-function catIcon(c){return c?.icon||localCategoryPrefs[c?.id]?.icon||defaultCatIcons[c?.name]||'Circle'}
-function catOrder(c){const v=Number(c?.sort_order);return Number.isFinite(v)?v:(localCategoryPrefs[c?.id]?.sort_order??999999)}
+function catIcon(c){return localCategoryPrefs[c?.id]?.icon||c?.icon||defaultCatIcons[c?.name]||'Circle'}
+function catOrder(c){const local=localCategoryPrefs[c?.id]?.sort_order;if(Number.isFinite(Number(local)))return Number(local);const v=Number(c?.sort_order);return Number.isFinite(v)?v:999999}
 let viewYear=2026, viewMonth=7;
 const monthNames=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const $=id=>document.getElementById(id);
@@ -513,28 +513,62 @@ async function seedDemo(){
     if(!error)cat.expense_type=expense_type;
   }
 
+  // 기존 ver.13/이전 버전 계정을 새 16개 카테고리 구조로 한 번 정리합니다.
+  // 현재는 실제 데이터가 쌓인 단계가 아니므로 기존 데모용 카테고리를 새 구조에 맞춰 이름만 매핑합니다.
+  const legacyNameMap={
+    '여가/문화':'커피/음료',
+    '주거/통신':'통신비',
+    '고정비':'적금',
+    '건강/의료':'건강'
+  };
+  for(const cat of [...catData]){
+    const nextName=legacyNameMap[cat.name];
+    if(nextName && !catData.some(x=>x.type==='expense'&&x.name===nextName)){
+      const {data,error}=await supabaseClient.from('categories')
+        .update({name:nextName,expense_type:legacyExpenseTypes[nextName]||cat.expense_type})
+        .eq('id',cat.id).eq('user_id',currentUser.id).select().single();
+      if(error)throw error;
+      cat.name=nextName;
+      cat.expense_type=data?.expense_type||cat.expense_type;
+    }
+  }
+
+  // 기존 계정에도 빠진 새 카테고리를 추가합니다. 이미 있는 카테고리는 건드리지 않습니다.
+  const existingExpenseNames=new Set(catData.filter(c=>c.type==='expense').map(c=>c.name));
+  const missingNewCats=cats.filter(name=>!existingExpenseNames.has(name)).map((name,index)=>({
+    user_id:currentUser.id,name,type:'expense',expense_type:legacyExpenseTypes[name]||'variable'
+  }));
+  if(missingNewCats.length){
+    const {data:inserted,error}=await supabaseClient.from('categories').insert(missingNewCats).select();
+    if(error)throw error;
+    catData=[...catData,...(inserted||[])];
+  }
+
+  // Lucide 아이콘을 기존 계정에도 적용합니다. DB에 아이콘 컬럼이 없으면 로컬 설정으로 보완합니다.
+  const iconByName=defaultCatIcons;
+  for(const cat of catData.filter(c=>c.type==='expense')){
+    const icon=iconByName[cat.name]||'Circle';
+    const sort_order=Math.max(0,cats.indexOf(cat.name));
+    localCategoryPrefs[cat.id]={...(localCategoryPrefs[cat.id]||{}),icon,sort_order};
+    if(categoryPrefsSupported){
+      const {error}=await supabaseClient.from('categories').update({icon,sort_order}).eq('id',cat.id).eq('user_id',currentUser.id);
+      if(!error)cat.icon=icon,cat.sort_order=sort_order;
+    }
+  }
+  saveLocalCategoryPrefs();
+
   const byName=Object.fromEntries(catData.map(c=>[c.type+':'+c.name,c]));
   const {data:existingBudgets,error:budgetLoadErr}=await supabaseClient
-    .from('budgets').select('*')
-    .eq('user_id',currentUser.id)
-    .eq('year',viewYear)
-    .eq('month',viewMonth+1);
+    .from('budgets').select('*').eq('user_id',currentUser.id).eq('year',viewYear).eq('month',viewMonth+1);
   if(budgetLoadErr)throw budgetLoadErr;
 
   const budgetValues=[
     ['적금',500000],['구독',30000],['보험',150000],['통신비',100000],['기부',20000],['교통',150000],
-    ['생활비',250000],['쇼핑',250000],['커피/음료',100000],['술/담배',100000],['식비',500000],['건강',100000],['배달음식',150000],['기타',100000]
+    ['생활비',250000],['쇼핑',250000],['커피/음료',100000],['술/담배',100000],['식비',500000],['건강',100000],['배달음식',150000],['기타',100000],['기타1',0],['기타2',0]
   ];
   const existingBudgetCatIds=new Set((existingBudgets||[]).map(b=>b.category_id));
-  // 예산도 신규 계정에서만 기본값을 만들고,
-  // 기존 사용자가 삭제한 카테고리/예산은 새로고침 시 되살리지 않습니다.
-  const missingBudgets=isBrandNewAccount ? budgetValues
-    .filter(([name])=>byName['expense:'+name] && !existingBudgetCatIds.has(byName['expense:'+name].id))
-    .map(([name,amount])=>({
-      user_id:currentUser.id,year:viewYear,month:viewMonth+1,
-      category_id:byName['expense:'+name].id,amount
-    })) : [];
-
+  const missingBudgets=budgetValues.filter(([name])=>byName['expense:'+name] && !existingBudgetCatIds.has(byName['expense:'+name].id))
+    .map(([name,amount])=>({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:byName['expense:'+name].id,amount}));
   if(missingBudgets.length){
     const {error}=await supabaseClient.from('budgets').insert(missingBudgets);
     if(error)throw error;
@@ -639,7 +673,7 @@ function renderBudget(){
    ? sectionHtml('고정지출',fixedRows)+sectionHtml('비고정지출',variableRows)
    : '<div class="empty-budget-row">아직 예산 항목이 없어요. 설정에서 추가해 주세요.</div>';
  const recent=transactions.filter(t=>t.type==='expense').slice(0,8);$('moreTransactions').style.display=recent.length>5?'block':'none';
- const rowsHtml=recent.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon">${catIcon(cat)}</div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');$('extraTransactions').innerHTML=recent.slice(5).map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}</div><div class="tx-icon">${catIcon(cat)}</div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');
+ const rowsHtml=recent.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');$('extraTransactions').innerHTML=recent.slice(5).map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join('');
  const recentContainer=document.querySelector('#budget .recent');const old=document.querySelectorAll('#budget .recent .tx-row');old.forEach(x=>x.remove());$('extraTransactions').before(document.createRange().createContextualFragment(rowsHtml));
  renderTrend();renderPace();
 }
