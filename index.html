@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.19 · 모바일 설정 플러스 버튼 제거</title>
+<title>monee · 가계부 · ver.20 · 모바일 설정 플러스 버튼 제거</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -288,7 +288,7 @@ button,input,select{font:inherit}button{cursor:pointer}
   .modal-actions .primary,
   .modal-actions .secondary-btn{width:130px}
 }
-#settings.active ~ .floating-action{display:none!important}
+
 
 @media(max-width:650px){
   .summary-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px}
@@ -312,11 +312,6 @@ button,input,select{font:inherit}button{cursor:pointer}
   .modal-actions .primary,.modal-actions .secondary-btn{width:130px}
 }
 
-@media(max-width:950px){
-  #settings.active ~ .floating-action{
-    display:none!important;
-  }
-}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -484,7 +479,13 @@ const showPage=(id,updateUrl=true)=>{
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  $('pageTitle').textContent={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';
- $('floatingAction').style.display=id==='settings'?'none':'grid';$('floatingAction').setAttribute('aria-hidden',id==='settings'?'true':'false');
+ if(id==='settings'){
+    $('floatingAction').style.setProperty('display','none','important');
+    $('floatingAction').setAttribute('aria-hidden','true');
+  }else{
+    $('floatingAction').style.removeProperty('display');
+    $('floatingAction').setAttribute('aria-hidden','false');
+  }
  if(updateUrl && location.hash!==`#${id}`) history.replaceState(null,'',`#${id}`);
  requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
 };
