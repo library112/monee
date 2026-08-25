@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.13 · grouped budget rows</title>
+<title>monee · 가계부 · ver.14 · lucide icons + partial budget save</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -44,7 +44,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .budget-section-name{min-width:0}
 .budget-column-heads{grid-column:3;display:grid;grid-template-columns:.75fr .85fr .75fr;align-items:center;color:#787f79;font-size:11px;font-weight:500;text-align:center}
 .budget-column-heads span{white-space:nowrap}
-.budget-table .tr{display:grid;grid-template-columns:1.05fr 2.25fr .75fr .85fr .75fr;align-items:center;padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;text-align:center}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:18px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
+.budget-table .tr{display:grid;grid-template-columns:1.05fr 2.25fr .75fr .85fr .75fr;align-items:center;padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;height:20px;display:grid;place-items:center;text-align:center}.cat-icon svg{width:17px;height:17px;stroke-width:2}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:18px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
 .lower-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1fr;gap:14px}.lower-card{padding:18px;min-height:300px}.mini-title{font-size:16px;margin:0 0 16px;letter-spacing:-.04em}.bars{height:170px;display:flex;align-items:flex-end;gap:12px;padding:4px 8px}.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}.month-bar-wrap{height:135px;display:flex;align-items:flex-end}.month-bar{width:24px;background:#c7d7e7;border-radius:6px 6px 2px 2px}.month-bar.current{background:#5f7fa6}.bar-label{font-size:10px;color:#7d847e}.bar-value{font-size:9px;color:#7d847e}.compare{margin-top:10px;padding:10px 11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px}
 .gauge-wrap{display:flex;justify-content:center;margin-top:2px}.gauge{width:210px;height:110px;overflow:hidden;position:relative}.gauge svg{width:100%;height:100%}.gauge-center{text-align:center;margin-top:-18px}.gauge-center b{display:block;font-size:18px}.gauge-center span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.pace-copy{text-align:center;margin:14px 0 0;font-size:11px;line-height:1.55}.good{margin-top:14px;padding:11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px;text-align:center}
 .days{text-align:center;padding-top:12px}.days-number{font-size:52px;color:#58799d;font-weight:800;letter-spacing:-.06em}.days-unit{font-size:14px;color:#58799d;font-weight:700}.days-date{font-size:11px;color:#8b918c;margin-top:-4px}.divider{height:1px;background:var(--line);margin:20px 0}.daily-label{text-align:center;color:#777e78;font-size:11px}.daily-amount{text-align:center;color:#58799d;font-size:23px;font-weight:800;margin-top:7px}.daily-note{text-align:center;color:#999f9a;font-size:10px;margin-top:6px;line-height:1.4}
@@ -97,11 +97,11 @@ button,input,select{font:inherit}button{cursor:pointer}
 .more.expanded{background:#eef4ef;color:#58799d}.month-control button{cursor:pointer}.month-control button:disabled{opacity:.35;cursor:default}.extra-transactions .tx-row{border-top:1px solid #edf2f6}
 
 .modal-help{margin:4px 0 0;color:var(--muted);font-size:9px;line-height:1.4}.budget-edit-modal{padding-bottom:20px;max-height:88vh;overflow:auto} .budget-edit-list{display:flex;flex-direction:column;gap:8px}
-.budget-edit-row{display:grid;grid-template-columns:28px 44px minmax(90px,1fr) 92px 110px 36px;gap:8px;align-items:center;background:#f7faff;border:1px solid var(--line);border-radius:11px;padding:8px;transition:box-shadow .15s ease,opacity .15s ease}
+.budget-edit-row{display:grid;grid-template-columns:28px 92px minmax(90px,1fr) 92px 110px 36px;gap:8px;align-items:center;background:#f7faff;border:1px solid var(--line);border-radius:11px;padding:8px;transition:box-shadow .15s ease,opacity .15s ease}
 .budget-edit-row.dragging{opacity:.45;box-shadow:0 8px 20px rgba(82,112,145,.14)}
 .drag-handle{display:grid;place-items:center;width:28px;height:34px;border-radius:8px;color:#8a98a8;background:#eef3f8;font-size:16px;cursor:grab;user-select:none;touch-action:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .drag-handle:active{cursor:grabbing}
-.budget-edit-row .emoji-input{width:44px;height:34px;padding:0;text-align:center;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:18px;outline:0}
+.budget-edit-row .emoji-input{width:92px;height:34px;padding:0 7px;text-align:center;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:18px;outline:0}
 .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget,.budget-edit-row .edit-type{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;outline:0;font-size:11px}
 .category-editor-help{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.45}.delete-category{width:34px;height:34px;border:0;border-radius:9px;background:#f5e9e8;color:#bd6d68;font-size:16px}.add-category-btn{width:100%;margin-top:10px;padding:10px;border:1px dashed #b9c9da;background:#f3f7fb;color:#57779a;border-radius:10px;font-size:11px;font-weight:700}.modal-actions{display:flex;justify-content:center;gap:8px;margin-top:10px}.modal-actions .primary,.modal-actions .secondary-btn{width:140px;flex:none}.secondary-btn{border:0;border-radius:11px;padding:12px;background:#edf1f5;color:#66778a;font-weight:700}.budget-table .empty-budget-row{padding:18px;text-align:center;color:var(--muted);font-size:11px}.cat-label .cat-name{font-size:12px}
 
@@ -291,13 +291,14 @@ button,input,select{font:inherit}button{cursor:pointer}
   .cat-icon{width:18px;min-width:18px}
   .cat-name{font-size:11px}
   .num{font-size:10px}
-  .budget-edit-row{grid-template-columns:24px 40px minmax(72px,1fr) 68px 82px 32px;gap:5px;padding:6px}
+  .budget-edit-row{grid-template-columns:24px 76px minmax(72px,1fr) 68px 82px 32px;gap:5px;padding:6px}
   .drag-handle{width:24px;height:32px;font-size:14px}
-  .budget-edit-row .emoji-input{width:40px;height:32px;font-size:17px}
+  .budget-edit-row .emoji-input{width:76px;height:32px;font-size:9px}
   .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget,.budget-edit-row .edit-type{padding:8px 6px;font-size:10px}
   .modal-actions .primary,.modal-actions .secondary-btn{width:130px}
 }
 </style>
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -424,7 +425,7 @@ const supabaseClient = window.supabase.createClient(
 
 <div class="modal-back" id="modal"><div class="modal"><div class="modal-head"><h3>기록하기</h3><button class="x" id="closeModal">×</button></div><div class="seg"><button class="active" id="expenseTab">지출</button><button id="incomeTab">수입</button></div><form id="entryForm" class="form-grid"><div class="field"><label>날짜</label><input id="date" type="date" value="2026-08-23"></div><div class="field"><label>금액</label><input id="amount" type="number" placeholder="0" required></div><div class="field"><label>카테고리</label><select id="category"></select></div><div class="field" id="methodBox"><label>결제수단</label><select id="method"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></div><div class="field full"><label>내용 / 메모</label><input id="memo" maxlength="100" placeholder="메모를 남겨보세요"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
 
-<div class="modal-back" id="budgetEditModal"><div class="modal budget-edit-modal"><div class="modal-head"><div><h3>항목별 월 예산 수정</h3><p class="modal-help">항목 이름·아이콘·예산을 수정할 수 있고, 왼쪽 ⋮⋮를 드래그해서 순서를 바꿀 수 있어요.</p></div><button class="x" data-close-modal="budgetEditModal">×</button></div>
+<div class="modal-back" id="budgetEditModal"><div class="modal budget-edit-modal"><div class="modal-head"><div><h3>항목별 월 예산 수정</h3><p class="modal-help">항목 이름·Lucide 아이콘·예산을 수정할 수 있고, 왼쪽 ⋮⋮를 드래그해서 순서를 바꿀 수 있어요.</p></div><button class="x" data-close-modal="budgetEditModal">×</button></div>
 <div class="budget-edit-list" id="budgetEditList"></div>
 <button class="add-category-btn" id="addBudgetCategory" type="button">＋ 항목 추가</button>
 <div class="modal-actions"><button class="secondary-btn" data-close-modal="budgetEditModal" type="button">취소</button><button class="primary" id="saveBudgetCategories" type="button">저장하기</button></div>
@@ -435,16 +436,16 @@ const supabaseClient = window.supabase.createClient(
 
 <script>
 (function(){
-const cats=['식비','교통','쇼핑','여가/문화','주거/통신','고정비','건강/의료','기타'];
+const cats=['적금','구독','보험','통신비','기부','교통','생활비','쇼핑','커피/음료','술/담배','식비','건강','배달음식','기타','기타1','기타2'];
 const incomeCats=['월급','기타'];
-const defaultCatIcons={'식비':'🍚','교통':'🚗','쇼핑':'🛍️','여가/문화':'☕','주거/통신':'🏠','고정비':'▣','건강/의료':'♡','기타':'•••'};
+const defaultCatIcons={'적금':'Vault','구독':'RefreshCw','보험':'ShieldCheck','통신비':'Smartphone','기부':'HeartHandshake','교통':'BusFront','생활비':'House','쇼핑':'ShoppingBag','커피/음료':'Coffee','술/담배':'Wine','식비':'Utensils','건강':'HeartPulse','배달음식':'Container','기타':'Ellipsis','기타1':'Ellipsis','기타2':'Ellipsis'};
 let entryType='expense', currentUser=null, budgetCategories=[], transactions=[], assets=[], goals=[];
 let categoryPrefsSupported=false;
 const categoryPrefsKey=()=>`monee-category-prefs-${currentUser?.id||'guest'}`;
 let localCategoryPrefs={};
 function loadLocalCategoryPrefs(){try{localCategoryPrefs=JSON.parse(localStorage.getItem(categoryPrefsKey())||'{}')||{}}catch(e){localCategoryPrefs={}}}
 function saveLocalCategoryPrefs(){try{localStorage.setItem(categoryPrefsKey(),JSON.stringify(localCategoryPrefs))}catch(e){}}
-function catIcon(c){return c?.icon||localCategoryPrefs[c?.id]?.icon||defaultCatIcons[c?.name]||'•'}
+function catIcon(c){return c?.icon||localCategoryPrefs[c?.id]?.icon||defaultCatIcons[c?.name]||'Circle'}
 function catOrder(c){const v=Number(c?.sort_order);return Number.isFinite(v)?v:(localCategoryPrefs[c?.id]?.sort_order??999999)}
 let viewYear=2026, viewMonth=7;
 const monthNames=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -502,15 +503,8 @@ async function seedDemo(){
   // 기존 계정에서 expense_type이 아직 비어 있는 기본 카테고리는
   // 한 번만 기본값을 넣어 고정/비고정 분류가 정상적으로 표시되도록 합니다.
   const legacyExpenseTypes={
-    '적금':'fixed',
-    '주거/통신':'fixed',
-    '고정비':'fixed',
-    '식비':'variable',
-    '교통':'variable',
-    '쇼핑':'variable',
-    '여가/문화':'variable',
-    '건강/의료':'variable',
-    '기타':'variable'
+    '적금':'fixed','구독':'fixed','보험':'fixed','통신비':'fixed','기부':'fixed','교통':'fixed',
+    '생활비':'variable','쇼핑':'variable','커피/음료':'variable','술/담배':'variable','식비':'variable','건강':'variable','배달음식':'variable','기타':'variable'
   };
   for(const cat of catData.filter(c=>c.type==='expense' && !c.expense_type && legacyExpenseTypes[c.name])){
     const expense_type=legacyExpenseTypes[cat.name];
@@ -528,8 +522,8 @@ async function seedDemo(){
   if(budgetLoadErr)throw budgetLoadErr;
 
   const budgetValues=[
-    ['식비',600000],['교통',250000],['쇼핑',300000],['여가/문화',200000],
-    ['주거/통신',700000],['고정비',300000],['건강/의료',100000],['기타',50000]
+    ['적금',500000],['구독',30000],['보험',150000],['통신비',100000],['기부',20000],['교통',150000],
+    ['생활비',250000],['쇼핑',250000],['커피/음료',100000],['술/담배',100000],['식비',500000],['건강',100000],['배달음식',150000],['기타',100000]
   ];
   const existingBudgetCatIds=new Set((existingBudgets||[]).map(b=>b.category_id));
   // 예산도 신규 계정에서만 기본값을 만들고,
@@ -612,11 +606,12 @@ async function loadAll(){
  transactions=t.data||[];assets=a.data||[];goals=g.data||[];
  renderAll();
 }
+function renderLucideIcons(root=document){if(window.lucide?.createIcons)window.lucide.createIcons({root});}
 function renderBudget(){
  updateMonthLabel();
  const rows=computeBudgetRows();
  const total=rows.reduce((s,c)=>s+c.budget,0),spent=rows.reduce((s,c)=>s+c.spent,0),remain=Math.max(0,total-spent),rate=total?Math.round(spent/total*1000)/10:0;
- const isFixedCategory=c=>c.expense_type==='fixed' || (!c.expense_type && ['적금','주거/통신','고정비'].includes(c.name));
+ const isFixedCategory=c=>c.expense_type==='fixed' || (!c.expense_type && ['적금','구독','보험','통신비','기부','교통'].includes(c.name));
  const fixedRows=rows.filter(isFixedCategory),variableRows=rows.filter(c=>!isFixedCategory(c));
  const fixedBudget=fixedRows.reduce((s,c)=>s+c.budget,0),fixedSpent=fixedRows.reduce((s,c)=>s+c.spent,0);
  const variableBudget=variableRows.reduce((s,c)=>s+c.budget,0),variableSpent=variableRows.reduce((s,c)=>s+c.spent,0);
@@ -629,7 +624,7 @@ function renderBudget(){
  const budgetRowHtml=c=>{
    const pct=c.budget?Math.min(100,Math.round(c.spent/c.budget*100)):0;
    return `<div class="tr">
-     <div class="cat-label"><span class="cat-icon">${catIcon(c)}</span><span class="cat-name">${escapeText(c.name)}</span></div>
+     <div class="cat-label"><span class="cat-icon"><i data-lucide="${escapeText(catIcon(c))}"></i></span><span class="cat-name">${escapeText(c.name)}</span></div>
      <div class="bar-wrap"><div class="bar-track"><i class="bar-fill ${pct>=70?'warn':''}" style="width:${pct}%"></i></div></div>
      <div class="num">${money(c.budget)}</div>
      <div class="num red">${money(c.spent)}</div>
@@ -653,7 +648,7 @@ function renderPace(){const rows=computeBudgetRows(),total=rows.reduce((s,c)=>s+
 function renderAssets(){const total=assets.reduce((s,a)=>s+Number(a.amount),0),cash=assets.filter(a=>a.asset_type==='현금성').reduce((s,a)=>s+Number(a.amount),0),save=assets.filter(a=>['저축','투자'].includes(a.asset_type)).reduce((s,a)=>s+Number(a.amount),0);$('assetTotal').textContent=money(total);$('cashAssetTotal').textContent=money(cash);$('savingAssetTotal').textContent=money(save);$('assetList').innerHTML=assets.length?assets.map(a=>`<div class="asset-row"><b>${escapeText(a.name)}</b><span>${money(a.amount)}</span><div class="asset-actions"><button class="row-action" data-edit-asset="${a.id}">수정</button><button class="row-action delete" data-delete-asset="${a.id}">삭제</button></div></div>`).join(''):'<div class="empty-state">등록된 자산이 없어요.</div>';document.querySelectorAll('[data-edit-asset]').forEach(b=>b.onclick=()=>openAsset(b.dataset.editAsset));document.querySelectorAll('[data-delete-asset]').forEach(b=>b.onclick=()=>deleteAsset(b.dataset.deleteAsset))}
 function renderGoals(){$('goalList').innerHTML=goals.length?goals.map(g=>{const pct=g.target_amount?Math.min(100,Math.round(g.current_amount/g.target_amount*100)):0;return `<div class="goal"><div class="goal-actions"><button class="row-action" data-edit-goal="${g.id}">수정</button><button class="row-action delete" data-delete-goal="${g.id}">삭제</button></div><div class="goal-top"><b>${escapeText(g.name)}</b><span>${money(g.current_amount)} / ${money(g.target_amount)}</span></div><div class="goal-track"><i style="width:${pct}%"></i></div><div class="goal-foot"><span>${pct}% 달성</span><span>${money(Math.max(0,g.target_amount-g.current_amount))} 남음</span></div></div>`}).join(''):'<div class="empty-state">아직 목표가 없어요. 오른쪽 아래 ＋ 버튼으로 추가해 주세요.</div>';document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openGoal(b.dataset.editGoal));document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal))}
 function renderSettings(){}
-function renderAll(){renderBudget();renderAssets();renderGoals();renderSettings()}
+function renderAll(){renderBudget();renderAssets();renderGoals();renderSettings();renderLucideIcons()}
 function fillCategories(){const list=entryType==='income'?incomeCats:budgetCategories.map(c=>c.name);$('category').innerHTML=list.map(c=>`<option>${escapeText(c)}</option>`).join('');$('methodBox').style.display=entryType==='income'?'none':'block'}
 function setModalLock(locked){document.body.style.overflow=locked?'hidden':''}function openAsset(id){const a=assets.find(x=>x.id===id);$('assetId').value=a?.id||'';$('assetName').value=a?.name||'';$('assetType').value=a?.asset_type||'현금성';$('assetAmount').value=a?.amount||'';$('assetModalTitle').textContent=a?'자산 수정':'자산 추가';openModal('assetModal')}
 async function deleteAsset(id){if(!confirm('이 자산을 삭제할까요?'))return;const {error}=await supabaseClient.from('assets').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
@@ -664,7 +659,7 @@ function renderBudgetEditor(){
  list.innerHTML=budgetCategories.map(c=>`
   <div class="budget-edit-row" data-id="${c.id}" draggable="true">
    <div class="drag-handle" title="드래그해서 순서 변경">⋮⋮</div>
-   <input class="emoji-input" maxlength="2" value="${escapeText(catIcon(c))}" aria-label="아이콘">
+   <input class="emoji-input" maxlength="40" value="${escapeText(catIcon(c))}" aria-label="Lucide 아이콘 이름">
    <input class="edit-name" value="${escapeText(c.name)}" aria-label="항목명">
    <select class="edit-type" aria-label="지출 유형">
     <option value="fixed" ${c.expense_type==='fixed'?'selected':''}>고정</option>
@@ -777,43 +772,40 @@ function renderBudgetEditor(){
 async function saveBudgetCategories(){
   const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
   for(let index=0;index<rows.length;index++){
-    const row=rows[index],id=row.dataset.id;
+    const row=rows[index],id=row.dataset.id,old=budgetCategories.find(c=>c.id===id);
+    if(!old)continue;
     const name=row.querySelector('.edit-name').value.trim();
-    const icon=(row.querySelector('.emoji-input').value.trim()||'•').slice(0,2);
+    const icon=(row.querySelector('.emoji-input').value.trim()||'Circle').slice(0,40);
     const expenseType=row.querySelector('.edit-type')?.value==='fixed'?'fixed':'variable';
     const amount=Math.max(0,Number(row.querySelector('.edit-budget').value)||0);
-    const old=budgetCategories.find(c=>c.id===id);
-    if(!name||!old)continue;
-
-    // 고정/비고정 유형과 이름은 Supabase DB에 직접 저장
-    const {error:typeError}=await supabaseClient.from('categories')
-      .update({name,expense_type:expenseType})
-      .eq('id',id).eq('user_id',currentUser.id);
-    if(typeError){alert(typeError.message);return;}
-
-    // 아이콘/정렬순서는 기존 DB 구조를 그대로 존중
+    if(!name)continue;
+    const categoryPatch={};
+    if(name!==old.name)categoryPatch.name=name;
+    if(expenseType!==(old.expense_type==='fixed'?'fixed':'variable'))categoryPatch.expense_type=expenseType;
     if(categoryPrefsSupported){
-      const {error}=await supabaseClient.from('categories')
-        .update({icon,sort_order:index})
-        .eq('id',id).eq('user_id',currentUser.id);
-      if(error){
-        categoryPrefsSupported=false;
-        localCategoryPrefs[id]={...(localCategoryPrefs[id]||{}),icon,sort_order:index};
-      }
+      if(icon!==catIcon(old))categoryPatch.icon=icon;
+      if(index!==catOrder(old))categoryPatch.sort_order=index;
     }else{
-      localCategoryPrefs[id]={...(localCategoryPrefs[id]||{}),icon,sort_order:index};
-      saveLocalCategoryPrefs();
+      const pref=localCategoryPrefs[id]||{};
+      if(icon!==(pref.icon||catIcon(old))||index!==(pref.sort_order??catOrder(old)))localCategoryPrefs[id]={...pref,icon,sort_order:index};
     }
-
-    const q=old.budgetId
-      ? supabaseClient.from('budgets').update({amount}).eq('id',old.budgetId).eq('user_id',currentUser.id)
-      : supabaseClient.from('budgets').insert({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:id,amount});
-    const {error:e2}=await q;
-    if(e2){alert(e2.message);return;}
+    if(Object.keys(categoryPatch).length){
+      const {error}=await supabaseClient.from('categories').update(categoryPatch).eq('id',id).eq('user_id',currentUser.id);
+      if(error){alert(error.message);return;}
+    }
+    if(Number(old.budget)!==amount){
+      let q;
+      if(old.budgetId){
+        q=supabaseClient.from('budgets').update({amount}).eq('id',old.budgetId).eq('user_id',currentUser.id);
+      }else{
+        const {data:existing,error:findError}=await supabaseClient.from('budgets').select('id').eq('user_id',currentUser.id).eq('year',viewYear).eq('month',viewMonth+1).eq('category_id',id).maybeSingle();
+        if(findError){alert(findError.message);return;}
+        q=existing?supabaseClient.from('budgets').update({amount}).eq('id',existing.id).eq('user_id',currentUser.id):supabaseClient.from('budgets').insert({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:id,amount});
+      }
+      const {error}=await q;if(error){alert(error.message);return;}
+    }
   }
-  saveLocalCategoryPrefs();
-  closeModal('budgetEditModal');
-  await loadAll();
+  saveLocalCategoryPrefs();closeModal('budgetEditModal');await loadAll();
 }
 async function saveTransaction(e){e.preventDefault();const amount=Number($('amount').value)||0;if(amount<=0)return;const name=$('category').value;const type=entryType;const cat=type==='income'?null:budgetCategories.find(c=>c.name===name);let incomeCatId=null;if(type==='income'){const {data}=await supabaseClient.from('categories').select('id').eq('user_id',currentUser.id).eq('type','income').eq('name',name).single();incomeCatId=data?.id}const {error}=await supabaseClient.from('transactions').insert({user_id:currentUser.id,transaction_date:$('date').value||new Date().toISOString().slice(0,10),type,amount,category_id:cat?.id||incomeCatId,payment_method:type==='income'?'현금':$('method').value,memo:$('memo').value.trim()});if(error)return alert(error.message);closeModal('modal');e.target.reset();$('date').value=new Date().toISOString().slice(0,10);fillCategories();await loadAll()}
 async function saveAsset(e){e.preventDefault();const id=$('assetId').value;const payload={user_id:currentUser.id,name:$('assetName').value.trim(),asset_type:$('assetType').value,amount:Number($('assetAmount').value)||0};const q=id?supabaseClient.from('assets').update(payload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('assets').insert(payload);const {error}=await q;if(error)return alert(error.message);closeModal('assetModal');e.target.reset();$('assetId').value='';await loadAll()}
