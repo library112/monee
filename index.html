@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.16 · 자산 관리 개선</title>
+<title>monee · 가계부 · ver.17 · 자산 추가 UI 개선</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -288,7 +288,7 @@ button,input,select{font:inherit}button{cursor:pointer}
   .modal-actions .primary,
   .modal-actions .secondary-btn{width:130px}
 }
-#settings.active ~ .floating-action{display:none}
+#settings.active ~ .floating-action{display:none!important}
 
 @media(max-width:650px){
   .summary-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px}
@@ -445,7 +445,7 @@ const supabaseClient = window.supabase.createClient(
 <div class="modal-actions"><button class="secondary-btn" data-close-modal="budgetEditModal" type="button">취소</button><button class="primary" id="saveBudgetCategories" type="button">저장하기</button></div>
 </div></div>
 
-<div class="modal-back" id="assetModal"><div class="modal"><div class="modal-head"><h3 id="assetModalTitle">자산 추가</h3><button class="x" data-close-modal="assetModal">×</button></div><form id="assetForm" class="form-grid"><input type="hidden" id="assetId"><div class="field full"><label>자산 이름</label><input id="assetName" type="text" required placeholder="예: 신한은행 생활비 계좌"></div><div class="field"><label>자산 종류</label><select id="assetType"><option value="저축">저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field"><label>현재 금액 (원)</label><input id="assetAmount" type="number" min="0" step="1" inputmode="numeric" required placeholder="0"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
+<div class="modal-back" id="assetModal"><div class="modal"><div class="modal-head"><h3 id="assetModalTitle">자산 추가</h3><button class="x" data-close-modal="assetModal">×</button></div><form id="assetForm" class="form-grid"><input type="hidden" id="assetId"><div class="field full"><label>자산 종류</label><select id="assetType"><option value="저축">저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field full"><label>자산 이름</label><input id="assetName" type="text" required placeholder="예: 신한은행 생활비 계좌"></div><div class="field full"><label>현재 금액 (원)</label><input id="assetAmount" type="number" min="0" step="1" inputmode="numeric" required placeholder="0"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
 <div class="modal-back" id="assetManageModal"><div class="modal"><div class="modal-head"><div><h3>자산 관리</h3><p class="modal-help">등록된 자산을 수정하거나 삭제할 수 있어요.</p></div><button class="x" data-close-modal="assetManageModal">×</button></div><div class="asset-manage-list" id="assetManageList"></div><div class="modal-actions"><button class="secondary-btn" data-close-modal="assetManageModal" type="button">닫기</button></div></div></div>
 <div class="modal-back" id="goalModal"><div class="modal"><div class="modal-head"><h3 id="goalModalTitle">새 목표 만들기</h3><button class="x" data-close-modal="goalModal">×</button></div><form id="goalForm" class="form-grid"><input type="hidden" id="goalId"><div class="field full"><label>목표 이름</label><input id="goalName" required placeholder="예: 유럽 여행"></div><div class="field"><label>목표 금액</label><input id="goalTarget" type="number" min="0" step="10000" required placeholder="3000000"></div><div class="field"><label>현재 모은 금액</label><input id="goalCurrent" type="number" min="0" step="10000" required placeholder="500000"></div><button class="primary full" type="submit">목표 추가하기</button></form></div></div>
 
@@ -478,7 +478,7 @@ const showPage=(id,updateUrl=true)=>{
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
  $('pageTitle').textContent={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';
- $('floatingAction').style.display=id==='settings'?'none':'grid';
+ $('floatingAction').style.display=id==='settings'?'none':'grid';$('floatingAction').setAttribute('aria-hidden',id==='settings'?'true':'false');
  if(updateUrl && location.hash!==`#${id}`) history.replaceState(null,'',`#${id}`);
  requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
 };
