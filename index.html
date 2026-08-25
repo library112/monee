@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.18 · 설정 플러스 버튼 제거</title>
+<title>monee · 가계부 · ver.19 · 모바일 설정 플러스 버튼 제거</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -310,6 +310,12 @@ button,input,select{font:inherit}button{cursor:pointer}
   .budget-edit-row .emoji-input{width:76px;height:32px;font-size:9px}
   .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget,.budget-edit-row .edit-type{padding:8px 6px;font-size:10px}
   .modal-actions .primary,.modal-actions .secondary-btn{width:130px}
+}
+
+@media(max-width:950px){
+  #settings.active ~ .floating-action{
+    display:none!important;
+  }
 }
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
