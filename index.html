@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.25 · 금융노트 페이지 전환 및 네비게이션 수정</title>
+<title>monee · 가계부 · ver.2.26 · 하단 네비게이션 5탭 정렬</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -339,6 +339,38 @@ nav .nav-inner button{min-width:0!important;width:100%;white-space:nowrap!import
   nav .nav-inner{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}
   nav .nav-inner button{font-size:10px!important;padding:8px 2px!important}
 }
+
+/* 하단 5개 탭: 항상 한 줄, 균등 비율 */
+nav .nav-inner{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:2px!important;
+  width:100%!important;
+  flex-wrap:nowrap!important;
+  align-items:stretch!important;
+}
+nav .nav-inner button{
+  min-width:0!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  padding:9px 2px!important;
+  margin:0!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  text-align:center!important;
+}
+@media(max-width:650px){
+  nav .nav-inner{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:1px!important;
+  }
+  nav .nav-inner button{
+    font-size:9px!important;
+    padding:8px 1px!important;
+    letter-spacing:-.04em!important;
+  }
+}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -390,7 +422,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.25">ver.2.25</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.26">ver.2.26</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
