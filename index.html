@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.4 · 예산·내역 기능 개선</title>
+<title>monee · 가계부 · ver.2.5 · 예산·수입 기능 개선</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -103,7 +103,12 @@ button,input,select{font:inherit}button{cursor:pointer}
 .drag-handle:active{cursor:grabbing}
 .budget-edit-row .emoji-input{width:92px;height:34px;padding:0 7px;text-align:center;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:18px;outline:0}
 .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget,.budget-edit-row .edit-type{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;outline:0;font-size:11px}
-.category-editor-help{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.45}.delete-category{width:34px;height:34px;border:0;border-radius:9px;background:#f5e9e8;color:#bd6d68;font-size:16px}.add-category-btn{width:100%;margin-top:10px;padding:10px;border:1px dashed #b9c9da;background:#f3f7fb;color:#57779a;border-radius:10px;font-size:11px;font-weight:700}.modal-actions{display:flex;justify-content:center;gap:8px;margin-top:10px}.modal-actions .primary,.modal-actions .secondary-btn{width:140px;flex:none}.secondary-btn{border:0;border-radius:11px;padding:12px;background:#edf1f5;color:#66778a;font-weight:700}.budget-table .empty-budget-row{padding:18px;text-align:center;color:var(--muted);font-size:11px}.cat-label .cat-name{font-size:12px}
+.category-editor-help{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.45}.delete-category{width:34px;height:34px;border:0;border-radius:9px;background:#f5e9e8;color:#bd6d68;font-size:16px}.add-category-btn{width:100%;margin-top:10px;padding:10px;border:1px dashed #b9c9da;background:#f3f7fb;color:#57779a;border-radius:10px;font-size:11px;font-weight:700}.modal-actions{display:flex;justify-content:center;gap:8px;margin-top:10px}.modal-actions .primary,.modal-actions .secondary-btn{width:140px;flex:none}.secondary-btn{border:0;border-radius:11px;padding:12px;background:#edf1f5;color:#66778a;font-weight:700}.budget-table .empty-budget-row{padding:18px;text-align:center;color:var(--muted);font-size:11px}.cat-label .cat-name{font-size:12px}.income-overview-box{margin-top:14px;border:1px solid #e1e8f0;border-radius:12px;padding:14px;background:#fafcff;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.income-overview-label span,.income-overview-detail span{display:block;color:#64748b;font-size:12px}
+.income-overview-label b{display:block;font-size:18px;margin-top:5px;color:#57799a}
+.income-overview-detail{text-align:right}
+.income-overview-detail span:last-child{margin-top:4px;font-size:10px;color:#9aa5b1}
+
 
 /* v5: mobile bottom navigation */
 @media (max-width: 950px){
@@ -363,7 +368,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.4">ver.2.4</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.5">ver.2.5</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -379,6 +384,10 @@ const supabaseClient = window.supabase.createClient(
         <div class="budget-table" id="budgetTable">
           <div class="budget-table-label">항목별 예산</div>
           <div id="budgetRows"></div>
+        </div>
+        <div class="income-overview-box">
+          <div class="income-overview-label"><span>수입</span><b id="incomeTotalValue">₩0</b></div>
+          <div class="income-overview-detail"><span>이번 달 수입</span><span id="incomeCountValue">0건</span></div>
         </div>
       </article>
 
@@ -686,6 +695,8 @@ function renderBudget(){
  updateMonthLabel();
  const rows=computeBudgetRows();
  const total=rows.reduce((s,c)=>s+c.budget,0),spent=rows.reduce((s,c)=>s+c.spent,0),remain=Math.max(0,total-spent),rate=total?Math.round(spent/total*1000)/10:0;
+  const monthIncome=currentMonthTransactions().filter(t=>t.type==='income').reduce((s,t)=>s+Math.max(0,Number(t.amount)||0),0);
+  const incomeCount=currentMonthTransactions().filter(t=>t.type==='income').length;
  const isFixedCategory=c=>c.expense_type==='fixed' || (!c.expense_type && ['적금','구독','보험','통신비','기부','교통'].includes(c.name));
  const fixedRows=rows.filter(isFixedCategory),variableRows=rows.filter(c=>!isFixedCategory(c));
  const fixedBudget=fixedRows.reduce((s,c)=>s+c.budget,0),fixedSpent=fixedRows.reduce((s,c)=>s+c.spent,0);
@@ -695,9 +706,10 @@ function renderBudget(){
  $('totalBudgetValue').textContent=money(total);$('remainValue').textContent=money(remain);
  $('fixedSpentValue').textContent=money(fixedSpent);$('fixedRateValue').textContent=fixedRate.toFixed(1)+'%';$('fixedProgress').style.width=fixedRate+'%';
  $('variableSpentValue').textContent=money(variableSpent);$('variableRateValue').textContent=variableRate.toFixed(1)+'%';$('variableProgress').style.width=variableRate+'%';
+  $('incomeTotalValue').textContent=money(monthIncome);$('incomeCountValue').textContent=incomeCount+'건';
  $('sideBudget').textContent=money(total);$('sideSpent').textContent=money(spent);$('sideRemain').textContent=money(remain);$('sideRate').textContent=rate.toFixed(1)+'%';$('sideProgress').style.width=Math.min(100,rate)+'%';
  const budgetRowHtml=c=>{
-   const pct=c.budget>0?Math.min(100,Math.round(c.spent/c.budget*100)):(c.spent>0?100:0);
+   const pct=c.budget>0?Math.max(0,Math.min(100,Math.round(c.spent/c.budget*100))):(c.spent>0?100:0);
    return `<div class="tr">
      <div class="cat-label"><span class="cat-icon"><i data-lucide="${escapeText(catIcon(c))}"></i></span><span class="cat-name">${escapeText(c.name)}</span></div>
      <div class="bar-wrap"><div class="bar-track"><i class="bar-fill ${pct>=70?'warn':''}" style="width:${pct}%"></i></div></div>
