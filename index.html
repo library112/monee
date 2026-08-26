@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.49 · 적금 상세팝업 열기 오류 수정</title>
+<title>monee · 가계부 · ver.2.50 · 적금 만기 예상금액 계산 추가</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -519,6 +519,10 @@ nav.nav .icon{
 .pace-bottom>div{min-width:0}
 .pace-bottom .pace-diff{grid-column:1/-1;padding-top:7px;margin-top:1px;border-top:1px solid var(--line)}
 .pace-diff b{font-size:11px}
+
+.saving-detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+.saving-detail-summary .saving-detail-total{grid-column:1/-1;padding-top:10px;margin-top:2px;border-top:1px solid var(--line)}
+.saving-detail-summary .saving-detail-total strong{font-size:18px}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -570,7 +574,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.49">ver.2.49</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.50">ver.2.50</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -644,7 +648,7 @@ const supabaseClient = window.supabase.createClient(
 
     <section id="goals" class="page"><div class="goals-page"><div class="section-head"><h2>나의 목표</h2></div><div class="goal-list" id="goalList"></div></div></section>
 
-    <section id="finance" class="page"><div class="finance-page"><div class="section-head"><div><h2>금융노트</h2><p class="page-subtitle">나중에 다시 확인해야 할 금융 정보를 한곳에 기록해 보세요.</p></div></div><div class="finance-grid"><article class="card finance-card"><div class="finance-card-head"><h3>📌 기억할 금융정보</h3><p>금융상품이나 계좌와 관련해 따로 기억해둘 내용을 기록해요.</p></div><div id="financeInfoList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>📅 금융 일정</h3><p>만기일, 갱신일처럼 나중에 다시 확인할 날짜를 기록해요.</p></div><div id="financeScheduleList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>🔄 정기 납부</h3><p>매월 또는 정기적으로 빠져나가는 금액과 날짜를 기록해요.</p></div><div id="financePaymentList" class="finance-note-list"></div></article></div></div></section><div class="modal-back" id="financeNoteModal"><div class="modal"><div class="modal-head"><div><h3 id="financeNoteModalTitle">금융정보 추가</h3><p class="modal-help">나중에 다시 확인하고 싶은 금융 정보를 기록해 보세요.</p></div><button class="x" data-close-modal="financeNoteModal">×</button></div><form id="financeNoteForm" class="form-grid finance-note-form"><input type="hidden" id="financeNoteId"><div class="field full"><label>분류</label><select id="financeNoteType"><option value="info">기억할 금융정보</option><option value="schedule">금융 일정</option><option value="payment">정기 납부</option></select></div><div class="field full"><label>제목</label><input id="financeNoteTitle" type="text" required placeholder="예: 적금 만기 후 재예치 여부 확인"></div><div class="field"><label>금액</label><input id="financeNoteAmount" type="number" min="0" step="1" placeholder="선택사항"></div><div class="field"><label>날짜</label><input id="financeNoteDate" type="date"></div><div class="field full"><label>메모</label><textarea id="financeNoteMemo" rows="3" placeholder="추가로 기억해둘 내용을 적어주세요."></textarea></div><button class="primary full" type="submit">저장하기</button></form></div></div><div class="modal-back" id="savingDetailModal"><div class="modal saving-detail-modal"><div class="modal-head"><div><h3 id="savingDetailTitle">적금 상세</h3><p class="modal-help">해당 적금에 반영된 입금 내역을 확인할 수 있어요.</p></div><button class="x" data-close-modal="savingDetailModal">×</button></div><div class="saving-detail-summary"><div><span>현재 잔액</span><strong id="savingDetailAmount">₩0</strong></div><div><span>금리</span><strong id="savingDetailRate">-</strong></div><div><span>만기일</span><strong id="savingDetailMaturity">-</strong></div></div><div class="saving-detail-section"><div class="saving-detail-section-title">입금 내역</div><div id="savingDepositList" class="saving-deposit-list"></div></div></div></div><section id="settings" class="page"><article class="card panel"><div class="section-head"><h2>설정</h2></div><div class="settings-list"><div class="setting"><div><strong>항목별 월 예산</strong><span>카테고리별 예산을 수정할 수 있어요.</span></div><button id="editBudgetSetting">수정</button></div><div class="setting"><div><strong>자산 관리</strong><span>계좌·적금·투자·현금을 관리해요.</span></div><button id="openAssetsSetting" type="button">수정</button></div><div class="setting"><div><strong>데이터 백업</strong><span>현재 가계부 데이터를 저장해요.</span></div><button id="saveBackup">저장</button></div></div><div class="account-setting"><div><strong>계정</strong><span id="settingsUserEmail"></span></div><button id="settingsLogoutBtn" type="button">로그아웃</button></div></article></section>
+    <section id="finance" class="page"><div class="finance-page"><div class="section-head"><div><h2>금융노트</h2><p class="page-subtitle">나중에 다시 확인해야 할 금융 정보를 한곳에 기록해 보세요.</p></div></div><div class="finance-grid"><article class="card finance-card"><div class="finance-card-head"><h3>📌 기억할 금융정보</h3><p>금융상품이나 계좌와 관련해 따로 기억해둘 내용을 기록해요.</p></div><div id="financeInfoList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>📅 금융 일정</h3><p>만기일, 갱신일처럼 나중에 다시 확인할 날짜를 기록해요.</p></div><div id="financeScheduleList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>🔄 정기 납부</h3><p>매월 또는 정기적으로 빠져나가는 금액과 날짜를 기록해요.</p></div><div id="financePaymentList" class="finance-note-list"></div></article></div></div></section><div class="modal-back" id="financeNoteModal"><div class="modal"><div class="modal-head"><div><h3 id="financeNoteModalTitle">금융정보 추가</h3><p class="modal-help">나중에 다시 확인하고 싶은 금융 정보를 기록해 보세요.</p></div><button class="x" data-close-modal="financeNoteModal">×</button></div><form id="financeNoteForm" class="form-grid finance-note-form"><input type="hidden" id="financeNoteId"><div class="field full"><label>분류</label><select id="financeNoteType"><option value="info">기억할 금융정보</option><option value="schedule">금융 일정</option><option value="payment">정기 납부</option></select></div><div class="field full"><label>제목</label><input id="financeNoteTitle" type="text" required placeholder="예: 적금 만기 후 재예치 여부 확인"></div><div class="field"><label>금액</label><input id="financeNoteAmount" type="number" min="0" step="1" placeholder="선택사항"></div><div class="field"><label>날짜</label><input id="financeNoteDate" type="date"></div><div class="field full"><label>메모</label><textarea id="financeNoteMemo" rows="3" placeholder="추가로 기억해둘 내용을 적어주세요."></textarea></div><button class="primary full" type="submit">저장하기</button></form></div></div><div class="modal-back" id="savingDetailModal"><div class="modal saving-detail-modal"><div class="modal-head"><div><h3 id="savingDetailTitle">적금 상세</h3><p class="modal-help">해당 적금에 반영된 입금 내역을 확인할 수 있어요.</p></div><button class="x" data-close-modal="savingDetailModal">×</button></div><div class="saving-detail-summary"><div><span>현재 잔액</span><strong id="savingDetailAmount">₩0</strong></div><div><span>금리</span><strong id="savingDetailRate">-</strong></div><div><span>가입기간</span><strong id="savingDetailTerm">-</strong></div><div><span>과세비율</span><strong id="savingDetailTaxRate">-</strong></div><div><span>만기일</span><strong id="savingDetailMaturity">-</strong></div><div><span>예상 이자</span><strong id="savingDetailInterest">-</strong></div><div><span>이자 세금</span><strong id="savingDetailTax">-</strong></div><div class="saving-detail-total"><span>만기 예상 수령액</span><strong id="savingDetailExpectedTotal">-</strong></div></div><div class="saving-detail-section"><div class="saving-detail-section-title">입금 내역</div><div id="savingDepositList" class="saving-deposit-list"></div></div></div></div><section id="settings" class="page"><article class="card panel"><div class="section-head"><h2>설정</h2></div><div class="settings-list"><div class="setting"><div><strong>항목별 월 예산</strong><span>카테고리별 예산을 수정할 수 있어요.</span></div><button id="editBudgetSetting">수정</button></div><div class="setting"><div><strong>자산 관리</strong><span>계좌·적금·투자·현금을 관리해요.</span></div><button id="openAssetsSetting" type="button">수정</button></div><div class="setting"><div><strong>데이터 백업</strong><span>현재 가계부 데이터를 저장해요.</span></div><button id="saveBackup">저장</button></div></div><div class="account-setting"><div><strong>계정</strong><span id="settingsUserEmail"></span></div><button id="settingsLogoutBtn" type="button">로그아웃</button></div></article></section>
   </main>
 </div>
 
@@ -662,7 +666,7 @@ const supabaseClient = window.supabase.createClient(
 <div class="modal-actions"><button class="secondary-btn" data-close-modal="budgetEditModal" type="button">취소</button><button class="primary" id="saveBudgetCategories" type="button">저장하기</button></div>
 </div></div>
 
-<div class="modal-back" id="assetModal"><div class="modal"><div class="modal-head"><h3 id="assetModalTitle">자산 추가</h3><button class="x" data-close-modal="assetModal">×</button></div><form id="assetForm" class="form-grid"><input type="hidden" id="assetId"><div class="field full"><label>자산 종류</label><select id="assetType"><option value="저축">저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field full"><label>자산 이름</label><input id="assetName" type="text" required placeholder="예: 신한은행 생활비 계좌"></div><div class="field full"><label>현재 금액 (원)</label><input id="assetAmount" type="number" min="0" step="1" inputmode="numeric" required placeholder="0"></div><div class="field full saving-only-field"><label>금리 (%)</label><input id="assetInterestRate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="예: 3.5"></div><div class="field full saving-only-field"><label>만기일</label><input id="assetMaturityDate" type="date"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
+<div class="modal-back" id="assetModal"><div class="modal"><div class="modal-head"><h3 id="assetModalTitle">자산 추가</h3><button class="x" data-close-modal="assetModal">×</button></div><form id="assetForm" class="form-grid"><input type="hidden" id="assetId"><div class="field full"><label>자산 종류</label><select id="assetType"><option value="저축">저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field full"><label>자산 이름</label><input id="assetName" type="text" required placeholder="예: 신한은행 생활비 계좌"></div><div class="field full"><label>현재 금액 (원)</label><input id="assetAmount" type="number" min="0" step="1" inputmode="numeric" required placeholder="0"></div><div class="field full saving-only-field"><label>금리 (%)</label><input id="assetInterestRate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="예: 3.5"></div><div class="field saving-only-field"><label>가입기간 (개월)</label><input id="assetTermMonths" type="number" min="1" step="1" inputmode="numeric" placeholder="예: 12"></div><div class="field saving-only-field"><label>과세비율 (%)</label><input id="assetTaxRate" type="number" min="0" max="100" step="0.1" inputmode="decimal" placeholder="예: 15.4"></div><div class="field full saving-only-field"><label>만기일</label><input id="assetMaturityDate" type="date"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
 <div class="modal-back" id="assetManageModal"><div class="modal"><div class="modal-head"><div><h3>자산 관리</h3><p class="modal-help">등록된 자산을 수정하거나 삭제할 수 있어요.</p></div><button class="x" data-close-modal="assetManageModal">×</button></div><div class="asset-manage-list" id="assetManageList"></div><div class="modal-actions"><button class="secondary-btn" data-close-modal="assetManageModal" type="button">닫기</button></div></div></div>
 <div class="modal-back" id="goalModal"><div class="modal"><div class="modal-head"><h3 id="goalModalTitle">새 목표 만들기</h3><button class="x" data-close-modal="goalModal">×</button></div><form id="goalForm" class="form-grid"><input type="hidden" id="goalId"><div class="field full"><label>목표 이름</label><input id="goalName" required placeholder="예: 유럽 여행"></div><div class="field"><label>목표 금액</label><input id="goalTarget" type="number" min="0" step="10000" required placeholder="3000000"></div><div class="field"><label>현재 모은 금액</label><input id="goalCurrent" type="number" min="0" step="10000" required placeholder="500000"></div><div class="field full"><label>추가할 금액</label><input id="goalAddAmount" type="number" min="0" step="10000" placeholder="0"></div><button class="primary full" type="submit" id="goalSubmitBtn">목표 추가하기</button></form></div></div>
 
@@ -1032,46 +1036,75 @@ function formatSavingDate(dateStr){
   return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`;
 }
 async function openSavingDetail(assetId){
-  const asset=assets.find(a=>String(a.id)===String(assetId));
-  if(!asset)return;
-  $('savingDetailTitle').textContent=asset.name||'적금';
-  $('savingDetailAmount').textContent=money(Number(asset.amount)||0);
-  $('savingDetailRate').textContent=asset.interest_rate!=null&&asset.interest_rate!==''?`${asset.interest_rate}%`:'-';
-  $('savingDetailMaturity').textContent=asset.maturity_date?formatSavingDate(asset.maturity_date):'-';
+ const asset=assets.find(a=>String(a.id)===String(assetId));
+ if(!asset)return;
 
-  let links={};
-  try{links=JSON.parse(localStorage.getItem('monee_saving_links')||'{}')}catch(e){links={}}
-  const linkedIds=Object.keys(links).filter(id=>String(links[id]?.assetId)===String(assetId));
-  const list=[];
-  linkedIds.forEach(id=>{
-    const tx=transactions.find(t=>String(t.id)===String(id));
-    const link=links[id];
-    if(tx&&Number(link.amount||0)>0){
-      list.push({tx,amount:Number(link.amount)||0});
-    }
-  });
-  list.sort((a,b)=>{
-    const ad=new Date((a.tx.transaction_date||'')+'T00:00:00').getTime()||0;
-    const bd=new Date((b.tx.transaction_date||'')+'T00:00:00').getTime()||0;
-    return bd-ad;
-  });
+ const meta=getAssetMeta(asset);
+ const rate=Number(meta.interestRate??asset.interest_rate??0)||0;
+ const termMonths=Number(meta.termMonths??asset.term_months??0)||0;
+ const taxRate=Number(meta.taxRate??asset.tax_rate??0)||0;
+ let maturityDate=meta.maturityDate||asset.maturity_date||'';
 
-  const target=$('savingDepositList');
-  if(!list.length){
-    target.innerHTML='<div class="saving-empty">아직 반영된 입금 내역이 없어요.</div>';
-  }else{
-    target.innerHTML=list.map(({tx,amount})=>{
-      const cat=budgetCategories.find(c=>c.id===tx.category_id);
-      return `<div class="saving-deposit" data-saving-tx-id="${escapeText(tx.id)}"><span class="saving-deposit-date">${formatSavingDate(tx.transaction_date)}</span><span class="saving-deposit-memo">${escapeText(tx.memo||cat?.name||'적금')}</span><span class="saving-deposit-amount">+${money(amount)}</span></div>`;
-    }).join('');
-    target.querySelectorAll('[data-saving-tx-id]').forEach(row=>{
-      row.onclick=()=>{
-        closeModal('savingDetailModal');
-        openTransactionEdit(row.dataset.savingTxId);
-      };
-    });
-  }
-  openModal('savingDetailModal');
+ $('savingDetailTitle').textContent=asset.name||'적금';
+ $('savingDetailAmount').textContent=money(Number(asset.amount)||0);
+ $('savingDetailRate').textContent=rate?`${rate}%`:'-';
+ $('savingDetailTerm').textContent=termMonths?`${termMonths}개월`:'-';
+ $('savingDetailTaxRate').textContent=`${taxRate}%`;
+ $('savingDetailMaturity').textContent=maturityDate?formatSavingDate(maturityDate):'-';
+
+ let links={};
+ try{links=JSON.parse(localStorage.getItem('monee_saving_links')||'{}')}catch(e){links={}}
+ const linkedIds=Object.keys(links).filter(id=>String(links[id]?.assetId)===String(assetId));
+ const list=[];
+ linkedIds.forEach(id=>{
+   const tx=transactions.find(t=>String(t.id)===String(id));
+   const link=links[id];
+   if(tx&&Number(link.amount||0)>0)list.push({tx,amount:Number(link.amount)||0});
+ });
+ list.sort((a,b)=>{
+   const ad=new Date((a.tx.transaction_date||'')+'T00:00:00').getTime()||0;
+   const bd=new Date((b.tx.transaction_date||'')+'T00:00:00').getTime()||0;
+   return bd-ad;
+ });
+
+ // If a maturity date is available, estimate interest for each actual deposit
+ // from its transaction date through maturity. This reflects the user's
+ // recurring savings deposits rather than treating the balance as a lump sum.
+ let grossInterest=0;
+ if(rate>0&&maturityDate&&list.length){
+   const maturityMs=new Date(maturityDate+'T00:00:00').getTime();
+   list.forEach(({tx,amount})=>{
+     const depositMs=new Date((tx.transaction_date||'')+'T00:00:00').getTime();
+     if(!Number.isNaN(maturityMs)&&!Number.isNaN(depositMs)){
+       const days=Math.max(0,Math.round((maturityMs-depositMs)/86400000));
+       grossInterest += amount*(rate/100)*(days/365);
+     }
+   });
+ }
+ const interest=Math.round(grossInterest);
+ const tax=Math.round(interest*(taxRate/100));
+ const expectedTotal=Math.max(0,Number(asset.amount)||0)+interest-tax;
+
+ $('savingDetailInterest').textContent=(rate&&maturityDate&&list.length)?`+${money(interest)}`:'-';
+ $('savingDetailTax').textContent=(rate&&maturityDate&&list.length&&taxRate)?`-${money(tax)}`:'₩0';
+ $('savingDetailExpectedTotal').textContent=(rate&&maturityDate&&list.length)?money(expectedTotal):'-';
+
+ const target=$('savingDepositList');
+ if(!list.length){
+   target.innerHTML='<div class="saving-empty">아직 반영된 입금 내역이 없어요.</div>';
+ }else{
+   target.innerHTML=list.map(({tx,amount})=>{
+     const cat=budgetCategories.find(c=>c.id===tx.category_id);
+     return `<div class="saving-deposit" data-saving-tx-id="${escapeText(tx.id)}"><span class="saving-deposit-date">${formatSavingDate(tx.transaction_date)}</span><span class="saving-deposit-memo">${escapeText(tx.memo||cat?.name||'적금')}</span><span class="saving-deposit-amount">+${money(amount)}</span></div>`;
+   }).join('');
+   target.querySelectorAll('[data-saving-tx-id]').forEach(row=>{
+     row.onclick=()=>{
+       closeModal('savingDetailModal');
+       openTransactionEdit(row.dataset.savingTxId);
+     };
+   });
+ }
+ openModal('savingDetailModal');
 }
 
 function assetTypeLabel(type){return type==='현금성'?'입출금':(type||'기타')}
@@ -1326,9 +1359,25 @@ function updateEditSavingLinkField(selectedId=''){
   else if($('editSavingAssetSelect'))$('editSavingAssetSelect').value='';
 }
 function fillCategories(){const list=entryType==='income'?incomeCats:budgetCategories.map(c=>c.name);$('category').innerHTML=list.map(c=>`<option>${escapeText(c)}</option>`).join('');$('methodBox').style.display=entryType==='income'?'none':'block'}
-function setModalLock(locked){document.body.style.overflow=locked?'hidden':''}function getAssetMeta(a){let meta={interestRate:a?.interest_rate??'',maturityDate:a?.maturity_date??''};try{const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');const saved=all[a?.id]||{};if(meta.interestRate===''&&saved.interestRate!==undefined)meta.interestRate=saved.interestRate;if(meta.maturityDate===''&&saved.maturityDate!==undefined)meta.maturityDate=saved.maturityDate}catch(e){}return meta}
+function setModalLock(locked){document.body.style.overflow=locked?'hidden':''}function getAssetMeta(a){
+ let meta={
+   interestRate:a?.interest_rate??'',
+   maturityDate:a?.maturity_date??'',
+   termMonths:a?.term_months??'',
+   taxRate:a?.tax_rate??''
+ };
+ try{
+   const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
+   const saved=all[a?.id]||{};
+   if(meta.interestRate===''&&saved.interestRate!==undefined)meta.interestRate=saved.interestRate;
+   if(meta.maturityDate===''&&saved.maturityDate!==undefined)meta.maturityDate=saved.maturityDate;
+   if(meta.termMonths===''&&saved.termMonths!==undefined)meta.termMonths=saved.termMonths;
+   if(meta.taxRate===''&&saved.taxRate!==undefined)meta.taxRate=saved.taxRate;
+ }catch(e){}
+ return meta;
+}
 function setSavingFieldsVisible(type){document.querySelectorAll('.saving-only-field').forEach(el=>el.style.display=type==='저축'?'block':'none')}
-function openAsset(id){const a=assets.find(x=>x.id===id);const type=a?(a.asset_type==='현금성'?'입출금':a.asset_type):'입출금';const meta=getAssetMeta(a);$('assetId').value=a?.id||'';$('assetName').value=a?.name||'';$('assetType').value=type;$('assetAmount').value=formatCurrencyInputValue(a?.amount??'');$('assetInterestRate').value=meta.interestRate??'';$('assetMaturityDate').value=meta.maturityDate??'';setSavingFieldsVisible(type);$('assetModalTitle').textContent=a?'자산 수정':'자산 추가';openModal('assetModal')}
+function openAsset(id){const a=assets.find(x=>x.id===id);const type=a?(a.asset_type==='현금성'?'입출금':a.asset_type):'입출금';const meta=getAssetMeta(a);$('assetId').value=a?.id||'';$('assetName').value=a?.name||'';$('assetType').value=type;$('assetAmount').value=formatCurrencyInputValue(a?.amount??'');$('assetInterestRate').value=meta.interestRate??'';$('assetTermMonths').value=meta.termMonths??'';$('assetTaxRate').value=meta.taxRate??'';$('assetMaturityDate').value=meta.maturityDate??'';setSavingFieldsVisible(type);$('assetModalTitle').textContent=a?'자산 수정':'자산 추가';openModal('assetModal')}
 async function deleteAsset(id){if(!confirm('이 자산을 삭제할까요?'))return;const {error}=await supabaseClient.from('assets').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
 function openGoal(id){const g=goals.find(x=>x.id===id);$('goalId').value=g?.id||'';$('goalName').value=g?.name||'';$('goalTarget').value=g?.target_amount||'';$('goalCurrent').value=g?.current_amount||'';$('goalAddAmount').value='';$('goalModalTitle').textContent=g?'목표 수정':'새 목표 만들기';$('goalSubmitBtn').textContent=g?'수정하기':'목표 추가하기';openModal('goalModal')}
 async function deleteGoal(id){if(!confirm('이 목표를 삭제할까요?'))return;const {error}=await supabaseClient.from('goals').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
@@ -1604,7 +1653,82 @@ async function saveTransaction(e){
   fillCategories();
   await loadAll();
 }
-async function saveAsset(e){e.preventDefault();const id=$('assetId').value;const name=$('assetName').value.trim();const type=$('assetType').value;const amountValue=$('assetAmount').value;const interestValue=$('assetInterestRate').value;const maturityDate=$('assetMaturityDate').value;if(!name)return alert('자산 이름을 입력해 주세요.');if(amountValue===''||Number(amountValue)<0)return alert('현재 금액을 확인해 주세요.');if(type==='저축'&&interestValue!==''&&Number(interestValue)<0)return alert('금리를 확인해 주세요.');const basePayload={user_id:currentUser.id,name,asset_type:type,amount:Number(amountValue)};const savingPayload={...basePayload,interest_rate:interestValue===''?null:Number(interestValue),maturity_date:maturityDate||null};let q=id?supabaseClient.from('assets').update(savingPayload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('assets').insert(savingPayload);let {error}=await q;if(error&&type==='저축'){q=id?supabaseClient.from('assets').update(basePayload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('assets').insert(basePayload);({error}=await q);if(!error){try{const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');const key=id||assets.find(a=>a.name===name)?.id;if(key)all[key]={interestRate:interestValue,maturityDate};localStorage.setItem('monee_asset_meta',JSON.stringify(all))}catch(e){}}}if(error)return alert(error.message);if(type!=='저축'&&id){try{const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');delete all[id];localStorage.setItem('monee_asset_meta',JSON.stringify(all))}catch(e){}}closeModal('assetModal');e.target.reset();$('assetId').value='';setSavingFieldsVisible('입출금');await loadAll()}
+async function saveAsset(e){
+ e.preventDefault();
+ const id=$('assetId').value;
+ const name=$('assetName').value.trim();
+ const type=$('assetType').value;
+ const amountValue=$('assetAmount').value;
+ const interestValue=$('assetInterestRate').value;
+ const termValue=$('assetTermMonths').value;
+ const taxValue=$('assetTaxRate').value;
+ const maturityDate=$('assetMaturityDate').value;
+ if(!name)return alert('자산 이름을 입력해 주세요.');
+ if(amountValue===''||currencyNumber('assetAmount')<0)return alert('현재 금액을 확인해 주세요.');
+ if(type==='저축'&&interestValue!==''&&Number(interestValue)<0)return alert('금리를 확인해 주세요.');
+ if(type==='저축'&&termValue!==''&&Number(termValue)<=0)return alert('가입기간을 확인해 주세요.');
+ if(type==='저축'&&taxValue!==''&&(Number(taxValue)<0||Number(taxValue)>100))return alert('과세비율을 확인해 주세요.');
+
+ const basePayload={user_id:currentUser.id,name,asset_type:type,amount:currencyNumber('assetAmount')};
+ const savingPayload={
+   ...basePayload,
+   interest_rate:interestValue===''?null:Number(interestValue),
+   maturity_date:maturityDate||null,
+   term_months:termValue===''?null:Number(termValue),
+   tax_rate:taxValue===''?null:Number(taxValue)
+ };
+
+ let q=id
+   ?supabaseClient.from('assets').update(type==='저축'?savingPayload:basePayload).eq('id',id).eq('user_id',currentUser.id)
+   :supabaseClient.from('assets').insert(type==='저축'?savingPayload:basePayload);
+ let {error}=await q;
+
+ if(error&&type==='저축'){
+   // New columns may not exist in an older Supabase schema.
+   // Fall back to the original asset columns, while retaining all new metadata locally.
+   q=id
+     ?supabaseClient.from('assets').update({
+        ...basePayload,
+        interest_rate:interestValue===''?null:Number(interestValue),
+        maturity_date:maturityDate||null
+      }).eq('id',id).eq('user_id',currentUser.id)
+     :supabaseClient.from('assets').insert({
+        ...basePayload,
+        interest_rate:interestValue===''?null:Number(interestValue),
+        maturity_date:maturityDate||null
+      });
+   ({error}=await q);
+   if(!error){
+     try{
+       const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
+       const key=id||assets.find(a=>a.name===name)?.id;
+       if(key)all[key]={interestRate:interestValue,maturityDate,termMonths:termValue,taxRate:taxValue};
+       localStorage.setItem('monee_asset_meta',JSON.stringify(all));
+     }catch(e){}
+   }
+ }
+ if(error)return alert(error.message);
+
+ if(type==='저축'){
+   try{
+     const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
+     const key=id||assets.find(a=>a.name===name)?.id;
+     if(key)all[key]={interestRate:interestValue,maturityDate,termMonths:termValue,taxRate:taxValue};
+     localStorage.setItem('monee_asset_meta',JSON.stringify(all));
+   }catch(e){}
+ }else if(id){
+   try{
+     const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
+     delete all[id];
+     localStorage.setItem('monee_asset_meta',JSON.stringify(all));
+   }catch(e){}
+ }
+ closeModal('assetModal');
+ e.target.reset();
+ $('assetId').value='';
+ setSavingFieldsVisible('입출금');
+ await loadAll();
+}
 async function saveGoal(e){e.preventDefault();const id=$('goalId').value;const name=$('goalName').value.trim();const targetAmount=currencyNumber('goalTarget');const currentAmount=currencyNumber('goalCurrent');const addAmount=Math.max(0,Number($('goalAddAmount').value)||0);if(!name)return alert('목표 이름을 입력해 주세요.');if(id){const payload={name,target_amount:targetAmount,current_amount:currentAmount+addAmount};const {error}=await supabaseClient.from('goals').update(payload).eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message)}else{const payload={user_id:currentUser.id,name,target_amount:targetAmount,current_amount:currentAmount};const {error}=await supabaseClient.from('goals').insert(payload);if(error)return alert(error.message)}closeModal('goalModal');e.target.reset();$('goalId').value='';$('goalAddAmount').value='';$('goalSubmitBtn').textContent='목표 추가하기';await loadAll()}
 async function login(e){e.preventDefault();$('loginMessage').textContent='';$('loginBtn').disabled=true;const {error}=await supabaseClient.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error)$('loginMessage').textContent='로그인에 실패했어요. 이메일 또는 비밀번호를 확인해 주세요.';$('loginBtn').disabled=false}
 let appStarting=false;
