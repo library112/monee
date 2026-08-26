@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.42 · 적금내역 정렬 및 원화 입력 개선</title>
+<title>monee · 가계부 · ver.2.45 · 소비 페이스 중복 표시 정리</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -514,6 +514,11 @@ nav.nav .icon{
 }
 
 #editSavingLinkField select{width:100%}
+
+.pace-bottom{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important}
+.pace-bottom>div{min-width:0}
+.pace-bottom .pace-diff{grid-column:1/-1;padding-top:7px;margin-top:1px;border-top:1px solid var(--line)}
+.pace-diff b{font-size:11px}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -565,7 +570,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.42">ver.2.42</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.45">ver.2.45</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -611,10 +616,10 @@ const supabaseClient = window.supabase.createClient(
           </div>
           <div class="pace-main">
             <div class="gauge-wrap"><div class="gauge"><svg viewBox="0 0 220 120"><path d="M20 100 A90 90 0 0 1 200 100" fill="none" stroke="#dde4de" stroke-width="16" stroke-linecap="round"/><path d="M20 100 A90 90 0 0 1 150 23" fill="none" stroke="#6686a8" stroke-width="16" stroke-linecap="round"/><line x1="110" y1="100" x2="152" y2="44" stroke="#b75552" stroke-width="4" stroke-linecap="round"/></svg></div></div>
-            <div class="pace-center"><b>하루 평균 ₩40,242 사용 중</b><span>목표: 하루 ₩40,323 이하</span></div>
+            <div class="pace-center"><b>하루 평균 ₩40,242 사용 중</b><span>앞으로 남은 기간 하루 사용 가능을 계산 중</span></div>
           </div>
           <div class="pace-bottom">
-            <div><span>하루 사용 가능 금액</span><b>₩78,281</b></div>
+            <div><span>남은 기간 하루 사용 가능</span><b>₩78,281</b></div>
             <div><span>8월 31일까지</span><b>16일</b></div>
           </div>
           <div class="good">현재 페이스를 유지하면 예산 내에서 마무리할 수 있어요!</div>
@@ -985,14 +990,40 @@ function renderBudget(){
  renderTrend();renderPace();
 }
 function renderTrend(){const months=[];for(let i=5;i>=0;i--){let d=new Date(viewYear,viewMonth-i,1);let y=d.getFullYear(),m=d.getMonth();const prefix=`${y}-${String(m+1).padStart(2,'0')}`;const spent=transactions.filter(t=>t.type==='expense'&&t.transaction_date?.startsWith(prefix)).reduce((s,t)=>s+Number(t.amount),0);months.push({label:`${m+1}월`,spent})}const max=Math.max(...months.map(x=>x.spent),1);document.querySelector('.bars').innerHTML=months.map((x,i)=>`<div class="bar-col"><div class="month-bar-wrap"><i class="month-bar ${i===5?'current':''}" style="height:${Math.max(4,Math.round(x.spent/max*88))}%"></i></div><span>${x.label}</span><b>${money(x.spent)}</b></div>`).join('');const prev=months[4]?.spent||0,cur=months[5]?.spent||0;const diff=cur-prev,pct=prev?Math.abs(diff/prev*100):0;document.querySelector('.compare').innerHTML=`지난달(${months[4]?.label||''}) 대비 <b>${diff>=0?'+':'-'}${money(Math.abs(diff))} (${pct.toFixed(1)}%) ${diff<=0?'↓':'↑'}</b>`}
-function renderPace(){const rows=computeBudgetRows(),total=rows.reduce((s,c)=>s+c.budget,0),spent=rows.reduce((s,c)=>s+c.spent,0);const now=new Date(),daysInMonth=new Date(viewYear,viewMonth+1,0).getDate(),day=(viewYear===now.getFullYear()&&viewMonth===now.getMonth())?now.getDate():daysInMonth;const remainDays=Math.max(0,daysInMonth-day),avg=day?spent/day:0,allowed=remainDays?Math.max(0,total-spent)/remainDays:Math.max(0,total-spent);document.querySelector('.pace-status').textContent=avg<=(total/daysInMonth||0)?'적정':'주의';document.querySelector('.days-compact b').textContent=remainDays;document.querySelector('.days-compact span').textContent='일 남음';document.querySelector('.pace-center b').textContent=`하루 평균 ${money(avg)} 사용 중`;document.querySelector('.pace-center span').textContent=`목표: 하루 ${money(total/daysInMonth||0)} 이하`;document.querySelector('.pace-bottom').innerHTML=`<div><span>하루 사용 가능 금액</span><b>${money(allowed)}</b></div><div><span>${viewMonth+1}월 ${daysInMonth}일까지</span><b>${remainDays}일</b></div>`;document.querySelector('.good').textContent=spent<=total?'현재 페이스를 유지하면 예산 내에서 마무리할 수 있어요!':'예산을 이미 초과했어요. 남은 기간의 지출을 조금 줄여보세요.'}
-function assetTypeLabel(type){return type==='현금성'?'입출금':(type||'기타')}
-
-function savingAssetType(a){return String(a?.asset_type||'').trim()==='저축'}
-function formatSavingDate(v){
-  if(!v)return '-';
-  const d=new Date(v+'T00:00:00');
-  return `${d.getMonth()+1}월 ${d.getDate()}일`;
+function renderPace(){
+ const rows=computeBudgetRows(),
+       total=rows.reduce((s,c)=>s+c.budget,0),
+       spent=rows.reduce((s,c)=>s+c.spent,0),
+       now=new Date(),
+       daysInMonth=new Date(viewYear,viewMonth+1,0).getDate(),
+       day=(viewYear===now.getFullYear()&&viewMonth===now.getMonth())?now.getDate():daysInMonth,
+       remainDays=Math.max(0,daysInMonth-day),
+       remainBudget=Math.max(0,total-spent),
+       avg=day?spent/day:0,
+       required=remainDays?remainBudget/remainDays:remainBudget,
+       target=daysInMonth?total/daysInMonth:0,
+       diff=avg-required;
+ const status=spent>total?'초과':(avg<=required?'적정':'주의');
+ document.querySelector('.pace-status').textContent=status;
+ document.querySelector('.days-compact b').textContent=remainDays;
+ document.querySelector('.days-compact span').textContent='일 남음';
+ document.querySelector('.pace-center b').textContent=`하루 평균 ${money(avg)} 사용 중`;
+ document.querySelector('.pace-center span').textContent=
+   remainDays>0
+   ? `앞으로 하루 ${money(required)} 이하로 쓰면 예산을 지킬 수 있어요`
+   : `월 예산 ${money(target)} · 남은 예산 ${money(remainBudget)}`;
+ document.querySelector('.pace-bottom').innerHTML=
+   `<div><span>남은 기간 하루 사용 가능</span><b>${money(required)}</b></div>
+    <div><span>현재 평균</span><b>${money(avg)} /일</b></div>
+    <div class="pace-diff ${diff>0?'needs-cut':diff<0?'room':'on-track'}"><span>예산을 지키려면</span><b>${diff>0?`하루 ${money(diff)} 줄여야 해요`:diff<0?`하루 ${money(Math.abs(diff))} 여유가 있어요`:'현재 페이스면 충분해요'}</b></div>`;
+ document.querySelector('.good').textContent=
+   spent>total
+   ? `예산을 ${money(spent-total)} 초과했어요.`
+   : remainDays>0
+     ? (avg<=required
+        ? `현재 페이스를 유지해도 남은 예산 안에서 마무리할 수 있어요!`
+        : `현재 평균보다 하루 ${money(avg-required)} 정도 줄이면 예산을 지킬 수 있어요.`)
+     : `이번 달 예산을 ${money(remainBudget)} 남겼어요.`;
 }
 async function openSavingDetail(assetId){
   const asset=assets.find(a=>String(a.id)===String(assetId));
