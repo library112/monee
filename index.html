@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.39 · 적금 상세 입금내역 추가</title>
+<title>monee · 가계부 · ver.2.40 · 적금 카드 클릭 상세팝업 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -563,7 +563,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.39">ver.2.39</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.40">ver.2.40</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1036,7 +1036,7 @@ function renderAssets(){
               const meta=saving?getAssetMeta(a):null;
               const rate=meta?.interestRate!==''&&meta?.interestRate!=null?`${escapeText(String(meta.interestRate))}%`:'-';
               const maturity=meta?.maturityDate?String(meta.maturityDate).replace(/-/g,'.'):'-';
-              return `<div class="asset-category-item${saving?' saving-item':''}">
+              return `<div class="asset-category-item${saving?' saving-item':''}" data-asset-id="${escapeText(String(a.id))}">
                 <div class="asset-category-name"><b>${escapeText(a.name)}</b></div>
                 <div class="asset-category-amount">${money(a.amount)}</div>
                 <div class="asset-category-actions">
@@ -1530,11 +1530,12 @@ function closeModal(id){$(id).classList.remove('show');setModalLock(false)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 $('prevMonth').onclick=async()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}await loadAll()};$('nextMonth').onclick=async()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}await loadAll()};
 
-document.addEventListener('click',function(e){
-  const card=e.target.closest('[data-asset-id]');
-  if(!card)return;
-  const asset=assets.find(a=>String(a.id)===String(card.dataset.assetId));
-  if(asset&&savingAssetType(asset))openSavingDetail(asset.id);
+document.querySelectorAll('[data-asset-id]').forEach(card=>{
+  card.onclick=function(e){
+    if(e.target.closest('button'))return;
+    const asset=assets.find(a=>String(a.id)===String(card.dataset.assetId));
+    if(asset&&savingAssetType(asset))openSavingDetail(asset.id);
+  };
 });
 
 $('floatingAction').onclick=()=>{const active=document.querySelector('.page.active')?.id;if(active==='assets')openAsset();else if(active==='goals')openGoal();else if(active==='finance')openFinanceNote('');else{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField();$('date').value=todayLocal();$('amount').value='';$('memo').value='';openModal('modal')}};
