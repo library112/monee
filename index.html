@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.24 · 금융노트 페이지 추가</title>
+<title>monee · 가계부 · ver.2.25 · 금융노트 페이지 전환 및 네비게이션 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -331,6 +331,14 @@ button,input,select{font:inherit}button{cursor:pointer}
   .modal-actions .primary,.modal-actions .secondary-btn{width:130px}
 }
 
+
+nav .nav-inner{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;flex-wrap:nowrap!important}
+nav .nav-inner button{min-width:0!important;width:100%;white-space:nowrap!important;padding-left:4px!important;padding-right:4px!important}
+
+@media(max-width:650px){
+  nav .nav-inner{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}
+  nav .nav-inner button{font-size:10px!important;padding:8px 2px!important}
+}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -382,7 +390,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.24">ver.2.24</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.25">ver.2.25</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -503,7 +511,7 @@ function txSortTime(t){const local=loadEditTimestamps()[t.id];return Number(loca
 function sortTransactions(list){return [...list].sort((a,b)=>{const da=String(a.transaction_date||''),db=String(b.transaction_date||'');if(db!==da)return db.localeCompare(da);return txSortTime(b)-txSortTime(a)})}
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const monthDate=()=>`${viewYear}-${String(viewMonth+1).padStart(2,'0')}-01`;
-const validPages=['budget','assets','goals','settings'];
+const validPages=['budget','assets','goals','finance','settings'];
 const pageFromHash=()=>{
  const id=decodeURIComponent(location.hash.replace(/^#/,'')).trim();
  return validPages.includes(id)?id:'budget';
@@ -847,6 +855,21 @@ function financeDate(v){
   const d=new Date(v+'T00:00:00');
   return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
 }
+
+
+function setCurrentPageState(page){
+  try{localStorage.setItem('monee_current_page',page)}catch(e){}
+}
+
+function activateFinancePage(){setCurrentPageState('finance');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const page=document.getElementById('finance');
+  if(page) page.classList.add('active');
+  document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page==='finance'));
+  renderFinanceNotes();
+  window.scrollTo(0,0);
+}
+
 function renderFinanceNotes(){
   loadFinanceNotes();
   const groups=[
@@ -1182,6 +1205,22 @@ window.addEventListener('hashchange',()=>showPage(pageFromHash(),false));
 showPage(pageFromHash(),false);
 supabaseClient.auth.getSession().then(({data})=>{if(data.session)startApp(data.session.user);else $('authGate').classList.remove('hidden')});supabaseClient.auth.onAuthStateChange((_event,session)=>{if(session)startApp(session.user);else{$('authGate').classList.remove('hidden');$('settingsUserEmail').textContent=''}});
 })();
+
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('[data-page="finance"]');
+  if(!btn)return;
+  e.preventDefault();
+  activateFinancePage();
+});
+
+function restoreSavedPage(){
+  let page='budget';
+  try{page=localStorage.getItem('monee_current_page')||'budget'}catch(e){}
+  if(page==='finance')activateFinancePage();
+}
+
+
+window.addEventListener('load',function(){setTimeout(restoreSavedPage,0)});
 </script>
 </body>
 </html>
