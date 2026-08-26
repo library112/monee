@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.20 · 모바일 설정 플러스 버튼 제거</title>
+<title>monee · 가계부 · ver.21 · 예산 항목 반영 오류 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -380,8 +380,6 @@ const supabaseClient = window.supabase.createClient(
           <div class="budget-table-label">항목별 예산</div>
           <div id="budgetRows"></div>
         </div>
-        <div class="table-note">💡 설정에서 항목을 추가·삭제하거나 이름과 예산을 자유롭게 수정할 수 있어요.</div>
-        <div class="table-note">💡 카테고리를 클릭하면 상세 내역을 확인할 수 있어요.</div>
       </article>
 
       <div class="lower-grid">
@@ -566,16 +564,19 @@ async function seedDemo(){
     catData=[...catData,...(inserted||[])];
   }
 
-  // Lucide 아이콘을 기존 계정에도 적용합니다. DB에 아이콘 컬럼이 없으면 로컬 설정으로 보완합니다.
+  // 기존 사용자가 설정한 아이콘·순서는 절대 기본값으로 덮어쓰지 않습니다.
+  // ver.20에서는 로그인/새로고침 때마다 기본 아이콘·순서가 다시 저장되어
+  // 설정페이지에서 변경한 값이 예산페이지에 반영되지 않는 문제가 있었습니다.
   const iconByName=defaultCatIcons;
   for(const cat of catData.filter(c=>c.type==='expense')){
-    const icon=iconByName[cat.name]||'Circle';
-    const sort_order=Math.max(0,cats.indexOf(cat.name));
-    localCategoryPrefs[cat.id]={...(localCategoryPrefs[cat.id]||{}),icon,sort_order};
-    if(categoryPrefsSupported){
-      const {error}=await supabaseClient.from('categories').update({icon,sort_order}).eq('id',cat.id).eq('user_id',currentUser.id);
-      if(!error)cat.icon=icon,cat.sort_order=sort_order;
-    }
+    const saved=localCategoryPrefs[cat.id]||{};
+    const icon=saved.icon||cat.icon||iconByName[cat.name]||'Circle';
+    const dbOrder=Number(cat.sort_order);
+    const savedOrder=Number(saved.sort_order);
+    const sort_order=Number.isFinite(savedOrder)
+      ? savedOrder
+      : (Number.isFinite(dbOrder) ? dbOrder : Math.max(0,cats.indexOf(cat.name)));
+    localCategoryPrefs[cat.id]={...saved,icon,sort_order};
   }
   saveLocalCategoryPrefs();
 
@@ -656,6 +657,15 @@ async function loadAll(){
  for(const r of [c,t,b,a,g])if(r.error)throw r.error;
  loadLocalCategoryPrefs();
  categoryPrefsSupported=(c.data||[]).some(x=>Object.prototype.hasOwnProperty.call(x,'icon')||Object.prototype.hasOwnProperty.call(x,'sort_order'));
+ if(categoryPrefsSupported){
+   (c.data||[]).filter(x=>x.type==='expense').forEach(c=>{
+     const pref=localCategoryPrefs[c.id]||{};
+     if(c.icon)pref.icon=c.icon;
+     if(Number.isFinite(Number(c.sort_order)))pref.sort_order=Number(c.sort_order);
+     localCategoryPrefs[c.id]=pref;
+   });
+   saveLocalCategoryPrefs();
+ }
  budgetCategories=c.data.filter(x=>x.type==='expense').map(c=>({...c,budget:0,spent:0,budgetId:null}))
    .sort((a,b)=>catOrder(a)-catOrder(b));
  const budgets=b.data;budgetCategories.forEach(c=>{const x=budgets.find(b=>b.category_id===c.id&&Number(b.year)===viewYear&&Number(b.month)===viewMonth+1);c.budget=Number(x?.amount||0);c.budgetId=x?.id||null;});
@@ -678,7 +688,7 @@ function renderBudget(){
  $('variableSpentValue').textContent=money(variableSpent);$('variableRateValue').textContent=variableRate.toFixed(1)+'%';$('variableProgress').style.width=variableRate+'%';
  $('sideBudget').textContent=money(total);$('sideSpent').textContent=money(spent);$('sideRemain').textContent=money(remain);$('sideRate').textContent=rate.toFixed(1)+'%';$('sideProgress').style.width=Math.min(100,rate)+'%';
  const budgetRowHtml=c=>{
-   const pct=c.budget?Math.min(100,Math.round(c.spent/c.budget*100)):0;
+   const pct=c.budget>0?Math.min(100,Math.round(c.spent/c.budget*100)):(c.spent>0?100:0);
    return `<div class="tr">
      <div class="cat-label"><span class="cat-icon"><i data-lucide="${escapeText(catIcon(c))}"></i></span><span class="cat-name">${escapeText(c.name)}</span></div>
      <div class="bar-wrap"><div class="bar-track"><i class="bar-fill ${pct>=70?'warn':''}" style="width:${pct}%"></i></div></div>
@@ -920,7 +930,7 @@ function openModal(id){$(id).classList.add('show');setModalLock(true)}
 function closeModal(id){$(id).classList.remove('show');setModalLock(false)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 $('prevMonth').onclick=async()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}await loadAll()};$('nextMonth').onclick=async()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}await loadAll()};
-$('floatingAction').onclick=()=>{const active=document.querySelector('.page.active')?.id;if(active==='assets')openAsset();else if(active==='goals')openGoal();else openModal('modal')};
+$('floatingAction').onclick=()=>{const active=document.querySelector('.page.active')?.id;if(active==='assets')openAsset();else if(active==='goals')openGoal();else{fillCategories();openModal('modal')}};
 $('closeModal').onclick=()=>closeModal('modal');document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));document.querySelectorAll('.modal-back').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)closeModal(back.id)}));
 $('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories()};
 $('entryForm').addEventListener('submit',saveTransaction);$('assetForm').addEventListener('submit',saveAsset);$('goalForm').addEventListener('submit',saveGoal);
