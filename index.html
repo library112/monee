@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.51 · 정기적금 납입 기준 만기 예상 추가</title>
+<title>monee 가계부 · ver.2.53 · 새 적금 저장 오류 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -578,7 +578,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.51">ver.2.51</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.53">ver.2.53</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1726,66 +1726,62 @@ async function saveAsset(e){
  const termValue=$('assetTermMonths').value;
  const taxValue=$('assetTaxRate').value;
  const maturityDate=$('assetMaturityDate').value;
+
  if(!name)return alert('자산 이름을 입력해 주세요.');
  if(amountValue===''||currencyNumber('assetAmount')<0)return alert('현재 금액을 확인해 주세요.');
  if(type==='저축'&&interestValue!==''&&Number(interestValue)<0)return alert('금리를 확인해 주세요.');
  if(type==='저축'&&termValue!==''&&Number(termValue)<=0)return alert('가입기간을 확인해 주세요.');
  if(type==='저축'&&taxValue!==''&&(Number(taxValue)<0||Number(taxValue)>100))return alert('과세비율을 확인해 주세요.');
 
- const basePayload={user_id:currentUser.id,name,asset_type:type,amount:currencyNumber('assetAmount')};
- const savingPayload={
-   ...basePayload,
-   interest_rate:interestValue===''?null:Number(interestValue),
-   maturity_date:maturityDate||null,
-   term_months:termValue===''?null:Number(termValue),
-   tax_rate:taxValue===''?null:Number(taxValue)
+ // Supabase의 현재 assets 테이블에는 금리/만기/가입기간/과세비율
+ // 컬럼이 없을 수 있으므로, DB에는 기존 자산 필드만 저장하고
+ // 적금 상세정보는 기존과 동일하게 localStorage 메타데이터로 관리합니다.
+ const basePayload={
+   user_id:currentUser.id,
+   name,
+   asset_type:type,
+   amount:currencyNumber('assetAmount')
  };
 
- let q=id
-   ?supabaseClient.from('assets').update(type==='저축'?savingPayload:basePayload).eq('id',id).eq('user_id',currentUser.id)
-   :supabaseClient.from('assets').insert(type==='저축'?savingPayload:basePayload);
- let {error}=await q;
+ let savedId=id||'';
+ let error=null;
 
- if(error&&type==='저축'){
-   // New columns may not exist in an older Supabase schema.
-   // Fall back to the original asset columns, while retaining all new metadata locally.
-   q=id
-     ?supabaseClient.from('assets').update({
-        ...basePayload,
-        interest_rate:interestValue===''?null:Number(interestValue),
-        maturity_date:maturityDate||null
-      }).eq('id',id).eq('user_id',currentUser.id)
-     :supabaseClient.from('assets').insert({
-        ...basePayload,
-        interest_rate:interestValue===''?null:Number(interestValue),
-        maturity_date:maturityDate||null
-      });
-   ({error}=await q);
-   if(!error){
-     try{
-       const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
-       const key=id||assets.find(a=>a.name===name)?.id;
-       if(key)all[key]={interestRate:interestValue,maturityDate,termMonths:termValue,taxRate:taxValue};
-       localStorage.setItem('monee_asset_meta',JSON.stringify(all));
-     }catch(e){}
-   }
+ if(id){
+   ({error}=await supabaseClient.from('assets')
+     .update(basePayload)
+     .eq('id',id)
+     .eq('user_id',currentUser.id));
+ }else{
+   const result=await supabaseClient.from('assets')
+     .insert(basePayload)
+     .select('id')
+     .single();
+   savedId=result.data?.id||'';
+   error=result.error;
  }
+
  if(error)return alert(error.message);
+ if(!savedId)return alert('자산을 저장했지만 자산 ID를 확인하지 못했어요.');
 
- if(type==='저축'){
-   try{
-     const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
-     const key=id||assets.find(a=>a.name===name)?.id;
-     if(key)all[key]={interestRate:interestValue,maturityDate,termMonths:termValue,taxRate:taxValue};
-     localStorage.setItem('monee_asset_meta',JSON.stringify(all));
-   }catch(e){}
- }else if(id){
-   try{
-     const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
-     delete all[id];
-     localStorage.setItem('monee_asset_meta',JSON.stringify(all));
-   }catch(e){}
+ // 적금 상세정보는 DB 스키마에 의존하지 않고 로컬 메타데이터로 저장
+ // 새 적금과 기존 적금 모두 동일하게 처리합니다.
+ try{
+   const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
+   if(type==='저축'){
+     all[savedId]={
+       interestRate:interestValue,
+       maturityDate,
+       termMonths:termValue,
+       taxRate:taxValue
+     };
+   }else{
+     delete all[savedId];
+   }
+   localStorage.setItem('monee_asset_meta',JSON.stringify(all));
+ }catch(e){
+   return alert('적금 상세정보를 저장하지 못했어요.');
  }
+
  closeModal('assetModal');
  e.target.reset();
  $('assetId').value='';
