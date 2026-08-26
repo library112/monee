@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.46 · 자산 로딩 오류 수정</title>
+<title>monee · 가계부 · ver.2.48 · 적금 입금내역 연도 표시</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -570,7 +570,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.46">ver.2.46</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.48">ver.2.48</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1025,6 +1025,12 @@ function renderPace(){
         : `현재 평균보다 하루 ${money(avg-required)} 정도 줄이면 예산을 지킬 수 있어요.`)
      : `이번 달 예산을 ${money(remainBudget)} 남겼어요.`;
 }
+function formatSavingDate(dateStr){
+  if(!dateStr)return '-';
+  const d=new Date(dateStr+'T00:00:00');
+  if(Number.isNaN(d.getTime()))return dateStr;
+  return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`;
+}
 async function openSavingDetail(assetId){
   const asset=assets.find(a=>String(a.id)===String(assetId));
   if(!asset)return;
@@ -1261,7 +1267,7 @@ function updateSavingLinkField(selectedId=''){
   const field=$('savingLinkField');
   const select=$('category');
   if(!field||!select)return;
-  const isSaving=select.value==='적금';
+  const isSaving=entryType==='expense'&&select.value==='적금';
   field.style.display=isSaving?'block':'none';
   if(isSaving)fillSavingAssets(selectedId);
   else if($('savingAssetSelect'))$('savingAssetSelect').value='';
@@ -1629,7 +1635,7 @@ $('incomeOverviewCard').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.prevent
 $('incomeEditForm').addEventListener('submit',saveIncomeEdit);$('deleteIncomeBtn').onclick=deleteIncomeRecord;$('deleteTransactionBtn').onclick=deleteTransactionRecord;
 $('transactionEditForm').addEventListener('submit',saveTransactionEdit);$('editCategory').addEventListener('change',()=>updateEditSavingLinkField());
 $('closeModal').onclick=()=>closeModal('modal');document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));document.querySelectorAll('.modal-back').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)closeModal(back.id)}));
-$('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories()};
+$('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories();updateSavingLinkField()};
 $('category').addEventListener('change',()=>updateSavingLinkField());$('entryForm').addEventListener('submit',saveTransaction);$('financeNoteForm').addEventListener('submit',saveFinanceNoteForm);$('assetForm').addEventListener('submit',saveAsset);$('assetType').addEventListener('change',e=>setSavingFieldsVisible(e.target.value));$('goalForm').addEventListener('submit',saveGoal);
 $('editBudgetSetting').onclick=()=>{renderBudgetEditor();openModal('budgetEditModal')};
 $('addBudgetCategory').onclick=async()=>{
