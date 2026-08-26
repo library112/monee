@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.32 · 적금 지출 자산 자동반영</title>
+<title>monee · 가계부 · ver.2.33 · 적금 지출 저장 오류 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -529,7 +529,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.32">ver.2.32</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.33">ver.2.33</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1333,20 +1333,59 @@ async function saveIncomeEdit(e){
   closeModal('incomeEditModal');
   await loadAll();
 }
-async function saveTransaction(e){e.preventDefault();const amount=Number($('amount').value)||0;if(amount<=0)return;const name=$('category').value;const type=entryType;const cat=type==='income'?null:budgetCategories.find(c=>c.name===name);let incomeCatId=null;if(type==='income'){const {data}=await supabaseClient.from('categories').select('id').eq('user_id',currentUser.id).eq('type','income').eq('name',name).single();incomeCatId=data?.id}const {error}=await supabaseClient.from('transactions').insert({user_id:currentUser.id,transaction_date:$('date').value||new Date().toISOString().slice(0,10),type,amount,category_id:cat?.id||incomeCatId,payment_method:type==='income'?'현금':$('method').value,memo:$('memo').value.trim()});if(error)return alert(error.message);
-  const transactionId=id||data?.id||result?.id;
-  if(transactionId){
-    const oldLink=findSavingLink(transactionId);
-    if(oldLink)await reverseSavingLink(transactionId);
-    const newIsSaving=$('category').value==='적금';
-    const savingId=$('savingAssetSelect')?.value||'';
-    const savingAmount=Number($('amount').value)||0;
-    if(newIsSaving&&savingId){
-      await applySavingLink(transactionId,savingId,savingAmount);
-    }else{
-      saveSavingLink(transactionId,null,0);
-    }
-  }closeModal('modal');e.target.reset();$('date').value=todayLocal();fillCategories();await loadAll()}
+async function saveTransaction(e){
+  e.preventDefault();
+  const amount=Number($('amount').value)||0;
+  if(amount<=0)return;
+
+  const name=$('category').value;
+  const type=entryType;
+  const cat=type==='income'?null:budgetCategories.find(c=>c.name===name);
+  let incomeCatId=null;
+
+  if(type==='income'){
+    const {data,error:catError}=await supabaseClient
+      .from('categories')
+      .select('id')
+      .eq('user_id',currentUser.id)
+      .eq('type','income')
+      .eq('name',name)
+      .single();
+    if(catError)return alert(catError.message);
+    incomeCatId=data?.id;
+  }
+
+  const transactionId=crypto.randomUUID();
+  const payload={
+    id:transactionId,
+    user_id:currentUser.id,
+    transaction_date:$('date').value||todayLocal(),
+    type,
+    amount,
+    category_id:cat?.id||incomeCatId,
+    payment_method:type==='income'?'현금':$('method').value,
+    memo:$('memo').value.trim()
+  };
+
+  const {error}=await supabaseClient.from('transactions').insert(payload);
+  if(error)return alert(error.message);
+
+  // 지출을 적금에 연결한 경우에만 자산의 저축 금액에 반영
+  const savingId=$('savingAssetSelect')?.value||'';
+  if(type==='expense'&&name==='적금'&&savingId){
+    await applySavingLink(transactionId,savingId,amount);
+  }else{
+    saveSavingLink(transactionId,null,0);
+  }
+
+  closeModal('modal');
+  e.target.reset();
+  $('date').value=todayLocal();
+  if($('savingAssetSelect'))$('savingAssetSelect').value='';
+  updateSavingLinkField();
+  fillCategories();
+  await loadAll();
+}
 async function saveAsset(e){e.preventDefault();const id=$('assetId').value;const name=$('assetName').value.trim();const type=$('assetType').value;const amountValue=$('assetAmount').value;const interestValue=$('assetInterestRate').value;const maturityDate=$('assetMaturityDate').value;if(!name)return alert('자산 이름을 입력해 주세요.');if(amountValue===''||Number(amountValue)<0)return alert('현재 금액을 확인해 주세요.');if(type==='저축'&&interestValue!==''&&Number(interestValue)<0)return alert('금리를 확인해 주세요.');const basePayload={user_id:currentUser.id,name,asset_type:type,amount:Number(amountValue)};const savingPayload={...basePayload,interest_rate:interestValue===''?null:Number(interestValue),maturity_date:maturityDate||null};let q=id?supabaseClient.from('assets').update(savingPayload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('assets').insert(savingPayload);let {error}=await q;if(error&&type==='저축'){q=id?supabaseClient.from('assets').update(basePayload).eq('id',id).eq('user_id',currentUser.id):supabaseClient.from('assets').insert(basePayload);({error}=await q);if(!error){try{const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');const key=id||assets.find(a=>a.name===name)?.id;if(key)all[key]={interestRate:interestValue,maturityDate};localStorage.setItem('monee_asset_meta',JSON.stringify(all))}catch(e){}}}if(error)return alert(error.message);if(type!=='저축'&&id){try{const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');delete all[id];localStorage.setItem('monee_asset_meta',JSON.stringify(all))}catch(e){}}closeModal('assetModal');e.target.reset();$('assetId').value='';setSavingFieldsVisible('입출금');await loadAll()}
 async function saveGoal(e){e.preventDefault();const id=$('goalId').value;const name=$('goalName').value.trim();const targetAmount=Number($('goalTarget').value)||0;const currentAmount=Number($('goalCurrent').value)||0;const addAmount=Math.max(0,Number($('goalAddAmount').value)||0);if(!name)return alert('목표 이름을 입력해 주세요.');if(id){const payload={name,target_amount:targetAmount,current_amount:currentAmount+addAmount};const {error}=await supabaseClient.from('goals').update(payload).eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message)}else{const payload={user_id:currentUser.id,name,target_amount:targetAmount,current_amount:currentAmount};const {error}=await supabaseClient.from('goals').insert(payload);if(error)return alert(error.message)}closeModal('goalModal');e.target.reset();$('goalId').value='';$('goalAddAmount').value='';$('goalSubmitBtn').textContent='목표 추가하기';await loadAll()}
 async function login(e){e.preventDefault();$('loginMessage').textContent='';$('loginBtn').disabled=true;const {error}=await supabaseClient.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error)$('loginMessage').textContent='로그인에 실패했어요. 이메일 또는 비밀번호를 확인해 주세요.';$('loginBtn').disabled=false}
