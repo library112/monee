@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.38 · 최근내역 더보기 표시 방식 수정</title>
+<title>monee · 가계부 · ver.2.39 · 적금 상세 입금내역 추가</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -493,6 +493,25 @@ nav.nav .icon{
 .edit-danger-actions .danger-btn{order:1}
 .edit-danger-actions .primary{order:2}
 
+
+.saving-detail-modal{max-width:460px}
+.saving-detail-summary{display:grid;grid-template-columns:1.2fr .8fr .9fr;gap:8px;margin:4px 0 18px}
+.saving-detail-summary>div{padding:11px 10px;border:1px solid var(--line);border-radius:10px;background:#fafcfb}
+.saving-detail-summary span{display:block;font-size:9px;color:var(--muted);margin-bottom:4px}
+.saving-detail-summary strong{display:block;font-size:11px;color:#40505e}
+.saving-detail-summary>div:first-child strong{font-size:14px;color:var(--blue-dark)}
+.saving-detail-section-title{font-size:11px;font-weight:700;color:#4b5965;margin-bottom:8px}
+.saving-deposit-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}
+.saving-deposit{display:grid;grid-template-columns:76px 1fr auto;gap:8px;align-items:center;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer}
+.saving-deposit:hover{background:#f8fafc}
+.saving-deposit-date{font-size:10px;color:var(--muted)}
+.saving-deposit-memo{font-size:10px;color:#66737e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saving-deposit-amount{font-size:11px;font-weight:700;color:#52769b;white-space:nowrap}
+.saving-empty{padding:16px 8px;text-align:center;font-size:10px;color:#9aa4ad;border:1px dashed var(--line);border-radius:9px}
+@media(max-width:600px){
+  .saving-detail-summary{grid-template-columns:1fr 1fr 1fr}
+  .saving-deposit{grid-template-columns:68px 1fr auto}
+}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -544,7 +563,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.38">ver.2.38</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.39">ver.2.39</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -618,7 +637,7 @@ const supabaseClient = window.supabase.createClient(
 
     <section id="goals" class="page"><div class="goals-page"><div class="section-head"><h2>나의 목표</h2></div><div class="goal-list" id="goalList"></div></div></section>
 
-    <section id="finance" class="page"><div class="finance-page"><div class="section-head"><div><h2>금융노트</h2><p class="page-subtitle">나중에 다시 확인해야 할 금융 정보를 한곳에 기록해 보세요.</p></div></div><div class="finance-grid"><article class="card finance-card"><div class="finance-card-head"><h3>📌 기억할 금융정보</h3><p>금융상품이나 계좌와 관련해 따로 기억해둘 내용을 기록해요.</p></div><div id="financeInfoList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>📅 금융 일정</h3><p>만기일, 갱신일처럼 나중에 다시 확인할 날짜를 기록해요.</p></div><div id="financeScheduleList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>🔄 정기 납부</h3><p>매월 또는 정기적으로 빠져나가는 금액과 날짜를 기록해요.</p></div><div id="financePaymentList" class="finance-note-list"></div></article></div></div></section><div class="modal-back" id="financeNoteModal"><div class="modal"><div class="modal-head"><div><h3 id="financeNoteModalTitle">금융정보 추가</h3><p class="modal-help">나중에 다시 확인하고 싶은 금융 정보를 기록해 보세요.</p></div><button class="x" data-close-modal="financeNoteModal">×</button></div><form id="financeNoteForm" class="form-grid finance-note-form"><input type="hidden" id="financeNoteId"><div class="field full"><label>분류</label><select id="financeNoteType"><option value="info">기억할 금융정보</option><option value="schedule">금융 일정</option><option value="payment">정기 납부</option></select></div><div class="field full"><label>제목</label><input id="financeNoteTitle" type="text" required placeholder="예: 적금 만기 후 재예치 여부 확인"></div><div class="field"><label>금액</label><input id="financeNoteAmount" type="number" min="0" step="1" placeholder="선택사항"></div><div class="field"><label>날짜</label><input id="financeNoteDate" type="date"></div><div class="field full"><label>메모</label><textarea id="financeNoteMemo" rows="3" placeholder="추가로 기억해둘 내용을 적어주세요."></textarea></div><button class="primary full" type="submit">저장하기</button></form></div></div><section id="settings" class="page"><article class="card panel"><div class="section-head"><h2>설정</h2></div><div class="settings-list"><div class="setting"><div><strong>항목별 월 예산</strong><span>카테고리별 예산을 수정할 수 있어요.</span></div><button id="editBudgetSetting">수정</button></div><div class="setting"><div><strong>자산 관리</strong><span>계좌·적금·투자·현금을 관리해요.</span></div><button id="openAssetsSetting" type="button">수정</button></div><div class="setting"><div><strong>데이터 백업</strong><span>현재 가계부 데이터를 저장해요.</span></div><button id="saveBackup">저장</button></div></div><div class="account-setting"><div><strong>계정</strong><span id="settingsUserEmail"></span></div><button id="settingsLogoutBtn" type="button">로그아웃</button></div></article></section>
+    <section id="finance" class="page"><div class="finance-page"><div class="section-head"><div><h2>금융노트</h2><p class="page-subtitle">나중에 다시 확인해야 할 금융 정보를 한곳에 기록해 보세요.</p></div></div><div class="finance-grid"><article class="card finance-card"><div class="finance-card-head"><h3>📌 기억할 금융정보</h3><p>금융상품이나 계좌와 관련해 따로 기억해둘 내용을 기록해요.</p></div><div id="financeInfoList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>📅 금융 일정</h3><p>만기일, 갱신일처럼 나중에 다시 확인할 날짜를 기록해요.</p></div><div id="financeScheduleList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>🔄 정기 납부</h3><p>매월 또는 정기적으로 빠져나가는 금액과 날짜를 기록해요.</p></div><div id="financePaymentList" class="finance-note-list"></div></article></div></div></section><div class="modal-back" id="financeNoteModal"><div class="modal"><div class="modal-head"><div><h3 id="financeNoteModalTitle">금융정보 추가</h3><p class="modal-help">나중에 다시 확인하고 싶은 금융 정보를 기록해 보세요.</p></div><button class="x" data-close-modal="financeNoteModal">×</button></div><form id="financeNoteForm" class="form-grid finance-note-form"><input type="hidden" id="financeNoteId"><div class="field full"><label>분류</label><select id="financeNoteType"><option value="info">기억할 금융정보</option><option value="schedule">금융 일정</option><option value="payment">정기 납부</option></select></div><div class="field full"><label>제목</label><input id="financeNoteTitle" type="text" required placeholder="예: 적금 만기 후 재예치 여부 확인"></div><div class="field"><label>금액</label><input id="financeNoteAmount" type="number" min="0" step="1" placeholder="선택사항"></div><div class="field"><label>날짜</label><input id="financeNoteDate" type="date"></div><div class="field full"><label>메모</label><textarea id="financeNoteMemo" rows="3" placeholder="추가로 기억해둘 내용을 적어주세요."></textarea></div><button class="primary full" type="submit">저장하기</button></form></div></div><div class="modal-back" id="savingDetailModal"><div class="modal saving-detail-modal"><div class="modal-head"><div><h3 id="savingDetailTitle">적금 상세</h3><p class="modal-help">해당 적금에 반영된 입금 내역을 확인할 수 있어요.</p></div><button class="x" data-close-modal="savingDetailModal">×</button></div><div class="saving-detail-summary"><div><span>현재 잔액</span><strong id="savingDetailAmount">₩0</strong></div><div><span>금리</span><strong id="savingDetailRate">-</strong></div><div><span>만기일</span><strong id="savingDetailMaturity">-</strong></div></div><div class="saving-detail-section"><div class="saving-detail-section-title">입금 내역</div><div id="savingDepositList" class="saving-deposit-list"></div></div></div></div><section id="settings" class="page"><article class="card panel"><div class="section-head"><h2>설정</h2></div><div class="settings-list"><div class="setting"><div><strong>항목별 월 예산</strong><span>카테고리별 예산을 수정할 수 있어요.</span></div><button id="editBudgetSetting">수정</button></div><div class="setting"><div><strong>자산 관리</strong><span>계좌·적금·투자·현금을 관리해요.</span></div><button id="openAssetsSetting" type="button">수정</button></div><div class="setting"><div><strong>데이터 백업</strong><span>현재 가계부 데이터를 저장해요.</span></div><button id="saveBackup">저장</button></div></div><div class="account-setting"><div><strong>계정</strong><span id="settingsUserEmail"></span></div><button id="settingsLogoutBtn" type="button">로그아웃</button></div></article></section>
   </main>
 </div>
 
@@ -936,6 +955,56 @@ function renderBudget(){
 function renderTrend(){const months=[];for(let i=5;i>=0;i--){let d=new Date(viewYear,viewMonth-i,1);let y=d.getFullYear(),m=d.getMonth();const prefix=`${y}-${String(m+1).padStart(2,'0')}`;const spent=transactions.filter(t=>t.type==='expense'&&t.transaction_date?.startsWith(prefix)).reduce((s,t)=>s+Number(t.amount),0);months.push({label:`${m+1}월`,spent})}const max=Math.max(...months.map(x=>x.spent),1);document.querySelector('.bars').innerHTML=months.map((x,i)=>`<div class="bar-col"><div class="month-bar-wrap"><i class="month-bar ${i===5?'current':''}" style="height:${Math.max(4,Math.round(x.spent/max*88))}%"></i></div><span>${x.label}</span><b>${money(x.spent)}</b></div>`).join('');const prev=months[4]?.spent||0,cur=months[5]?.spent||0;const diff=cur-prev,pct=prev?Math.abs(diff/prev*100):0;document.querySelector('.compare').innerHTML=`지난달(${months[4]?.label||''}) 대비 <b>${diff>=0?'+':'-'}${money(Math.abs(diff))} (${pct.toFixed(1)}%) ${diff<=0?'↓':'↑'}</b>`}
 function renderPace(){const rows=computeBudgetRows(),total=rows.reduce((s,c)=>s+c.budget,0),spent=rows.reduce((s,c)=>s+c.spent,0);const now=new Date(),daysInMonth=new Date(viewYear,viewMonth+1,0).getDate(),day=(viewYear===now.getFullYear()&&viewMonth===now.getMonth())?now.getDate():daysInMonth;const remainDays=Math.max(0,daysInMonth-day),avg=day?spent/day:0,allowed=remainDays?Math.max(0,total-spent)/remainDays:Math.max(0,total-spent);document.querySelector('.pace-status').textContent=avg<=(total/daysInMonth||0)?'적정':'주의';document.querySelector('.days-compact b').textContent=remainDays;document.querySelector('.days-compact span').textContent='일 남음';document.querySelector('.pace-center b').textContent=`하루 평균 ${money(avg)} 사용 중`;document.querySelector('.pace-center span').textContent=`목표: 하루 ${money(total/daysInMonth||0)} 이하`;document.querySelector('.pace-bottom').innerHTML=`<div><span>하루 사용 가능 금액</span><b>${money(allowed)}</b></div><div><span>${viewMonth+1}월 ${daysInMonth}일까지</span><b>${remainDays}일</b></div>`;document.querySelector('.good').textContent=spent<=total?'현재 페이스를 유지하면 예산 내에서 마무리할 수 있어요!':'예산을 이미 초과했어요. 남은 기간의 지출을 조금 줄여보세요.'}
 function assetTypeLabel(type){return type==='현금성'?'입출금':(type||'기타')}
+
+function savingAssetType(a){return String(a?.asset_type||'').trim()==='저축'}
+function formatSavingDate(v){
+  if(!v)return '-';
+  const d=new Date(v+'T00:00:00');
+  return `${d.getMonth()+1}월 ${d.getDate()}일`;
+}
+async function openSavingDetail(assetId){
+  const asset=assets.find(a=>String(a.id)===String(assetId));
+  if(!asset)return;
+  $('savingDetailTitle').textContent=asset.name||'적금';
+  $('savingDetailAmount').textContent=money(Number(asset.amount)||0);
+  $('savingDetailRate').textContent=asset.interest_rate!=null&&asset.interest_rate!==''?`${asset.interest_rate}%`:'-';
+  $('savingDetailMaturity').textContent=asset.maturity_date?formatSavingDate(asset.maturity_date):'-';
+
+  let links={};
+  try{links=JSON.parse(localStorage.getItem('monee_saving_links')||'{}')}catch(e){links={}}
+  const linkedIds=Object.keys(links).filter(id=>String(links[id]?.assetId)===String(assetId));
+  const list=[];
+  linkedIds.forEach(id=>{
+    const tx=transactions.find(t=>String(t.id)===String(id));
+    const link=links[id];
+    if(tx&&Number(link.amount||0)>0){
+      list.push({tx,amount:Number(link.amount)||0});
+    }
+  });
+  list.sort((a,b)=>{
+    const ad=new Date((a.tx.transaction_date||'')+'T00:00:00').getTime()||0;
+    const bd=new Date((b.tx.transaction_date||'')+'T00:00:00').getTime()||0;
+    return bd-ad;
+  });
+
+  const target=$('savingDepositList');
+  if(!list.length){
+    target.innerHTML='<div class="saving-empty">아직 반영된 입금 내역이 없어요.</div>';
+  }else{
+    target.innerHTML=list.map(({tx,amount})=>{
+      const cat=budgetCategories.find(c=>c.id===tx.category_id);
+      return `<div class="saving-deposit" data-saving-tx-id="${escapeText(tx.id)}"><span class="saving-deposit-date">${formatSavingDate(tx.transaction_date)}</span><span class="saving-deposit-memo">${escapeText(tx.memo||cat?.name||'적금')}</span><span class="saving-deposit-amount">+${money(amount)}</span></div>`;
+    }).join('');
+    target.querySelectorAll('[data-saving-tx-id]').forEach(row=>{
+      row.onclick=()=>{
+        closeModal('savingDetailModal');
+        openTransactionEdit(row.dataset.savingTxId);
+      };
+    });
+  }
+  openModal('savingDetailModal');
+}
+
 function renderAssets(){
   const total=assets.reduce((s,a)=>s+Number(a.amount),0),
         cash=assets.filter(a=>['입출금','현금성'].includes(a.asset_type)).reduce((s,a)=>s+Number(a.amount),0),
@@ -1460,6 +1529,14 @@ function openModal(id){$(id).classList.add('show');setModalLock(true)}
 function closeModal(id){$(id).classList.remove('show');setModalLock(false)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 $('prevMonth').onclick=async()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}await loadAll()};$('nextMonth').onclick=async()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}await loadAll()};
+
+document.addEventListener('click',function(e){
+  const card=e.target.closest('[data-asset-id]');
+  if(!card)return;
+  const asset=assets.find(a=>String(a.id)===String(card.dataset.assetId));
+  if(asset&&savingAssetType(asset))openSavingDetail(asset.id);
+});
+
 $('floatingAction').onclick=()=>{const active=document.querySelector('.page.active')?.id;if(active==='assets')openAsset();else if(active==='goals')openGoal();else if(active==='finance')openFinanceNote('');else{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField();$('date').value=todayLocal();$('amount').value='';$('memo').value='';openModal('modal')}};
 $('openAllTransactions').onclick=()=>{renderAllTransactions();openModal('allTransactionsModal')};$('moreTransactions').onclick=function(e){e.preventDefault();e.stopPropagation();const rows=document.querySelectorAll('#budget .recent [data-extra-recent="true"]');const open=this.dataset.open==='true';rows.forEach(row=>{row.style.display=open?'none':'grid';});this.dataset.open=open?'false':'true';this.classList.toggle('expanded',!open);this.querySelector('.more-label').textContent=open?'더 보기':'접기';this.querySelector('.more-chevron').textContent=open?'▼':'▲';};
 $('incomeOverviewCard').onclick=()=>{renderIncomeTransactions();openModal('incomeTransactionsModal')};
