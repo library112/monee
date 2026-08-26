@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.56 · 목표 카드 금액 배치 개선</title>
+<title>monee 가계부 · ver.2.57 · 모바일 자산 수정팝업 확대 문제 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -77,6 +77,21 @@ button,input,select{font:inherit}button{cursor:pointer}
   .main{padding:18px 12px 82px}
 }
 @media(max-width:430px){
+  /* iOS Safari automatically zooms focused form controls below 16px.
+     Keep modal controls at 16px so the modal stays at the viewport scale. */
+  .modal input,
+  .modal select,
+  .modal textarea{
+    font-size:16px!important;
+    -webkit-text-size-adjust:100%;
+  }
+  #assetModal .modal{
+    width:calc(100% - 24px);
+    max-width:620px;
+    max-height:88vh;
+    overflow-y:auto;
+  }
+
   .floating-action{
     width:40px!important;
     height:40px!important;
@@ -578,7 +593,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.56">ver.2.56</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.57">ver.2.57</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
