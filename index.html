@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.53 · 새 적금 저장 오류 수정</title>
+<title>monee 가계부 · ver.2.54 · 금융노트 금액 저장 오류 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -578,7 +578,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.53">ver.2.53</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.54">ver.2.54</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -652,7 +652,7 @@ const supabaseClient = window.supabase.createClient(
 
     <section id="goals" class="page"><div class="goals-page"><div class="section-head"><h2>나의 목표</h2></div><div class="goal-list" id="goalList"></div></div></section>
 
-    <section id="finance" class="page"><div class="finance-page"><div class="section-head"><div><h2>금융노트</h2><p class="page-subtitle">나중에 다시 확인해야 할 금융 정보를 한곳에 기록해 보세요.</p></div></div><div class="finance-grid"><article class="card finance-card"><div class="finance-card-head"><h3>📌 기억할 금융정보</h3><p>금융상품이나 계좌와 관련해 따로 기억해둘 내용을 기록해요.</p></div><div id="financeInfoList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>📅 금융 일정</h3><p>만기일, 갱신일처럼 나중에 다시 확인할 날짜를 기록해요.</p></div><div id="financeScheduleList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>🔄 정기 납부</h3><p>매월 또는 정기적으로 빠져나가는 금액과 날짜를 기록해요.</p></div><div id="financePaymentList" class="finance-note-list"></div></article></div></div></section><div class="modal-back" id="financeNoteModal"><div class="modal"><div class="modal-head"><div><h3 id="financeNoteModalTitle">금융정보 추가</h3><p class="modal-help">나중에 다시 확인하고 싶은 금융 정보를 기록해 보세요.</p></div><button class="x" data-close-modal="financeNoteModal">×</button></div><form id="financeNoteForm" class="form-grid finance-note-form"><input type="hidden" id="financeNoteId"><div class="field full"><label>분류</label><select id="financeNoteType"><option value="info">기억할 금융정보</option><option value="schedule">금융 일정</option><option value="payment">정기 납부</option></select></div><div class="field full"><label>제목</label><input id="financeNoteTitle" type="text" required placeholder="예: 적금 만기 후 재예치 여부 확인"></div><div class="field"><label>금액</label><input id="financeNoteAmount" type="number" min="0" step="1" placeholder="선택사항"></div><div class="field"><label>날짜</label><input id="financeNoteDate" type="date"></div><div class="field full"><label>메모</label><textarea id="financeNoteMemo" rows="3" placeholder="추가로 기억해둘 내용을 적어주세요."></textarea></div><button class="primary full" type="submit">저장하기</button></form></div></div><div class="modal-back" id="savingDetailModal"><div class="modal saving-detail-modal"><div class="modal-head"><div><h3 id="savingDetailTitle">적금 상세</h3><p class="modal-help">해당 적금에 반영된 입금 내역을 확인할 수 있어요.</p></div><button class="x" data-close-modal="savingDetailModal">×</button></div><div class="saving-detail-summary">
+    <section id="finance" class="page"><div class="finance-page"><div class="section-head"><div><h2>금융노트</h2><p class="page-subtitle">나중에 다시 확인해야 할 금융 정보를 한곳에 기록해 보세요.</p></div></div><div class="finance-grid"><article class="card finance-card"><div class="finance-card-head"><h3>📌 기억할 금융정보</h3><p>금융상품이나 계좌와 관련해 따로 기억해둘 내용을 기록해요.</p></div><div id="financeInfoList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>📅 금융 일정</h3><p>만기일, 갱신일처럼 나중에 다시 확인할 날짜를 기록해요.</p></div><div id="financeScheduleList" class="finance-note-list"></div></article><article class="card finance-card"><div class="finance-card-head"><h3>🔄 정기 납부</h3><p>매월 또는 정기적으로 빠져나가는 금액과 날짜를 기록해요.</p></div><div id="financePaymentList" class="finance-note-list"></div></article></div></div></section><div class="modal-back" id="financeNoteModal"><div class="modal"><div class="modal-head"><div><h3 id="financeNoteModalTitle">금융정보 추가</h3><p class="modal-help">나중에 다시 확인하고 싶은 금융 정보를 기록해 보세요.</p></div><button class="x" data-close-modal="financeNoteModal">×</button></div><form id="financeNoteForm" class="form-grid finance-note-form"><input type="hidden" id="financeNoteId"><div class="field full"><label>분류</label><select id="financeNoteType"><option value="info">기억할 금융정보</option><option value="schedule">금융 일정</option><option value="payment">정기 납부</option></select></div><div class="field full"><label>제목</label><input id="financeNoteTitle" type="text" required placeholder="예: 적금 만기 후 재예치 여부 확인"></div><div class="field"><label>금액</label><input id="financeNoteAmount" type="text" inputmode="numeric" placeholder="선택사항"></div><div class="field"><label>날짜</label><input id="financeNoteDate" type="date"></div><div class="field full"><label>메모</label><textarea id="financeNoteMemo" rows="3" placeholder="추가로 기억해둘 내용을 적어주세요."></textarea></div><button class="primary full" type="submit">저장하기</button></form></div></div><div class="modal-back" id="savingDetailModal"><div class="modal saving-detail-modal"><div class="modal-head"><div><h3 id="savingDetailTitle">적금 상세</h3><p class="modal-help">해당 적금에 반영된 입금 내역을 확인할 수 있어요.</p></div><button class="x" data-close-modal="savingDetailModal">×</button></div><div class="saving-detail-summary">
 <div data-saving-edit="amount"><span>현재 잔액</span><strong id="savingDetailAmount">₩0</strong></div>
 <div data-saving-edit="rate"><span>금리</span><strong id="savingDetailRate">-</strong></div>
 <div data-saving-edit="term"><span>가입기간</span><strong id="savingDetailTerm">-</strong></div>
@@ -1334,7 +1334,7 @@ function saveFinanceNoteForm(e){
     userId:currentUser.id,
     type:$('financeNoteType').value,
     title:$('financeNoteTitle').value.trim(),
-    amount:$('financeNoteAmount').value,
+    amount:currencyNumber('financeNoteAmount'),
     date:$('financeNoteDate').value,
     memo:$('financeNoteMemo').value.trim()
   };
