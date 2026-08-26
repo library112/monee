@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.37 · 최근내역 더보기 구조 수정</title>
+<title>monee · 가계부 · ver.2.38 · 최근내역 더보기 표시 방식 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -493,8 +493,6 @@ nav.nav .icon{
 .edit-danger-actions .danger-btn{order:1}
 .edit-danger-actions .primary{order:2}
 
-.recent .extra-tx-row{display:none!important}
-.recent.show-extra .extra-tx-row{display:grid!important}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -546,7 +544,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.37">ver.2.37</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.38">ver.2.38</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -923,11 +921,11 @@ function renderBudget(){
  const recent=sortTransactions(transactions.filter(t=>t.type==='expense')).slice(0,8);
  const recentContainer=document.querySelector('#budget .recent');
  const moreBtn=$('moreTransactions');
- const txHtml=(t,index)=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row ${index>=5?'extra-tx-row':''}" data-transaction-id="${escapeText(t.id)}" style="cursor:pointer"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`};
+ const txHtml=(t,index)=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);const extra=index>=5?' data-extra-recent="true" style="display:none;cursor:pointer"':' style="cursor:pointer"';return `<div class="tx-row"${extra} data-transaction-id="${escapeText(t.id)}"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`};
  recentContainer.querySelectorAll('.tx-row').forEach(x=>x.remove());
  if(recent.length){moreBtn.style.display=recent.length>5?'flex':'none';recent.forEach((t,i)=>moreBtn.insertAdjacentHTML('beforebegin',txHtml(t,i)));}
  else{moreBtn.style.display='none';}
- recentContainer.classList.remove('show-extra');
+ moreBtn.dataset.open='false';
  moreBtn.classList.remove('expanded');
  moreBtn.querySelector('.more-label').textContent='더 보기';
  moreBtn.querySelector('.more-chevron').textContent='▼';
@@ -1463,7 +1461,7 @@ function closeModal(id){$(id).classList.remove('show');setModalLock(false)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 $('prevMonth').onclick=async()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}await loadAll()};$('nextMonth').onclick=async()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}await loadAll()};
 $('floatingAction').onclick=()=>{const active=document.querySelector('.page.active')?.id;if(active==='assets')openAsset();else if(active==='goals')openGoal();else if(active==='finance')openFinanceNote('');else{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField();$('date').value=todayLocal();$('amount').value='';$('memo').value='';openModal('modal')}};
-$('openAllTransactions').onclick=()=>{renderAllTransactions();openModal('allTransactionsModal')};
+$('openAllTransactions').onclick=()=>{renderAllTransactions();openModal('allTransactionsModal')};$('moreTransactions').onclick=function(e){e.preventDefault();e.stopPropagation();const rows=document.querySelectorAll('#budget .recent [data-extra-recent="true"]');const open=this.dataset.open==='true';rows.forEach(row=>{row.style.display=open?'none':'grid';});this.dataset.open=open?'false':'true';this.classList.toggle('expanded',!open);this.querySelector('.more-label').textContent=open?'더 보기':'접기';this.querySelector('.more-chevron').textContent=open?'▼':'▲';};
 $('incomeOverviewCard').onclick=()=>{renderIncomeTransactions();openModal('incomeTransactionsModal')};
 $('incomeOverviewCard').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();renderIncomeTransactions();openModal('incomeTransactionsModal')}};
 $('incomeEditForm').addEventListener('submit',saveIncomeEdit);$('deleteIncomeBtn').onclick=deleteIncomeRecord;$('deleteTransactionBtn').onclick=deleteTransactionRecord;
