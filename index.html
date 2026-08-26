@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.33 · 적금 지출 저장 오류 수정</title>
+<title>monee · 가계부 · ver.2.34 · 예산 초과표시 및 내역 관리 개선</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -478,6 +478,13 @@ nav.nav .icon{
 
 .saving-link-field{grid-column:1/-1}.saving-link-field select{width:100%}
 .saving-link-help{font-size:9px;color:var(--muted);margin-top:5px}
+
+.edit-danger-actions{display:flex!important;justify-content:flex-end;gap:8px;margin-top:4px}
+.edit-danger-actions .danger-btn{margin-right:auto}
+.danger-btn{border:0;border-radius:9px;padding:9px 14px;background:#fff0f0;color:#dc3545;font-weight:700;cursor:pointer}
+.danger-btn:hover{background:#ffe3e3}
+.rate.over{color:#dc3545;font-weight:700}
+.bar-fill.over{box-shadow:inset 0 0 0 1px rgba(180,20,20,.08)}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -529,7 +536,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.33">ver.2.33</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.34">ver.2.34</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -613,8 +620,8 @@ const supabaseClient = window.supabase.createClient(
 
 <div class="modal-back" id="allTransactionsModal"><div class="modal"><div class="modal-head"><h3>전체 내역</h3><button class="x" data-close-modal="allTransactionsModal">×</button></div><div id="allTransactionsList"></div></div></div>
 <div class="modal-back" id="incomeTransactionsModal"><div class="modal"><div class="modal-head"><h3>수입 내역</h3><button class="x" data-close-modal="incomeTransactionsModal">×</button></div><div id="incomeTransactionsList" class="income-list"></div></div></div>
-<div class="modal-back" id="incomeEditModal"><div class="modal"><div class="modal-head"><h3>수입 수정</h3><button class="x" data-close-modal="incomeEditModal">×</button></div><form id="incomeEditForm" class="form-grid"><input type="hidden" id="editIncomeId"><div class="field"><label>날짜</label><input id="editIncomeDate" type="date" required></div><div class="field"><label>금액</label><input id="editIncomeAmount" type="number" min="1" required></div><div class="field"><label>카테고리</label><select id="editIncomeCategory"></select></div><div class="field full"><label>내용 / 메모</label><input id="editIncomeMemo" maxlength="100"></div><button class="primary full" type="submit">수정하기</button></form></div></div>
-<div class="modal-back" id="transactionEditModal"><div class="modal"><div class="modal-head"><h3>내역 수정</h3><button class="x" data-close-modal="transactionEditModal">×</button></div><form id="transactionEditForm" class="form-grid"><input type="hidden" id="editTransactionId"><div class="field"><label>날짜</label><input id="editDate" type="date" required></div><div class="field"><label>금액</label><input id="editAmount" type="number" min="1" required></div><div class="field"><label>카테고리</label><select id="editCategory"></select></div><div class="field"><label>결제수단</label><select id="editMethod"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></div><div class="field full"><label>내용 / 메모</label><input id="editMemo" maxlength="100"></div><button class="primary full" type="submit">수정하기</button></form></div></div>
+<div class="modal-back" id="incomeEditModal"><div class="modal"><div class="modal-head"><h3>수입 수정</h3><button class="x" data-close-modal="incomeEditModal">×</button></div><form id="incomeEditForm" class="form-grid"><input type="hidden" id="editIncomeId"><div class="field"><label>날짜</label><input id="editIncomeDate" type="date" required></div><div class="field"><label>금액</label><input id="editIncomeAmount" type="number" min="1" required></div><div class="field"><label>카테고리</label><select id="editIncomeCategory"></select></div><div class="field full"><label>내용 / 메모</label><input id="editIncomeMemo" maxlength="100"></div><div class="modal-actions full edit-danger-actions"><button class="danger-btn" id="deleteIncomeBtn" type="button">삭제하기</button><button class="primary" type="submit">수정하기</button></div></form></div></div>
+<div class="modal-back" id="transactionEditModal"><div class="modal"><div class="modal-head"><h3>내역 수정</h3><button class="x" data-close-modal="transactionEditModal">×</button></div><form id="transactionEditForm" class="form-grid"><input type="hidden" id="editTransactionId"><div class="field"><label>날짜</label><input id="editDate" type="date" required></div><div class="field"><label>금액</label><input id="editAmount" type="number" min="1" required></div><div class="field"><label>카테고리</label><select id="editCategory"></select></div><div class="field"><label>결제수단</label><select id="editMethod"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></div><div class="field full"><label>내용 / 메모</label><input id="editMemo" maxlength="100"></div><div class="modal-actions full edit-danger-actions"><button class="danger-btn" id="deleteTransactionBtn" type="button">삭제하기</button><button class="primary" type="submit">수정하기</button></div></form></div></div>
 <div class="modal-back" id="budgetEditModal"><div class="modal budget-edit-modal"><div class="modal-head"><div><h3>항목별 월 예산 수정</h3><p class="modal-help">항목 이름·Lucide 아이콘·예산을 수정할 수 있고, 왼쪽 ⋮⋮를 드래그해서 순서를 바꿀 수 있어요.</p></div><button class="x" data-close-modal="budgetEditModal">×</button></div>
 <div class="budget-edit-list" id="budgetEditList"></div>
 <button class="add-category-btn" id="addBudgetCategory" type="button">＋ 항목 추가</button>
@@ -878,16 +885,19 @@ function renderBudget(){
  const budgetRowHtml=c=>{
    const budget=Math.max(0,Number(c.budget)||0);
    const spent=Math.max(0,Number(c.spent)||0);
-   const pct=budget>0?Math.max(0,Math.min(100,(spent/budget)*100)):(spent>0?100:0);
-   const pctText=budget>0?`${pct.toFixed(1)}%`:(spent>0?'사용액 있음':'0.0%');
+   const rawPct=budget>0?(spent/budget)*100:(spent>0?Infinity:0);
+   const barPct=Number.isFinite(rawPct)?Math.max(0,Math.min(100,rawPct)):(spent>0?100:0);
+   const pctText=budget>0?`${rawPct.toFixed(1)}%`:(spent>0?'사용액 있음':'0.0%');
+   const barColor=rawPct>100?'#ef4444':rawPct===100?'var(--orange)':'var(--blue)';
+   const rateClass=rawPct>100?'over':rawPct===100?'warn':'';
    return `<div class="tr">
      <div class="cat-label"><span class="cat-icon"><i data-lucide="${escapeText(catIcon(c))}"></i></span><span class="cat-name">${escapeText(c.name)}</span></div>
      <div class="bar-wrap">
        <div class="bar-track" aria-label="${escapeText(c.name)} 사용률 ${pctText}">
-         <span class="bar-fill ${pct>=70?'warn':''}" style="display:block!important;width:${pct.toFixed(2)}%!important;min-width:${pct>0?'2px':'0'};height:100%;background:${pct>=70?'var(--orange)':'var(--green)'};border-radius:999px;"></span>
+         <span class="bar-fill ${rateClass}" style="display:block!important;width:${barPct.toFixed(2)}%!important;min-width:${barPct>0?'2px':'0'};height:100%;background:${barColor};border-radius:999px;"></span>
        </div>
      </div>
-     <div class="rate ${pct>=70?'warn':''}">${pctText}</div>
+     <div class="rate ${rateClass}">${pctText}</div>
      <div class="num">${money(budget)}</div>
      <div class="num red">${money(spent)}</div>
      <div class="num green">${money(Math.max(0,budget-spent))}</div>
@@ -1317,6 +1327,26 @@ function renderIncomeTransactions(){
   }).join(''):'<div class="income-empty">이번 달에 등록된 수입이 없어요.</div>';
   document.querySelectorAll('[data-income-id]').forEach(x=>x.onclick=()=>openIncomeEdit(x.dataset.incomeId));
 }
+
+async function deleteTransactionRecord(){
+  const id=$("editTransactionId").value;
+  if(!id)return;
+  if(!confirm('이 내역을 삭제할까요?'))return;
+  const {error}=await supabaseClient.from('transactions').delete().eq('id',id).eq('user_id',currentUser.id);
+  if(error)return alert(error.message);
+  await reverseSavingLink(id);
+  closeModal('transactionEditModal');
+  await loadAll();
+}
+async function deleteIncomeRecord(){
+  const id=$("editIncomeId").value;
+  if(!id)return;
+  if(!confirm('이 수입 내역을 삭제할까요?'))return;
+  const {error}=await supabaseClient.from('transactions').delete().eq('id',id).eq('user_id',currentUser.id).eq('type','income');
+  if(error)return alert(error.message);
+  closeModal('incomeEditModal');
+  await loadAll();
+}
 async function saveTransactionEdit(e){e.preventDefault();const id=$("editTransactionId").value;const payload={transaction_date:$("editDate").value,amount:Number($("editAmount").value)||0,category_id:$("editCategory").value||null,payment_method:$("editMethod").value,memo:$("editMemo").value.trim()};if(payload.amount<=0)return;const {error}=await supabaseClient.from('transactions').update(payload).eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);saveEditTimestamp(id);closeModal('transactionEditModal');await loadAll()}
 function renderAllTransactions(){const list=sortTransactions(transactions.filter(t=>t.type==='expense'));$("allTransactionsList").innerHTML=list.length?list.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row" data-all-transaction-id="${escapeText(t.id)}" style="cursor:pointer"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join(''):'<div class="empty-state">등록된 내역이 없어요.</div>';document.querySelectorAll('[data-all-transaction-id]').forEach(x=>x.onclick=()=>openTransactionEdit(x.dataset.allTransactionId));renderLucideIcons($("allTransactionsList"))}
 
@@ -1413,10 +1443,10 @@ function closeModal(id){$(id).classList.remove('show');setModalLock(false)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 $('prevMonth').onclick=async()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}await loadAll()};$('nextMonth').onclick=async()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}await loadAll()};
 $('floatingAction').onclick=()=>{const active=document.querySelector('.page.active')?.id;if(active==='assets')openAsset();else if(active==='goals')openGoal();else if(active==='finance')openFinanceNote('');else{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField();$('date').value=todayLocal();$('amount').value='';$('memo').value='';openModal('modal')}};
-$('openAllTransactions').onclick=()=>{renderAllTransactions();openModal('allTransactionsModal')};
+$('openAllTransactions').onclick=()=>{renderAllTransactions();openModal('allTransactionsModal')};$('moreTransactions').onclick=()=>{const extra=$('extraTransactions');const btn=$('moreTransactions');const isOpen=extra.style.display==='block';extra.style.display=isOpen?'none':'block';btn.querySelector('.more-label').textContent=isOpen?'더 보기':'접기';btn.querySelector('.more-chevron').textContent=isOpen?'▼':'▲';};
 $('incomeOverviewCard').onclick=()=>{renderIncomeTransactions();openModal('incomeTransactionsModal')};
 $('incomeOverviewCard').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();renderIncomeTransactions();openModal('incomeTransactionsModal')}};
-$('incomeEditForm').addEventListener('submit',saveIncomeEdit);
+$('incomeEditForm').addEventListener('submit',saveIncomeEdit);$('deleteIncomeBtn').onclick=deleteIncomeRecord;$('deleteTransactionBtn').onclick=deleteTransactionRecord;
 $('transactionEditForm').addEventListener('submit',saveTransactionEdit);
 $('closeModal').onclick=()=>closeModal('modal');document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));document.querySelectorAll('.modal-back').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)closeModal(back.id)}));
 $('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories()};
