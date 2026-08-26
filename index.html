@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.48 · 적금 입금내역 연도 표시</title>
+<title>monee · 가계부 · ver.2.49 · 적금 상세팝업 열기 오류 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -570,7 +570,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.48">ver.2.48</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.49">ver.2.49</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1076,6 +1076,9 @@ async function openSavingDetail(assetId){
 
 function assetTypeLabel(type){return type==='현금성'?'입출금':(type||'기타')}
 
+function savingAssetType(asset){
+  return !!asset && (asset.asset_type==='저축' || asset.asset_type==='적금');
+}
 function renderAssets(){
   const total=assets.reduce((s,a)=>s+Number(a.amount),0),
         cash=assets.filter(a=>['입출금','현금성'].includes(a.asset_type)).reduce((s,a)=>s+Number(a.amount),0),
