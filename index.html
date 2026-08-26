@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.27 · 5탭 네비게이션 및 금융노트 아이콘 수정</title>
+<title>monee · 가계부 · ver.2.29 · 하단 5탭 모바일 열 수 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -59,7 +59,7 @@ button,input,select{font:inherit}button{cursor:pointer}
   .layout{grid-template-columns:1fr}
   .sidebar{position:fixed;left:0;right:0;top:0;z-index:40;height:118px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr;align-items:center;padding:10px 14px;background:rgba(240,243,239,.97);backdrop-filter:blur(12px);border-right:0;border-bottom:1px solid #dfe5df;box-shadow:0 6px 20px rgba(54,67,59,.06)}
   .brand{padding:0 10px;align-self:center}.brand-mark{font-size:24px}.brand-tag{font-size:9px;margin-top:1px}
-  .nav{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;align-self:stretch;align-items:center}
+  .nav{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;align-self:stretch;align-items:center}
   .nav button{justify-content:center;text-align:center;padding:7px 4px;font-size:10px;gap:3px;min-height:42px}
   .nav .icon{width:auto;font-size:14px}
   .record{position:fixed;right:14px;bottom:16px;z-index:50;width:58px;height:58px;border-radius:18px;font-size:0;margin:0;padding:0}.record:before{content:'+';font-size:24px}
@@ -93,7 +93,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .floating-action{position:fixed;right:24px;bottom:96px;z-index:60;width:40px;height:40px;border-radius:50%;border:0;background:var(--green);color:#fff;font-size:23px;line-height:1;box-shadow:0 10px 22px rgba(82,112,145,.25);display:grid;place-items:center}
 .edit-inline{border:0;background:var(--blue-soft);color:var(--blue-dark);border-radius:10px;padding:7px 11px;font-size:10px;font-weight:700}
 .pace-combined{min-height:300px}.pace-head{display:flex;justify-content:space-between;align-items:flex-start}.pace-status{margin-top:5px;color:#58799d;font-size:11px;font-weight:700}.days-compact{text-align:right}.days-compact b{font-size:30px;color:#58799d}.days-compact span{display:block;color:var(--muted);font-size:9px}.pace-main{text-align:center;margin-top:2px}.pace-center{margin-top:-12px}.pace-center b{display:block;font-size:11px}.pace-center span{display:block;color:var(--muted);font-size:10px;margin-top:4px}.pace-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.pace-bottom>div{background:#f4f7fa;border-radius:12px;padding:10px}.pace-bottom span{display:block;color:var(--muted);font-size:9px}.pace-bottom b{display:block;margin-top:4px;color:#58799d;font-size:15px}
-@media(max-width:950px){.floating-action{right:16px;bottom:96px;width:40px;height:40px;border-radius:50%;font-size:23px}.sidebar{height:96px}.main{padding-top:18px;margin:0 auto;align-self:start}.nav{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:950px){.floating-action{right:16px;bottom:96px;width:40px;height:40px;border-radius:50%;font-size:23px}.sidebar{height:96px}.main{padding-top:18px;margin:0 auto;align-self:start}.nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
 
 .more.expanded{background:#e7eef6;color:#57799a}.month-control button{cursor:pointer}.month-control button:disabled{opacity:.35;cursor:default}.extra-transactions .tx-row{border-top:1px solid #edf2f6}
 
@@ -139,7 +139,7 @@ button,input,select{font:inherit}button{cursor:pointer}
   .sidebar .brand,.sidebar .tagline,.sidebar .record,.sidebar .summary-card{display:none!important}
   .sidebar .nav{
     display:grid!important;
-    grid-template-columns:repeat(4,1fr)!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
     width:100%!important;
     max-width:520px!important;
     gap:4px!important;
@@ -455,7 +455,7 @@ const supabaseClient = window.supabase.createClient(
     <nav class="nav">
       <button class="active" data-page="budget"><span class="icon">◔</span><span>예산</span></button>
       <button data-page="assets"><span class="icon">◇</span><span>자산</span></button>
-      <button data-page="goals"><span class="icon">◎</span><span>목표</span></button><button data-page="finance"><span class="icon">▣</span><span>금융노트</span></button>
+      <button data-page="goals"><span class="icon">◎</span><span>목표</span></button><button data-page="finance"><span class="icon">▤</span><span>금융노트</span></button>
       <button data-page="settings"><span class="icon">⚙</span><span>설정</span></button>
     </nav>
         <div class="sidebar-summary">
@@ -470,7 +470,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.27">ver.2.27</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.29">ver.2.29</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -600,7 +600,7 @@ const showPage=(id,updateUrl=true)=>{
  id=validPages.includes(id)?id:'budget';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
- $('pageTitle').childNodes[0].nodeValue={budget:'예산',assets:'자산',goals:'목표',settings:'설정'}[id]||'monee';
+ $('pageTitle').childNodes[0].nodeValue={budget:'예산',assets:'자산',goals:'목표',finance:'금융노트',settings:'설정'}[id]||'monee';
  $('appVersion').style.display=id==='settings'?'inline':'none';
  if(id==='settings'){
     $('floatingAction').style.setProperty('display','none','important');
