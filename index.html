@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.23 · 금융노트 페이지 추가</title>
+<title>monee · 가계부 · ver.2.24 · 금융노트 페이지 추가</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -382,7 +382,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.23">ver.2.23</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.24">ver.2.24</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -826,13 +826,90 @@ function renderAssets(){
   document.querySelectorAll('[data-manage-delete-asset]').forEach(b=>b.onclick=()=>deleteAsset(b.dataset.manageDeleteAsset));
 }
 function renderGoals(){$('goalList').innerHTML=goals.length?goals.map(g=>{const pct=g.target_amount?Math.min(100,Math.round(g.current_amount/g.target_amount*100)):0;return `<div class="goal"><div class="goal-actions"><button class="row-action" data-edit-goal="${g.id}">수정</button><button class="row-action delete" data-delete-goal="${g.id}">삭제</button></div><div class="goal-top"><b>${escapeText(g.name)}</b><span>${money(g.current_amount)} / ${money(g.target_amount)}</span></div><div class="goal-track"><i style="width:${pct}%"></i></div><div class="goal-foot"><span>${pct}% 달성</span><span>${money(Math.max(0,g.target_amount-g.current_amount))} 남음</span></div></div>`}).join(''):'<div class="empty-state">아직 목표가 없어요. 오른쪽 아래 ＋ 버튼으로 추가해 주세요.</div>';document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openGoal(b.dataset.editGoal));document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal))}
+
 let financeNotes=[];
-function loadFinanceNotes(){try{financeNotes=JSON.parse(localStorage.getItem('monee_finance_notes')||'[]').filter(n=>n&&n.userId===currentUser?.id)}catch(e){financeNotes=[]}}
-function saveFinanceNotes(){let all=[];try{all=JSON.parse(localStorage.getItem('monee_finance_notes')||'[]').filter(n=>n&&n.userId!==currentUser?.id)}catch(e){}all.push(...financeNotes);localStorage.setItem('monee_finance_notes',JSON.stringify(all))}
-function financeDate(v){if(!v)return '';const d=new Date(v+'T00:00:00');return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`}
-function renderFinanceNotes(){loadFinanceNotes();const groups={info:'financeInfoList',schedule:'financeScheduleList',payment:'financePaymentList'};Object.entries(groups).forEach(([type,id])=>{const list=financeNotes.filter(n=>n.type===type).sort((a,b)=>(b.date||'').localeCompare(a.date||''));$(id).innerHTML=list.length?list.map(n=>`<div class="finance-note" data-finance-id="${escapeText(n.id)}"><div class="finance-note-main"><span class="finance-note-title">${escapeText(n.title)}</span>${n.amount!==''&&n.amount!=null?`<span class="finance-note-amount">${money(Number(n.amount)||0)}</span>`:''}</div>${n.date?`<div class="finance-note-meta"><span>${financeDate(n.date)}</span>${n.type==='payment'?'<span>정기 납부</span>':''}</div>`:''}${n.memo?`<div class="finance-note-memo">${escapeText(n.memo)}</div>`:''}</div>`).join(''):'<div class="finance-empty">기록된 내용이 없어요.</div>'});document.querySelectorAll('[data-finance-id]').forEach(el=>el.onclick=()=>openFinanceNote(el.dataset.financeId))})}
-function openFinanceNote(id){const n=financeNotes.find(x=>x.id===id);$('financeNoteId').value=n?.id||'';$('financeNoteType').value=n?.type||'info';$('financeNoteTitle').value=n?.title||'';$('financeNoteAmount').value=n?.amount??'';$('financeNoteDate').value=n?.date||'';$('financeNoteMemo').value=n?.memo||'';$('financeNoteModalTitle').textContent=n?'금융정보 수정':'금융정보 추가';openModal('financeNoteModal')}
-function saveFinanceNoteForm(e){e.preventDefault();const id=$('financeNoteId').value;const note={id:id||crypto.randomUUID(),userId:currentUser.id,type:$('financeNoteType').value,title:$('financeNoteTitle').value.trim(),amount:$('financeNoteAmount').value,date:$('financeNoteDate').value,memo:$('financeNoteMemo').value.trim()};if(!note.title)return alert('제목을 입력해 주세요.');if(id)financeNotes=financeNotes.map(n=>n.id===id?note:n);else financeNotes.push(note);saveFinanceNotes();closeModal('financeNoteModal');e.target.reset();renderFinanceNotes()}
+function loadFinanceNotes(){
+  try{
+    const all=JSON.parse(localStorage.getItem('monee_finance_notes')||'[]');
+    financeNotes=Array.isArray(all)?all.filter(n=>n&&n.userId===currentUser?.id):[];
+  }catch(e){financeNotes=[]}
+}
+function saveFinanceNotes(){
+  let all=[];
+  try{
+    const raw=JSON.parse(localStorage.getItem('monee_finance_notes')||'[]');
+    all=Array.isArray(raw)?raw.filter(n=>n&&n.userId!==currentUser?.id):[];
+  }catch(e){}
+  localStorage.setItem('monee_finance_notes',JSON.stringify(all.concat(financeNotes)));
+}
+function financeDate(v){
+  if(!v)return '';
+  const d=new Date(v+'T00:00:00');
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+function renderFinanceNotes(){
+  loadFinanceNotes();
+  const groups=[
+    ['info','financeInfoList'],
+    ['schedule','financeScheduleList'],
+    ['payment','financePaymentList']
+  ];
+  groups.forEach(([type,id])=>{
+    const list=financeNotes
+      .filter(n=>n.type===type)
+      .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const target=$(id);
+    if(!target)return;
+    if(!list.length){
+      target.innerHTML='<div class="finance-empty">기록된 내용이 없어요.</div>';
+      return;
+    }
+    target.innerHTML=list.map(n=>{
+      const amount=n.amount!==''&&n.amount!=null
+        ?`<span class="finance-note-amount">${money(Number(n.amount)||0)}</span>`:'';
+      const meta=n.date
+        ?`<div class="finance-note-meta"><span>${financeDate(n.date)}</span>${n.type==='payment'?'<span>정기 납부</span>':''}</div>`:'';
+      const memo=n.memo
+        ?`<div class="finance-note-memo">${escapeText(n.memo)}</div>`:'';
+      return `<div class="finance-note" data-finance-id="${escapeText(n.id)}"><div class="finance-note-main"><span class="finance-note-title">${escapeText(n.title)}</span>${amount}</div>${meta}${memo}</div>`;
+    }).join('');
+  });
+  document.querySelectorAll('[data-finance-id]').forEach(el=>{
+    el.onclick=()=>openFinanceNote(el.dataset.financeId);
+  });
+}
+function openFinanceNote(id){
+  const n=financeNotes.find(x=>x.id===id);
+  $('financeNoteId').value=n?.id||'';
+  $('financeNoteType').value=n?.type||'info';
+  $('financeNoteTitle').value=n?.title||'';
+  $('financeNoteAmount').value=n?.amount??'';
+  $('financeNoteDate').value=n?.date||'';
+  $('financeNoteMemo').value=n?.memo||'';
+  $('financeNoteModalTitle').textContent=n?'금융정보 수정':'금융정보 추가';
+  openModal('financeNoteModal');
+}
+function saveFinanceNoteForm(e){
+  e.preventDefault();
+  const id=$('financeNoteId').value;
+  const note={
+    id:id||crypto.randomUUID(),
+    userId:currentUser.id,
+    type:$('financeNoteType').value,
+    title:$('financeNoteTitle').value.trim(),
+    amount:$('financeNoteAmount').value,
+    date:$('financeNoteDate').value,
+    memo:$('financeNoteMemo').value.trim()
+  };
+  if(!note.title)return alert('제목을 입력해 주세요.');
+  if(id)financeNotes=financeNotes.map(n=>n.id===id?note:n);
+  else financeNotes.push(note);
+  saveFinanceNotes();
+  closeModal('financeNoteModal');
+  e.target.reset();
+  $('financeNoteId').value='';
+  renderFinanceNotes();
+}
 
 function renderSettings(){}
 function renderAll(){renderBudget();renderAssets();renderGoals();renderSettings();renderFinanceNotes();renderLucideIcons()}
