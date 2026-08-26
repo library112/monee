@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.9 · 수입 카드 및 간격 개선</title>
+<title>monee · 가계부 · ver.2.10 · 수입 카테고리 및 간격 개선</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -103,7 +103,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .drag-handle:active{cursor:grabbing}
 .budget-edit-row .emoji-input{width:92px;height:34px;padding:0 7px;text-align:center;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:18px;outline:0}
 .budget-edit-row input.edit-name,.budget-edit-row input.edit-budget,.budget-edit-row .edit-type{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;outline:0;font-size:11px}
-.category-editor-help{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.45}.delete-category{width:34px;height:34px;border:0;border-radius:9px;background:#f5e9e8;color:#bd6d68;font-size:16px}.add-category-btn{width:100%;margin-top:10px;padding:10px;border:1px dashed #b9c9da;background:#f3f7fb;color:#57779a;border-radius:10px;font-size:11px;font-weight:700}.modal-actions{display:flex;justify-content:center;gap:8px;margin-top:10px}.modal-actions .primary,.modal-actions .secondary-btn{width:140px;flex:none}.secondary-btn{border:0;border-radius:11px;padding:12px;background:#edf1f5;color:#66778a;font-weight:700}.budget-table .empty-budget-row{padding:18px;text-align:center;color:var(--muted);font-size:11px}.cat-label .cat-name{font-size:12px}.income-overview-card{padding:18px;margin-top:0}
+.category-editor-help{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.45}.delete-category{width:34px;height:34px;border:0;border-radius:9px;background:#f5e9e8;color:#bd6d68;font-size:16px}.add-category-btn{width:100%;margin-top:10px;padding:10px;border:1px dashed #b9c9da;background:#f3f7fb;color:#57779a;border-radius:10px;font-size:11px;font-weight:700}.modal-actions{display:flex;justify-content:center;gap:8px;margin-top:10px}.modal-actions .primary,.modal-actions .secondary-btn{width:140px;flex:none}.secondary-btn{border:0;border-radius:11px;padding:12px;background:#edf1f5;color:#66778a;font-weight:700}.budget-table .empty-budget-row{padding:18px;text-align:center;color:var(--muted);font-size:11px}.cat-label .cat-name{font-size:12px}.income-overview-card{padding:18px;margin-top:0;margin-bottom:22px}
 .income-overview-content{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:4px 2px 2px}
 .income-overview-content b{font-size:28px;color:#57799a;letter-spacing:-.04em}
 .income-overview-content span{font-size:11px;color:#9aa5b1;padding-bottom:4px}
@@ -113,7 +113,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .income-list .income-row{display:grid;grid-template-columns:85px 28px 1fr 110px;align-items:center;gap:10px;padding:11px 5px;border-top:1px solid #edf2f6;font-size:11px}
 .income-list .income-row:first-child{border-top:0}
 .income-date{color:#777e78}.income-icon{font-size:17px}.income-name{font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.income-amount{text-align:right;color:#58799d;font-weight:700;white-space:nowrap}.income-empty{padding:24px;text-align:center;color:var(--muted)}
-@media(max-width:650px){.income-list .income-row{grid-template-columns:65px 25px 1fr 90px;gap:8px;padding:10px 4px}.income-amount{font-size:10px}}
+@media(max-width:650px){.income-overview-card{margin-bottom:22px}.income-list .income-row{grid-template-columns:65px 25px 1fr 90px;gap:8px;padding:10px 4px}.income-amount{font-size:10px}}
 
 
 
@@ -375,7 +375,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.9">ver.2.9</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.10">ver.2.10</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -458,7 +458,7 @@ const supabaseClient = window.supabase.createClient(
 <div class="modal-back" id="modal"><div class="modal"><div class="modal-head"><h3>기록하기</h3><button class="x" id="closeModal">×</button></div><div class="seg"><button class="active" id="expenseTab">지출</button><button id="incomeTab">수입</button></div><form id="entryForm" class="form-grid"><div class="field"><label>날짜</label><input id="date" type="date" value="2026-08-23"></div><div class="field"><label>금액</label><input id="amount" type="number" placeholder="0" required></div><div class="field"><label>카테고리</label><select id="category"></select></div><div class="field" id="methodBox"><label>결제수단</label><select id="method"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></div><div class="field full"><label>내용 / 메모</label><input id="memo" maxlength="100" placeholder="메모를 남겨보세요"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
 
 <div class="modal-back" id="allTransactionsModal"><div class="modal"><div class="modal-head"><h3>전체 내역</h3><button class="x" data-close-modal="allTransactionsModal">×</button></div><div id="allTransactionsList"></div></div></div>
-<div class="modal-back" id="incomeTransactionsModal"><div class="modal"><div class="modal-head"><h3>이번 달 수입</h3><button class="x" data-close-modal="incomeTransactionsModal">×</button></div><div id="incomeTransactionsList" class="income-list"></div></div></div>
+<div class="modal-back" id="incomeTransactionsModal"><div class="modal"><div class="modal-head"><h3>수입 내역</h3><button class="x" data-close-modal="incomeTransactionsModal">×</button></div><div id="incomeTransactionsList" class="income-list"></div></div></div>
 <div class="modal-back" id="incomeEditModal"><div class="modal"><div class="modal-head"><h3>수입 수정</h3><button class="x" data-close-modal="incomeEditModal">×</button></div><form id="incomeEditForm" class="form-grid"><input type="hidden" id="editIncomeId"><div class="field"><label>날짜</label><input id="editIncomeDate" type="date" required></div><div class="field"><label>금액</label><input id="editIncomeAmount" type="number" min="1" required></div><div class="field"><label>카테고리</label><select id="editIncomeCategory"></select></div><div class="field full"><label>내용 / 메모</label><input id="editIncomeMemo" maxlength="100"></div><button class="primary full" type="submit">수정하기</button></form></div></div>
 <div class="modal-back" id="transactionEditModal"><div class="modal"><div class="modal-head"><h3>내역 수정</h3><button class="x" data-close-modal="transactionEditModal">×</button></div><form id="transactionEditForm" class="form-grid"><input type="hidden" id="editTransactionId"><div class="field"><label>날짜</label><input id="editDate" type="date" required></div><div class="field"><label>금액</label><input id="editAmount" type="number" min="1" required></div><div class="field"><label>카테고리</label><select id="editCategory"></select></div><div class="field"><label>결제수단</label><select id="editMethod"><option>카드</option><option>현금</option><option>계좌이체</option><option>기타</option></select></div><div class="field full"><label>내용 / 메모</label><input id="editMemo" maxlength="100"></div><button class="primary full" type="submit">수정하기</button></form></div></div>
 <div class="modal-back" id="budgetEditModal"><div class="modal budget-edit-modal"><div class="modal-head"><div><h3>항목별 월 예산 수정</h3><p class="modal-help">항목 이름·Lucide 아이콘·예산을 수정할 수 있고, 왼쪽 ⋮⋮를 드래그해서 순서를 바꿀 수 있어요.</p></div><button class="x" data-close-modal="budgetEditModal">×</button></div>
@@ -476,7 +476,7 @@ const supabaseClient = window.supabase.createClient(
 const cats=['적금','구독','보험','통신비','기부','교통','생활비','쇼핑','커피/음료','술/담배','식비','건강','배달음식','기타','기타1','기타2'];
 const incomeCats=['월급','기타'];
 const defaultCatIcons={'적금':'Vault','구독':'RefreshCw','보험':'ShieldCheck','통신비':'Smartphone','기부':'HeartHandshake','교통':'BusFront','생활비':'House','쇼핑':'ShoppingBag','커피/음료':'Coffee','술/담배':'Wine','식비':'Utensils','건강':'HeartPulse','배달음식':'Container','기타':'Ellipsis','기타1':'Ellipsis','기타2':'Ellipsis'};
-let entryType='expense', currentUser=null, budgetCategories=[], transactions=[], assets=[], goals=[];
+let entryType='expense', currentUser=null, budgetCategories=[], incomeCategories=[], transactions=[], assets=[], goals=[];
 let categoryPrefsSupported=false;
 const categoryPrefsKey=()=>`monee-category-prefs-${currentUser?.id||'guest'}`;
 let localCategoryPrefs={};
@@ -696,6 +696,7 @@ async function loadAll(){
    });
    saveLocalCategoryPrefs();
  }
+ incomeCategories=(c.data||[]).filter(x=>x.type==='income');
  budgetCategories=c.data.filter(x=>x.type==='expense').map(c=>({...c,budget:0,spent:0,budgetId:null}))
    .sort((a,b)=>catOrder(a)-catOrder(b));
  const budgets=b.data;budgetCategories.forEach(c=>{const x=budgets.find(b=>b.category_id===c.id&&Number(b.year)===viewYear&&Number(b.month)===viewMonth+1);c.budget=Number(x?.amount||0);c.budgetId=x?.id||null;});
@@ -947,8 +948,9 @@ async function saveBudgetCategories(){
 function fillEditCategories(selectedId){$("editCategory").innerHTML=budgetCategories.map(c=>`<option value="${escapeText(c.id)}">${escapeText(c.name)}</option>`).join('');if(selectedId)$("editCategory").value=selectedId}
 function openTransactionEdit(id){const t=transactions.find(x=>x.id===id);if(!t||t.type!=='expense')return;$("editTransactionId").value=t.id;$("editDate").value=t.transaction_date||todayLocal();$("editAmount").value=t.amount||'';fillEditCategories(t.category_id);$("editMethod").value=t.payment_method||'카드';$("editMemo").value=t.memo||'';openModal('transactionEditModal')}
 function fillIncomeEditCategories(selectedId){
-  $("editIncomeCategory").innerHTML=incomeCats.map(c=>`<option value="${escapeText(c)}">${escapeText(c)}</option>`).join('');
-  const current=budgetCategories.find(c=>c.id===selectedId);
+  const cats=incomeCategories.length?incomeCategories:incomeCats.map(name=>({id:name,name,type:'income'}));
+  $("editIncomeCategory").innerHTML=cats.map(c=>`<option value="${escapeText(c.name)}">${escapeText(c.name)}</option>`).join('');
+  const current=cats.find(c=>c.id===selectedId);
   if(current?.name)$("editIncomeCategory").value=current.name;
 }
 function openIncomeEdit(id){
@@ -966,8 +968,10 @@ function renderIncomeTransactions(){
   const list=sortTransactions(transactions.filter(t=>t.type==='income'&&t.transaction_date?.startsWith(prefix)));
   $("incomeTransactionsList").innerHTML=list.length?list.map(t=>{
     const d=new Date(t.transaction_date+'T00:00:00');
-    const cat=budgetCategories.find(c=>c.id===t.category_id);
-    return `<div class="income-row" data-income-id="${escapeText(t.id)}" style="cursor:pointer"><div class="income-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="income-icon">₩</div><div class="income-name">${escapeText(t.memo||cat?.name||'수입')}</div><div class="income-amount">${money(t.amount)}</div></div>`;
+    const cat=incomeCategories.find(c=>c.id===t.category_id);
+    const categoryName=cat?.name||'기타';
+    const detail=t.memo?.trim()?` · ${t.memo.trim()}`:'';
+    return `<div class="income-row" data-income-id="${escapeText(t.id)}" style="cursor:pointer"><div class="income-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="income-icon">₩</div><div class="income-name">${escapeText(`수입 · ${categoryName}${detail}`)}</div><div class="income-amount">${money(t.amount)}</div></div>`;
   }).join(''):'<div class="income-empty">이번 달에 등록된 수입이 없어요.</div>';
   document.querySelectorAll('[data-income-id]').forEach(x=>x.onclick=()=>openIncomeEdit(x.dataset.incomeId));
 }
@@ -978,7 +982,7 @@ async function saveIncomeEdit(e){
   e.preventDefault();
   const id=$("editIncomeId").value;
   const name=$("editIncomeCategory").value;
-  const cat=budgetCategories.find(c=>c.type==='income'&&c.name===name);
+  const cat=incomeCategories.find(c=>c.name===name);
   const payload={transaction_date:$("editIncomeDate").value,amount:Number($("editIncomeAmount").value)||0,category_id:cat?.id||null,payment_method:'현금',memo:$("editIncomeMemo").value.trim()};
   if(payload.amount<=0)return;
   const {error}=await supabaseClient.from('transactions').update(payload).eq('id',id).eq('user_id',currentUser.id).eq('type','income');
