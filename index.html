@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.45 · 소비 페이스 중복 표시 정리</title>
+<title>monee · 가계부 · ver.2.46 · 자산 로딩 오류 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -570,7 +570,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.45">ver.2.45</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.46">ver.2.46</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1067,6 +1067,8 @@ async function openSavingDetail(assetId){
   }
   openModal('savingDetailModal');
 }
+
+function assetTypeLabel(type){return type==='현금성'?'입출금':(type||'기타')}
 
 function renderAssets(){
   const total=assets.reduce((s,a)=>s+Number(a.amount),0),
