@@ -2,9 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.57 · 모바일 자산 수정팝업 확대 문제 수정</title>
+<title>monee 가계부 · ver.2.58 · iPhone 자산 수정팝업 자동확대 완전 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -230,6 +230,21 @@ button,input,select{font:inherit}button{cursor:pointer}
 .modal{width:min(620px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border-radius:18px}
 .modal-back{overscroll-behavior:contain}
 .modal-back .modal{overscroll-behavior:contain}
+/* iOS Safari: prevent automatic zoom when a form control receives focus. */
+.modal input,
+.modal select,
+.modal textarea{
+  font-size:16px!important;
+  -webkit-text-size-adjust:100%;
+}
+#assetModal .modal{
+  box-sizing:border-box;
+  width:calc(100vw - 24px);
+  max-width:620px;
+  max-height:calc(100dvh - 32px);
+  overflow-y:auto;
+}
+
 
 
 /* Mobile date field width fix */
@@ -593,7 +608,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.57">ver.2.57</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.58">ver.2.58</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -695,7 +710,7 @@ const supabaseClient = window.supabase.createClient(
 <div class="modal-actions"><button class="secondary-btn" data-close-modal="budgetEditModal" type="button">취소</button><button class="primary" id="saveBudgetCategories" type="button">저장하기</button></div>
 </div></div>
 
-<div class="modal-back" id="assetModal"><div class="modal"><div class="modal-head"><h3 id="assetModalTitle">자산 추가</h3><button class="x" data-close-modal="assetModal">×</button></div><form id="assetForm" class="form-grid"><input type="hidden" id="assetId"><div class="field full"><label>자산 종류</label><select id="assetType"><option value="저축">저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field full"><label>자산 이름</label><input id="assetName" type="text" required placeholder="예: 신한은행 생활비 계좌"></div><div class="field full"><label>현재 금액 (원)</label><input id="assetAmount" type="number" min="0" step="1" inputmode="numeric" required placeholder="0"></div><div class="field full saving-only-field"><label>금리 (%)</label><input id="assetInterestRate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="예: 3.5"></div><div class="field saving-only-field"><label>가입기간 (개월)</label><input id="assetTermMonths" type="number" min="1" step="1" inputmode="numeric" placeholder="예: 12"></div><div class="field saving-only-field"><label>과세비율 (%)</label><input id="assetTaxRate" type="number" min="0" max="100" step="0.1" inputmode="decimal" placeholder="예: 15.4"></div><div class="field full saving-only-field"><label>만기일</label><input id="assetMaturityDate" type="date"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
+<div class="modal-back" id="assetModal"><div class="modal"><div class="modal-head"><h3 id="assetModalTitle">자산 추가</h3><button class="x" data-close-modal="assetModal">×</button></div><form id="assetForm" class="form-grid"><input type="hidden" id="assetId"><div class="field full"><label>자산 종류</label><select id="assetType"><option value="저축">저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field full"><label>자산 이름</label><input id="assetName" type="text" required placeholder="예: 신한은행 생활비 계좌"></div><div class="field full"><label>현재 금액 (원)</label><input id="assetAmount" type="number" min="0" step="1" inputmode="numeric" required placeholder="0"></div><div class="field full saving-only-field"><label>금리 (%)</label><input id="assetInterestRate" type="text" inputmode="decimal" autocomplete="off" placeholder="예: 3.5"></div><div class="field saving-only-field"><label>가입기간 (개월)</label><input id="assetTermMonths" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 12"></div><div class="field saving-only-field"><label>과세비율 (%)</label><input id="assetTaxRate" type="text" inputmode="decimal" autocomplete="off" placeholder="예: 15.4"></div><div class="field full saving-only-field"><label>만기일</label><input id="assetMaturityDate" type="date"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
 <div class="modal-back" id="assetManageModal"><div class="modal"><div class="modal-head"><div><h3>자산 관리</h3><p class="modal-help">등록된 자산을 수정하거나 삭제할 수 있어요.</p></div><button class="x" data-close-modal="assetManageModal">×</button></div><div class="asset-manage-list" id="assetManageList"></div><div class="modal-actions"><button class="secondary-btn" data-close-modal="assetManageModal" type="button">닫기</button></div></div></div>
 <div class="modal-back" id="goalModal"><div class="modal"><div class="modal-head"><h3 id="goalModalTitle">새 목표 만들기</h3><button class="x" data-close-modal="goalModal">×</button></div><form id="goalForm" class="form-grid"><input type="hidden" id="goalId"><div class="field full"><label>목표 이름</label><input id="goalName" required placeholder="예: 유럽 여행"></div><div class="field"><label>목표 금액</label><input id="goalTarget" type="number" min="0" step="10000" required placeholder="3000000"></div><div class="field"><label>현재 모은 금액</label><input id="goalCurrent" type="number" min="0" step="10000" required placeholder="500000"></div><div class="field full"><label>추가할 금액</label><input id="goalAddAmount" type="number" min="0" step="10000" placeholder="0"></div><button class="primary full" type="submit" id="goalSubmitBtn">목표 추가하기</button></form></div></div>
 
@@ -1847,7 +1862,12 @@ $('incomeEditForm').addEventListener('submit',saveIncomeEdit);$('deleteIncomeBtn
 $('transactionEditForm').addEventListener('submit',saveTransactionEdit);$('editCategory').addEventListener('change',()=>updateEditSavingLinkField());
 $('closeModal').onclick=()=>closeModal('modal');document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));document.querySelectorAll('.modal-back').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)closeModal(back.id)}));
 $('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories();updateSavingLinkField()};
-$('category').addEventListener('change',()=>updateSavingLinkField());$('entryForm').addEventListener('submit',saveTransaction);$('financeNoteForm').addEventListener('submit',saveFinanceNoteForm);$('assetForm').addEventListener('submit',saveAsset);$('assetType').addEventListener('change',e=>setSavingFieldsVisible(e.target.value));$('goalForm').addEventListener('submit',saveGoal);
+$('category').addEventListener('change',()=>updateSavingLinkField());$('entryForm').addEventListener('submit',saveTransaction);$('financeNoteForm').addEventListener('submit',saveFinanceNoteForm);$('assetForm').addEventListener('submit',saveAsset);$('assetType').addEventListener('change',e=>setSavingFieldsVisible(e.target.value));
+['assetInterestRate','assetTermMonths','assetTaxRate'].forEach(id=>{
+ const el=$(id);
+ if(el)el.addEventListener('focus',()=>{el.style.fontSize='16px';});
+});
+$('goalForm').addEventListener('submit',saveGoal);
 $('editBudgetSetting').onclick=()=>{renderBudgetEditor();openModal('budgetEditModal')};
 $('addBudgetCategory').onclick=async()=>{
  const name=prompt('새 예산 항목 이름을 입력해 주세요.','새 항목');
