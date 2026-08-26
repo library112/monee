@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee · 가계부 · ver.2.35 · 최근내역 더보기 및 수정버튼 정렬 개선</title>
+<title>monee · 가계부 · ver.2.36 · 최근내역 더보기 기능 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -486,8 +486,8 @@ nav.nav .icon{
 .rate.over{color:#dc3545;font-weight:700}
 .bar-fill.over{box-shadow:inset 0 0 0 1px rgba(180,20,20,.08)}
 
-.extra-transactions{display:none}
-.extra-transactions.is-open{display:block}
+.extra-transactions{display:none!important}
+.extra-transactions.is-open{display:block!important}
 .edit-danger-actions{width:100%;display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;margin-top:8px!important}
 .edit-danger-actions .danger-btn,.edit-danger-actions .primary{width:100%!important;height:40px!important;box-sizing:border-box!important;margin:0!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0 14px!important}
 .edit-danger-actions .danger-btn{order:1}
@@ -543,7 +543,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.35">ver.2.35</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.36">ver.2.36</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1450,7 +1450,7 @@ function closeModal(id){$(id).classList.remove('show');setModalLock(false)}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 $('prevMonth').onclick=async()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}await loadAll()};$('nextMonth').onclick=async()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}await loadAll()};
 $('floatingAction').onclick=()=>{const active=document.querySelector('.page.active')?.id;if(active==='assets')openAsset();else if(active==='goals')openGoal();else if(active==='finance')openFinanceNote('');else{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField();$('date').value=todayLocal();$('amount').value='';$('memo').value='';openModal('modal')}};
-$('openAllTransactions').onclick=()=>{renderAllTransactions();openModal('allTransactionsModal')};$('moreTransactions').onclick=()=>{const extra=$('extraTransactions');const btn=$('moreTransactions');if(!extra||!btn)return;const isOpen=extra.classList.contains('is-open');extra.classList.toggle('is-open',!isOpen);btn.classList.toggle('expanded',!isOpen);btn.querySelector('.more-label').textContent=isOpen?'더 보기':'접기';btn.querySelector('.more-chevron').textContent=isOpen?'▼':'▲';};
+$('openAllTransactions').onclick=()=>{renderAllTransactions();openModal('allTransactionsModal')};
 $('incomeOverviewCard').onclick=()=>{renderIncomeTransactions();openModal('incomeTransactionsModal')};
 $('incomeOverviewCard').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();renderIncomeTransactions();openModal('incomeTransactionsModal')}};
 $('incomeEditForm').addEventListener('submit',saveIncomeEdit);$('deleteIncomeBtn').onclick=deleteIncomeRecord;$('deleteTransactionBtn').onclick=deleteTransactionRecord;
@@ -1478,7 +1478,7 @@ $('addBudgetCategory').onclick=async()=>{
  await loadAll();renderBudgetEditor();
 };
 $('saveBudgetCategories').onclick=saveBudgetCategories;
-$('moreTransactions').onclick=function(){const box=$('extraTransactions');const open=box.style.display!=='none';box.style.display=open?'none':'block';this.classList.toggle('expanded',!open);this.querySelector('.more-label').textContent=open?'더 보기':'접기';this.querySelector('.more-chevron').textContent=open?'▼':'▲'};
+$('moreTransactions').onclick=function(){const box=$('extraTransactions');if(!box)return;const open=box.classList.toggle('is-open');this.classList.toggle('expanded',open);this.querySelector('.more-label').textContent=open?'접기':'더 보기';this.querySelector('.more-chevron').textContent=open?'▲':'▼';};
 $('saveBackup').onclick=()=>{const data={transactions,assets,goals,budgetCategories,categoryPrefs:localCategoryPrefs,exportedAt:new Date().toISOString()};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='monee-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
 loadLocalCategoryPrefs();fillCategories();$('floatingAction').style.display='grid';
 window.addEventListener('hashchange',()=>showPage(pageFromHash(),false));
