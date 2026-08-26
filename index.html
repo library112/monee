@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.54 · 금융노트 금액 저장 오류 수정</title>
+<title>monee 가계부 · ver.2.55 · 고정/비고정지출 초과 사용률 표시 수정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -578,7 +578,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.54">ver.2.54</span></h1></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.55">ver.2.55</span></h1></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -957,11 +957,21 @@ function renderBudget(){
  const fixedRows=rows.filter(isFixedCategory),variableRows=rows.filter(c=>!isFixedCategory(c));
  const fixedBudget=fixedRows.reduce((s,c)=>s+c.budget,0),fixedSpent=fixedRows.reduce((s,c)=>s+c.spent,0);
  const variableBudget=variableRows.reduce((s,c)=>s+c.budget,0),variableSpent=variableRows.reduce((s,c)=>s+c.spent,0);
- const fixedRate=fixedBudget?Math.min(100,Math.round(fixedSpent/fixedBudget*1000)/10):0;
- const variableRate=variableBudget?Math.min(100,Math.round(variableSpent/variableBudget*1000)/10):0;
+ const fixedRate=fixedBudget?Math.round(fixedSpent/fixedBudget*1000)/10:0;
+ const variableRate=variableBudget?Math.round(variableSpent/variableBudget*1000)/10:0;
+ const setSummaryProgress=(rate,valueId,progressId)=>{
+   const valueEl=$(valueId), progressEl=$(progressId);
+   const capped=Math.min(100,Math.max(0,rate));
+   const color=rate>100?'#ef4444':rate===100?'var(--orange)':'var(--blue)';
+   valueEl.textContent=rate.toFixed(1)+'%';
+   progressEl.style.width=capped+'%';
+   progressEl.style.background=color;
+ };
  $('totalBudgetValue').textContent=money(total);$('remainValue').textContent=money(remain);
- $('fixedSpentValue').textContent=money(fixedSpent);$('fixedRateValue').textContent=fixedRate.toFixed(1)+'%';$('fixedProgress').style.width=fixedRate+'%';
- $('variableSpentValue').textContent=money(variableSpent);$('variableRateValue').textContent=variableRate.toFixed(1)+'%';$('variableProgress').style.width=variableRate+'%';
+ $('fixedSpentValue').textContent=money(fixedSpent);
+ setSummaryProgress(fixedRate,'fixedRateValue','fixedProgress');
+ $('variableSpentValue').textContent=money(variableSpent);
+ setSummaryProgress(variableRate,'variableRateValue','variableProgress');
   $('incomeTotalValue').textContent=money(monthIncome);$('incomeCountValue').textContent=incomeCount+'건';
  $('sideBudget').textContent=money(total);$('sideSpent').textContent=money(spent);$('sideRemain').textContent=money(remain);$('sideRate').textContent=rate.toFixed(1)+'%';$('sideProgress').style.width=Math.min(100,rate)+'%';
  const budgetRowHtml=c=>{
