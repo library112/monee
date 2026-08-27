@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.71 · 적금 연결 및 삭제 중복 차감 방지</title>
+<title>monee 가계부 · ver.2.72 · 적금 연결 및 삭제 중복 차감 방지</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -647,7 +647,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.71">ver.2.71</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.72">ver.2.72</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1514,12 +1514,12 @@ function fillEditSavingAssets(selectedId=''){
     list.map(a=>`<option value="${escapeText(a.id)}">${escapeText(a.name)}</option>`).join('');
   if(selectedId)select.value=selectedId;
 }
-function updateEditSavingLinkField(selectedId=''){
+function updateEditSavingLinkField(selectedId='',forceSaving=false){
   const field=$('editSavingLinkField');
   const category=$('editCategory');
   if(!field||!category)return;
   const cat=budgetCategories.find(c=>String(c.id)===String(category.value));
-  const isSaving=cat?.name==='적금';
+  const isSaving=forceSaving||cat?.name==='적금';
   field.style.display=isSaving?'block':'none';
   if(isSaving)fillEditSavingAssets(selectedId);
   else if($('editSavingAssetSelect'))$('editSavingAssetSelect').value='';
@@ -1701,7 +1701,7 @@ async function saveBudgetCategories(){
   saveLocalCategoryPrefs();closeModal('budgetEditModal');await loadAll();
 }
 function fillEditCategories(selectedId){$("editCategory").innerHTML=budgetCategories.map(c=>`<option value="${escapeText(c.id)}">${escapeText(c.name)}</option>`).join('');if(selectedId)$("editCategory").value=selectedId}
-function openTransactionEdit(id){const t=transactions.find(x=>x.id===id);if(!t||t.type!=='expense')return;$("editTransactionId").value=t.id;$("editDate").value=t.transaction_date||todayLocal();$("editAmount").value=formatCurrencyInputValue(t.amount||'');fillEditCategories(t.category_id);const link=findSavingLink(t.id);updateEditSavingLinkField(link?.assetId||'');$("editMethod").value=t.payment_method||'카드';$("editMemo").value=t.memo||'';openModal('transactionEditModal')}
+function openTransactionEdit(id){const t=transactions.find(x=>x.id===id);if(!t||t.type!=='expense')return;$("editTransactionId").value=t.id;$("editDate").value=t.transaction_date||todayLocal();$("editAmount").value=formatCurrencyInputValue(t.amount||'');fillEditCategories(t.category_id);const link=findSavingLink(t.id);const cat=budgetCategories.find(c=>String(c.id)===String(t.category_id));const historicalSaving=cat?.name==='적금';updateEditSavingLinkField(link?.assetId||'',historicalSaving);$("editMethod").value=t.payment_method||'카드';$("editMemo").value=t.memo||'';openModal('transactionEditModal')}
 function fillIncomeEditCategories(selectedId){
   const cats=incomeCategories.length?incomeCategories:incomeCats.map(name=>({id:name,name,type:'income'}));
   $("editIncomeCategory").innerHTML=cats.map(c=>`<option value="${escapeText(c.name)}">${escapeText(c.name)}</option>`).join('');
@@ -1941,7 +1941,7 @@ async function startApp(user){
   }
 }
 
-/* ver.2.71: 적금 연결 선택 복원 및 자산 중복 차감 방지 */
+/* ver.2.72: 적금 연결 선택 복원 및 자산 중복 차감 방지 */
 let autoRefreshPromise=null;
 let lastAutoRefreshAt=0;
 async function refreshOnResume(){
