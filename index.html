@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.63 · 페이지 헤더 및 섹션 정렬 개선</title>
+<title>monee 가계부 · ver.2.64 · 예산 섹션 제목 정렬 개선</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -575,6 +575,12 @@ nav.nav .icon{
 }
 
 /* ver.2.63 page header and section alignment refinement */
+/* ver.2.64 budget section heading alignment */
+.budget-overview > .section-head{padding-left:20px!important}
+@media(max-width:650px){
+  .budget-overview > .section-head{padding-left:20px!important}
+}
+
 .topbar{align-items:flex-start!important;gap:18px!important;margin-bottom:14px!important;min-height:58px!important}
 .page-title{padding:0 0 0 20px!important}
 .page-title h1{font-size:32px!important;line-height:1.15!important}
@@ -638,7 +644,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.63">ver.2.63</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.64">ver.2.64</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
