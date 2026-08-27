@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.70 · 앱 복귀 자동 갱신 및 중복 저장 방지</title>
+<title>monee 가계부 · ver.2.71 · 적금 연결 및 삭제 중복 차감 방지</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -647,7 +647,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.70">ver.2.70</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.71">ver.2.71</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1479,16 +1479,31 @@ function changeSavingAssetAmount(assetId,delta){
   const next=Math.max(0,Number(asset.amount||0)+Number(delta||0));
   return supabaseClient.from('assets').update({amount:next}).eq('id',asset.id).eq('user_id',currentUser.id);
 }
+const moneeSavingLocks=new Set();
 async function reverseSavingLink(transactionId){
-  const link=findSavingLink(transactionId);
-  if(!link)return;
-  await changeSavingAssetAmount(link.assetId,-Number(link.amount||0));
-  saveSavingLink(transactionId,null,0);
+  if(!transactionId||moneeSavingLocks.has(`reverse:${transactionId}`))return;
+  moneeSavingLocks.add(`reverse:${transactionId}`);
+  try{
+    const link=findSavingLink(transactionId);
+    if(!link)return;
+    const result=await changeSavingAssetAmount(link.assetId,-Number(link.amount||0));
+    if(result?.error)throw result.error;
+    saveSavingLink(transactionId,null,0);
+  }finally{
+    moneeSavingLocks.delete(`reverse:${transactionId}`);
+  }
 }
 async function applySavingLink(transactionId,assetId,amount){
-  if(!assetId)return;
-  await changeSavingAssetAmount(assetId,Number(amount||0));
-  saveSavingLink(transactionId,assetId,Number(amount||0));
+  if(!transactionId||!assetId)return;
+  if(moneeSavingLocks.has(`apply:${transactionId}`))return;
+  moneeSavingLocks.add(`apply:${transactionId}`);
+  try{
+    const result=await changeSavingAssetAmount(assetId,Number(amount||0));
+    if(result?.error)throw result.error;
+    saveSavingLink(transactionId,assetId,Number(amount||0));
+  }finally{
+    moneeSavingLocks.delete(`apply:${transactionId}`);
+  }
 }
 
 function fillEditSavingAssets(selectedId=''){
@@ -1718,13 +1733,22 @@ function renderIncomeTransactions(){
 
 async function deleteTransactionRecord(){
   const id=$("editTransactionId").value;
-  if(!id)return;
+  if(!id||moneeSavingLocks.has(`delete:${id}`))return;
   if(!confirm('이 내역을 삭제할까요?'))return;
-  const {error}=await supabaseClient.from('transactions').delete().eq('id',id).eq('user_id',currentUser.id);
-  if(error)return alert(error.message);
-  await reverseSavingLink(id);
-  closeModal('transactionEditModal');
-  await loadAll();
+  moneeSavingLocks.add(`delete:${id}`);
+  const btn=$("deleteTransactionBtn");
+  const wasDisabled=btn?.disabled;
+  if(btn)btn.disabled=true;
+  try{
+    const {error}=await supabaseClient.from('transactions').delete().eq('id',id).eq('user_id',currentUser.id);
+    if(error){alert(error.message);return;}
+    await reverseSavingLink(id);
+    closeModal('transactionEditModal');
+    await loadAll();
+  }finally{
+    moneeSavingLocks.delete(`delete:${id}`);
+    if(btn)btn.disabled=wasDisabled;
+  }
 }
 async function deleteIncomeRecord(){
   const id=$("editIncomeId").value;
@@ -1735,7 +1759,28 @@ async function deleteIncomeRecord(){
   closeModal('incomeEditModal');
   await loadAll();
 }
-async function saveTransactionEdit(e){e.preventDefault();const id=$("editTransactionId").value;const payload={transaction_date:$("editDate").value,amount:currencyNumber('editAmount'),category_id:$("editCategory").value||null,payment_method:$("editMethod").value,memo:$("editMemo").value.trim()};if(payload.amount<=0)return;const {error}=await supabaseClient.from('transactions').update(payload).eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);const oldLink=findSavingLink(id);if(oldLink)await reverseSavingLink(id);const newCat=budgetCategories.find(c=>String(c.id)===String(payload.category_id));const newSavingId=$("editSavingAssetSelect")?.value||'';if(newCat?.name==='적금'&&newSavingId){await applySavingLink(id,newSavingId,payload.amount)}else{saveSavingLink(id,null,0)}saveEditTimestamp(id);closeModal('transactionEditModal');await loadAll()}
+async function saveTransactionEdit(e){
+  e.preventDefault();
+  const id=$("editTransactionId").value;
+  if(!id||moneeSavingLocks.has(`edit:${id}`))return;
+  const payload={transaction_date:$("editDate").value,amount:currencyNumber('editAmount'),category_id:$("editCategory").value||null,payment_method:$("editMethod").value,memo:$("editMemo").value.trim()};
+  if(payload.amount<=0)return;
+  moneeSavingLocks.add(`edit:${id}`);
+  try{
+    const {error}=await supabaseClient.from('transactions').update(payload).eq('id',id).eq('user_id',currentUser.id);
+    if(error){alert(error.message);return;}
+    const oldLink=findSavingLink(id);
+    if(oldLink)await reverseSavingLink(id);
+    const newCat=budgetCategories.find(c=>String(c.id)===String(payload.category_id));
+    const newSavingId=$("editSavingAssetSelect")?.value||'';
+    if(newCat?.name==='적금'&&newSavingId){await applySavingLink(id,newSavingId,payload.amount)}else{saveSavingLink(id,null,0)}
+    saveEditTimestamp(id);
+    closeModal('transactionEditModal');
+    await loadAll();
+  }finally{
+    moneeSavingLocks.delete(`edit:${id}`);
+  }
+}
 function renderAllTransactions(){const list=sortTransactions(transactions.filter(t=>t.type==='expense'));$("allTransactionsList").innerHTML=list.length?list.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row" data-all-transaction-id="${escapeText(t.id)}" style="cursor:pointer"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join(''):'<div class="empty-state">등록된 내역이 없어요.</div>';document.querySelectorAll('[data-all-transaction-id]').forEach(x=>x.onclick=()=>openTransactionEdit(x.dataset.allTransactionId));renderLucideIcons($("allTransactionsList"))}
 
 async function saveIncomeEdit(e){
@@ -1896,7 +1941,7 @@ async function startApp(user){
   }
 }
 
-/* ver.2.70: automatically refresh data when the app returns to the foreground */
+/* ver.2.71: 적금 연결 선택 복원 및 자산 중복 차감 방지 */
 let autoRefreshPromise=null;
 let lastAutoRefreshAt=0;
 async function refreshOnResume(){
