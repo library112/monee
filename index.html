@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.69 · 앱 복귀 자동 갱신 및 중복 저장 방지</title>
+<title>monee 가계부 · ver.2.70 · 앱 복귀 자동 갱신 및 중복 저장 방지</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -588,12 +588,12 @@ nav.nav .icon{
   .asset-category-panel>.section-head{padding-left:10px!important}
 }
 
-/* ver.2.69: budget heading restored to the card inner alignment */
+/* ver.2.70: budget heading restored to the card inner alignment */
 .budget-overview > .section-head{padding-left:0!important}
 .budget-overview > .section-head h2{transform:none!important}
 
 
-/* ver.2.69: goals page - nudge only "나의 목표" heading right */
+/* ver.2.70: goals page - nudge only "나의 목표" heading right */
 .goals-page>.section-head h2{transform:translateX(10px)!important}
 
 </style>
@@ -647,7 +647,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.69">ver.2.69</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.70">ver.2.70</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1034,7 +1034,7 @@ function renderBudget(){
  const setSummaryProgress=(rate,valueId,progressId)=>{
    const valueEl=$(valueId), progressEl=$(progressId);
    const capped=Math.min(100,Math.max(0,rate));
-   const color=rate>100?'#ef4444':rate===100?'var(--orange)':'var(--blue)';
+   const color=rate>100?'#ef4444':rate===100?'var(--orange)':'var(--blue-dark)';
    valueEl.textContent=rate.toFixed(1)+'%';
    progressEl.style.width=capped+'%';
    progressEl.style.background=color;
@@ -1052,7 +1052,7 @@ function renderBudget(){
    const rawPct=budget>0?(spent/budget)*100:(spent>0?Infinity:0);
    const barPct=Number.isFinite(rawPct)?Math.max(0,Math.min(100,rawPct)):(spent>0?100:0);
    const pctText=budget>0?`${rawPct.toFixed(1)}%`:(spent>0?'지출 있음':'0.0%');
-   const barColor=rawPct>100?'#ef4444':rawPct===100?'var(--orange)':'var(--blue)';
+   const barColor=rawPct>100?'#ef4444':rawPct===100?'var(--orange)':'var(--blue-dark)';
    const rateClass=rawPct>100?'over':rawPct===100?'warn':(budget===0&&spent>0?'has-spent':'');
    return `<div class="tr">
      <div class="cat-label"><span class="cat-icon"><i data-lucide="${escapeText(catIcon(c))}"></i></span><span class="cat-name">${escapeText(c.name)}</span></div>
@@ -1896,7 +1896,7 @@ async function startApp(user){
   }
 }
 
-/* ver.2.69: automatically refresh data when the app returns to the foreground */
+/* ver.2.70: automatically refresh data when the app returns to the foreground */
 let autoRefreshPromise=null;
 let lastAutoRefreshAt=0;
 async function refreshOnResume(){
