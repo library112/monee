@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.67 · 예산 제목 정렬 미세조정</title>
+<title>monee 가계부 · ver.2.68 · 목표 섹션 제목 위치 미세조정</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -588,9 +588,13 @@ nav.nav .icon{
   .asset-category-panel>.section-head{padding-left:10px!important}
 }
 
-/* ver.2.67: budget heading restored to the card inner alignment */
+/* ver.2.68: budget heading restored to the card inner alignment */
 .budget-overview > .section-head{padding-left:0!important}
 .budget-overview > .section-head h2{transform:none!important}
+
+
+/* ver.2.68: goals page - nudge only "나의 목표" heading right */
+.goals-page>.section-head h2{transform:translateX(10px)!important}
 
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -643,7 +647,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.67">ver.2.67</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.68">ver.2.68</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
