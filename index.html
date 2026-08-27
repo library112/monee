@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.72 · 적금 연결 및 삭제 중복 차감 방지</title>
+<title>monee 가계부 · ver.2.73 · 데이터 연결 및 기기 간 동기화 강화</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -647,7 +647,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.72">ver.2.72</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.73">ver.2.73</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -805,6 +805,53 @@ const editTimestampKey=()=>`monee-tx-edit-times-${currentUser?.id||'guest'}`;
 function loadEditTimestamps(){try{return JSON.parse(localStorage.getItem(editTimestampKey())||'{}')||{}}catch(e){return {}}}
 function saveEditTimestamp(id){try{const m=loadEditTimestamps();m[id]=Date.now();localStorage.setItem(editTimestampKey(),JSON.stringify(m))}catch(e){}}
 function txSortTime(t){const local=loadEditTimestamps()[t.id];return Number(local)||new Date(t.updated_at||t.created_at||0).getTime()||0}
+
+/* ver.2.73: 브라우저/Safari 홈 화면(Web App) 간 로컬 데이터 분리 문제를 보완합니다.
+   금융정보, 적금 연결, 적금 상세정보처럼 기존 localStorage에만 있던 사용자 데이터는
+   로그인 계정의 Supabase user metadata에도 보관하여 같은 계정의 모든 실행환경에서 공유합니다. */
+let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{}};
+let privateDataReady=false;
+let privateDataSaveQueue=Promise.resolve();
+function readJsonLocal(key,fallback){try{const v=JSON.parse(localStorage.getItem(key)||'');return v??fallback}catch(e){return fallback}}
+function localFinanceNotes(){const all=readJsonLocal('monee_finance_notes',[]);return Array.isArray(all)?all.filter(n=>n&&n.userId===currentUser?.id):[]}
+function localSavingLinks(){const v=readJsonLocal('monee_saving_links',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
+function localAssetMeta(){const v=readJsonLocal('monee_asset_meta',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
+function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
+async function savePrivateData(){
+  if(!currentUser)return;
+  const snapshot=JSON.parse(JSON.stringify(moneePrivateData));
+  privateDataSaveQueue=privateDataSaveQueue.then(async()=>{
+    const {data,error}=await supabaseClient.auth.updateUser({data:{monee_private_data:snapshot}});
+    if(error){console.error('사용자 데이터 저장 실패:',error);return false;}
+    if(data?.user){currentUser=data.user;}
+    writePrivateDataToLocal();
+    return true;
+  }).catch(e=>{console.error('사용자 데이터 저장 실패:',e);return false;});
+  return privateDataSaveQueue;
+}
+async function hydratePrivateData(){
+  if(!currentUser)return;
+  const {data,error}=await supabaseClient.auth.getUser();
+  if(error)throw error;
+  currentUser=data.user||currentUser;
+  const cloud=currentUser.user_metadata?.monee_private_data;
+  const cloudData=(cloud&&typeof cloud==='object')?cloud:null;
+  const hasCloudFinance=Array.isArray(cloudData?.financeNotes);
+  const hasCloudLinks=cloudData?.savingLinks&&typeof cloudData.savingLinks==='object'&&!Array.isArray(cloudData.savingLinks);
+  const hasCloudMeta=cloudData?.assetMeta&&typeof cloudData.assetMeta==='object'&&!Array.isArray(cloudData.assetMeta);
+  const localF=localFinanceNotes(), localL=localSavingLinks(), localA=localAssetMeta();
+  moneePrivateData={
+    financeNotes:hasCloudFinance?cloudData.financeNotes:localF,
+    savingLinks:hasCloudLinks?cloudData.savingLinks:localL,
+    assetMeta:hasCloudMeta?cloudData.assetMeta:localA
+  };
+  privateDataReady=true;
+  writePrivateDataToLocal();
+  // 홈 화면에서 처음 실행되어 로컬 데이터가 비어 있는 경우에는
+  // 빈 값을 클라우드에 먼저 써서 Safari의 기존 데이터를 덮어쓰지 않습니다.
+  const hasLocalData=localF.length>0||Object.keys(localL).length>0||Object.keys(localA).length>0;
+  if((!hasCloudFinance&&localF.length)||(!hasCloudLinks&&Object.keys(localL).length)||(!hasCloudMeta&&Object.keys(localA).length)||(!cloudData&&hasLocalData))await savePrivateData();
+}
 function sortTransactions(list){return [...list].sort((a,b)=>{const da=String(a.transaction_date||''),db=String(b.transaction_date||'');if(db!==da)return db.localeCompare(da);return txSortTime(b)-txSortTime(a)})}
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const monthDate=()=>`${viewYear}-${String(viewMonth+1).padStart(2,'0')}-01`;
@@ -1155,8 +1202,7 @@ async function openSavingDetail(assetId){
  $('savingDetailTaxRate').textContent=`${taxRate}%`;
  $('savingDetailMaturity').textContent=maturityDate?formatSavingDate(maturityDate):'-';
 
- let links={};
- try{links=JSON.parse(localStorage.getItem('monee_saving_links')||'{}')}catch(e){links={}}
+ const links=moneePrivateData.savingLinks||{};
  const linkedIds=Object.keys(links).filter(id=>String(links[id]?.assetId)===String(assetId));
  const list=[];
  linkedIds.forEach(id=>{
@@ -1339,18 +1385,12 @@ function renderGoals(){$('goalList').innerHTML=goals.length?goals.map(g=>{const 
 
 let financeNotes=[];
 function loadFinanceNotes(){
-  try{
-    const all=JSON.parse(localStorage.getItem('monee_finance_notes')||'[]');
-    financeNotes=Array.isArray(all)?all.filter(n=>n&&n.userId===currentUser?.id):[];
-  }catch(e){financeNotes=[]}
+  financeNotes=privateDataReady?([...moneePrivateData.financeNotes].filter(n=>n&&n.userId===currentUser?.id)):localFinanceNotes();
 }
-function saveFinanceNotes(){
-  let all=[];
-  try{
-    const raw=JSON.parse(localStorage.getItem('monee_finance_notes')||'[]');
-    all=Array.isArray(raw)?raw.filter(n=>n&&n.userId!==currentUser?.id):[];
-  }catch(e){}
-  localStorage.setItem('monee_finance_notes',JSON.stringify(all.concat(financeNotes)));
+async function saveFinanceNotes(){
+  moneePrivateData.financeNotes=[...financeNotes];
+  writePrivateDataToLocal();
+  await savePrivateData();
 }
 function financeDate(v){
   if(!v)return '';
@@ -1414,7 +1454,7 @@ function openFinanceNote(id){
   $('financeNoteModalTitle').textContent=n?'금융정보 수정':'금융정보 추가';
   openModal('financeNoteModal');
 }
-function saveFinanceNoteForm(e){
+async function saveFinanceNoteForm(e){
   e.preventDefault();
   const id=$('financeNoteId').value;
   const note={
@@ -1429,7 +1469,7 @@ function saveFinanceNoteForm(e){
   if(!note.title)return alert('제목을 입력해 주세요.');
   if(id)financeNotes=financeNotes.map(n=>n.id===id?note:n);
   else financeNotes.push(note);
-  saveFinanceNotes();
+  await saveFinanceNotes();
   closeModal('financeNoteModal');
   e.target.reset();
   $('financeNoteId').value='';
@@ -1460,17 +1500,16 @@ function updateSavingLinkField(selectedId=''){
   else if($('savingAssetSelect'))$('savingAssetSelect').value='';
 }
 function findSavingLink(transactionId){
-  try{
-    const links=JSON.parse(localStorage.getItem('monee_saving_links')||'{}');
-    return links[transactionId]||null;
-  }catch(e){return null}
+  const links=moneePrivateData.savingLinks||{};
+  return links[transactionId]||null;
 }
-function saveSavingLink(transactionId,assetId,amount){
-  let links={};
-  try{links=JSON.parse(localStorage.getItem('monee_saving_links')||'{}')}catch(e){}
+async function saveSavingLink(transactionId,assetId,amount){
+  const links={...(moneePrivateData.savingLinks||{})};
   if(assetId)links[transactionId]={assetId,amount:Number(amount)||0};
   else delete links[transactionId];
-  localStorage.setItem('monee_saving_links',JSON.stringify(links));
+  moneePrivateData.savingLinks=links;
+  writePrivateDataToLocal();
+  await savePrivateData();
 }
 function changeSavingAssetAmount(assetId,delta){
   if(!assetId||!delta)return;
@@ -1488,7 +1527,7 @@ async function reverseSavingLink(transactionId){
     if(!link)return;
     const result=await changeSavingAssetAmount(link.assetId,-Number(link.amount||0));
     if(result?.error)throw result.error;
-    saveSavingLink(transactionId,null,0);
+    await saveSavingLink(transactionId,null,0);
   }finally{
     moneeSavingLocks.delete(`reverse:${transactionId}`);
   }
@@ -1500,7 +1539,7 @@ async function applySavingLink(transactionId,assetId,amount){
   try{
     const result=await changeSavingAssetAmount(assetId,Number(amount||0));
     if(result?.error)throw result.error;
-    saveSavingLink(transactionId,assetId,Number(amount||0));
+    await saveSavingLink(transactionId,assetId,Number(amount||0));
   }finally{
     moneeSavingLocks.delete(`apply:${transactionId}`);
   }
@@ -1514,32 +1553,24 @@ function fillEditSavingAssets(selectedId=''){
     list.map(a=>`<option value="${escapeText(a.id)}">${escapeText(a.name)}</option>`).join('');
   if(selectedId)select.value=selectedId;
 }
-function updateEditSavingLinkField(selectedId='',forceSaving=false){
+function updateEditSavingLinkField(selectedId=''){
   const field=$('editSavingLinkField');
   const category=$('editCategory');
   if(!field||!category)return;
   const cat=budgetCategories.find(c=>String(c.id)===String(category.value));
-  const isSaving=forceSaving||cat?.name==='적금';
+  const isSaving=cat?.name==='적금';
   field.style.display=isSaving?'block':'none';
   if(isSaving)fillEditSavingAssets(selectedId);
   else if($('editSavingAssetSelect'))$('editSavingAssetSelect').value='';
 }
 function fillCategories(){const list=entryType==='income'?incomeCats:budgetCategories.map(c=>c.name);$('category').innerHTML=list.map(c=>`<option>${escapeText(c)}</option>`).join('');$('methodBox').style.display=entryType==='income'?'none':'block'}
 function setModalLock(locked){document.body.style.overflow=locked?'hidden':''}function getAssetMeta(a){
- let meta={
-   interestRate:a?.interest_rate??'',
-   maturityDate:a?.maturity_date??'',
-   termMonths:a?.term_months??'',
-   taxRate:a?.tax_rate??''
- };
- try{
-   const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
-   const saved=all[a?.id]||{};
-   if(meta.interestRate===''&&saved.interestRate!==undefined)meta.interestRate=saved.interestRate;
-   if(meta.maturityDate===''&&saved.maturityDate!==undefined)meta.maturityDate=saved.maturityDate;
-   if(meta.termMonths===''&&saved.termMonths!==undefined)meta.termMonths=saved.termMonths;
-   if(meta.taxRate===''&&saved.taxRate!==undefined)meta.taxRate=saved.taxRate;
- }catch(e){}
+ let meta={interestRate:a?.interest_rate??'',maturityDate:a?.maturity_date??'',termMonths:a?.term_months??'',taxRate:a?.tax_rate??''};
+ const saved=(moneePrivateData.assetMeta||{})[a?.id]||{};
+ if(meta.interestRate===''&&saved.interestRate!==undefined)meta.interestRate=saved.interestRate;
+ if(meta.maturityDate===''&&saved.maturityDate!==undefined)meta.maturityDate=saved.maturityDate;
+ if(meta.termMonths===''&&saved.termMonths!==undefined)meta.termMonths=saved.termMonths;
+ if(meta.taxRate===''&&saved.taxRate!==undefined)meta.taxRate=saved.taxRate;
  return meta;
 }
 function setSavingFieldsVisible(type){document.querySelectorAll('.saving-only-field').forEach(el=>el.style.display=type==='저축'?'block':'none')}
@@ -1701,7 +1732,7 @@ async function saveBudgetCategories(){
   saveLocalCategoryPrefs();closeModal('budgetEditModal');await loadAll();
 }
 function fillEditCategories(selectedId){$("editCategory").innerHTML=budgetCategories.map(c=>`<option value="${escapeText(c.id)}">${escapeText(c.name)}</option>`).join('');if(selectedId)$("editCategory").value=selectedId}
-function openTransactionEdit(id){const t=transactions.find(x=>x.id===id);if(!t||t.type!=='expense')return;$("editTransactionId").value=t.id;$("editDate").value=t.transaction_date||todayLocal();$("editAmount").value=formatCurrencyInputValue(t.amount||'');fillEditCategories(t.category_id);const link=findSavingLink(t.id);const cat=budgetCategories.find(c=>String(c.id)===String(t.category_id));const historicalSaving=cat?.name==='적금';updateEditSavingLinkField(link?.assetId||'',historicalSaving);$("editMethod").value=t.payment_method||'카드';$("editMemo").value=t.memo||'';openModal('transactionEditModal')}
+function openTransactionEdit(id){const t=transactions.find(x=>x.id===id);if(!t||t.type!=='expense')return;$("editTransactionId").value=t.id;$("editDate").value=t.transaction_date||todayLocal();$("editAmount").value=formatCurrencyInputValue(t.amount||'');fillEditCategories(t.category_id);const link=findSavingLink(t.id);updateEditSavingLinkField(link?.assetId||'');$("editMethod").value=t.payment_method||'카드';$("editMemo").value=t.memo||'';openModal('transactionEditModal')}
 function fillIncomeEditCategories(selectedId){
   const cats=incomeCategories.length?incomeCategories:incomeCats.map(name=>({id:name,name,type:'income'}));
   $("editIncomeCategory").innerHTML=cats.map(c=>`<option value="${escapeText(c.name)}">${escapeText(c.name)}</option>`).join('');
@@ -1773,7 +1804,7 @@ async function saveTransactionEdit(e){
     if(oldLink)await reverseSavingLink(id);
     const newCat=budgetCategories.find(c=>String(c.id)===String(payload.category_id));
     const newSavingId=$("editSavingAssetSelect")?.value||'';
-    if(newCat?.name==='적금'&&newSavingId){await applySavingLink(id,newSavingId,payload.amount)}else{saveSavingLink(id,null,0)}
+    if(newCat?.name==='적금'&&newSavingId){await applySavingLink(id,newSavingId,payload.amount)}else{await saveSavingLink(id,null,0)}
     saveEditTimestamp(id);
     closeModal('transactionEditModal');
     await loadAll();
@@ -1838,7 +1869,7 @@ async function saveTransaction(e){
   if(type==='expense'&&name==='적금'&&savingId){
     await applySavingLink(transactionId,savingId,amount);
   }else{
-    saveSavingLink(transactionId,null,0);
+    await saveSavingLink(transactionId,null,0);
   }
 
   closeModal('modal');
@@ -1896,24 +1927,16 @@ async function saveAsset(e){
  if(error)return alert(error.message);
  if(!savedId)return alert('자산을 저장했지만 자산 ID를 확인하지 못했어요.');
 
- // 적금 상세정보는 DB 스키마에 의존하지 않고 로컬 메타데이터로 저장
- // 새 적금과 기존 적금 모두 동일하게 처리합니다.
- try{
-   const all=JSON.parse(localStorage.getItem('monee_asset_meta')||'{}');
-   if(type==='저축'){
-     all[savedId]={
-       interestRate:interestValue,
-       maturityDate,
-       termMonths:termValue,
-       taxRate:taxValue
-     };
-   }else{
-     delete all[savedId];
-   }
-   localStorage.setItem('monee_asset_meta',JSON.stringify(all));
- }catch(e){
-   return alert('적금 상세정보를 저장하지 못했어요.');
+ // 적금 상세정보도 계정 데이터로 저장하여 Safari와 홈 화면에서 공유합니다.
+ const allMeta={...(moneePrivateData.assetMeta||{})};
+ if(type==='저축'){
+   allMeta[savedId]={interestRate:interestValue,maturityDate,termMonths:termValue,taxRate:taxValue};
+ }else{
+   delete allMeta[savedId];
  }
+ moneePrivateData.assetMeta=allMeta;
+ writePrivateDataToLocal();
+ await savePrivateData();
 
  closeModal('assetModal');
  e.target.reset();
@@ -1932,6 +1955,7 @@ async function startApp(user){
   $('settingsUserEmail').textContent=user.email||'';
   try{
     await seedDemo();
+    await hydratePrivateData();
     await loadAll();
   }catch(e){
     console.error(e);
@@ -1941,7 +1965,7 @@ async function startApp(user){
   }
 }
 
-/* ver.2.72: 적금 연결 선택 복원 및 자산 중복 차감 방지 */
+/* ver.2.73: 적금 연결 선택 복원, 중복 차감 방지, 기기 간 데이터 동기화 */
 let autoRefreshPromise=null;
 let lastAutoRefreshAt=0;
 async function refreshOnResume(){
