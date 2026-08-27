@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.68 · 목표 섹션 제목 위치 미세조정</title>
+<title>monee 가계부 · ver.2.69 · 앱 복귀 자동 갱신 및 중복 저장 방지</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -588,12 +588,12 @@ nav.nav .icon{
   .asset-category-panel>.section-head{padding-left:10px!important}
 }
 
-/* ver.2.68: budget heading restored to the card inner alignment */
+/* ver.2.69: budget heading restored to the card inner alignment */
 .budget-overview > .section-head{padding-left:0!important}
 .budget-overview > .section-head h2{transform:none!important}
 
 
-/* ver.2.68: goals page - nudge only "나의 목표" heading right */
+/* ver.2.69: goals page - nudge only "나의 목표" heading right */
 .goals-page>.section-head h2{transform:translateX(10px)!important}
 
 </style>
@@ -647,7 +647,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.68">ver.2.68</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.69">ver.2.69</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1895,6 +1895,44 @@ async function startApp(user){
     appStarting=false;
   }
 }
+
+/* ver.2.69: automatically refresh data when the app returns to the foreground */
+let autoRefreshPromise=null;
+let lastAutoRefreshAt=0;
+async function refreshOnResume(){
+  if(!currentUser||appStarting)return;
+  const now=Date.now();
+  if(now-lastAutoRefreshAt<800)return;
+  if(autoRefreshPromise)return autoRefreshPromise;
+  lastAutoRefreshAt=now;
+  autoRefreshPromise=(async()=>{
+    try{await loadAll();}
+    catch(e){console.error('자동 새로고침 실패:',e);}
+    finally{autoRefreshPromise=null;}
+  })();
+  return autoRefreshPromise;
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')refreshOnResume();
+});
+window.addEventListener('pageshow',()=>refreshOnResume());
+
+function preventDoubleSubmit(handler){
+  return async function(e){
+    const form=e.currentTarget;
+    if(form.__moneeSubmitting)return;
+    form.__moneeSubmitting=true;
+    const submitter=e.submitter||form.querySelector('button[type="submit"]');
+    const wasDisabled=submitter?.disabled;
+    if(submitter)submitter.disabled=true;
+    try{await handler(e);}
+    finally{
+      form.__moneeSubmitting=false;
+      if(submitter)submitter.disabled=wasDisabled;
+    }
+  };
+}
+
 bindAllCurrencyInputs();$('loginForm').addEventListener('submit',login);$('settingsLogoutBtn').addEventListener('click',()=>supabaseClient.auth.signOut());$('openAssetsSetting').onclick=()=>{renderAssets();openModal('assetManageModal')};
 function setModalLock(locked){document.body.classList.toggle('modal-open',locked)}
 function openModal(id){$(id).classList.add('show');setModalLock(true)}
@@ -1906,16 +1944,16 @@ $('floatingAction').onclick=()=>{const active=document.querySelector('.page.acti
 $('openAllTransactions').onclick=()=>{renderAllTransactions();openModal('allTransactionsModal')};$('moreTransactions').onclick=function(e){e.preventDefault();e.stopPropagation();const rows=document.querySelectorAll('#budget .recent [data-extra-recent="true"]');const open=this.dataset.open==='true';rows.forEach(row=>{row.style.display=open?'none':'grid';});this.dataset.open=open?'false':'true';this.classList.toggle('expanded',!open);this.querySelector('.more-label').textContent=open?'더 보기':'접기';this.querySelector('.more-chevron').textContent=open?'▼':'▲';};
 $('incomeOverviewCard').onclick=()=>{renderIncomeTransactions();openModal('incomeTransactionsModal')};
 $('incomeOverviewCard').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();renderIncomeTransactions();openModal('incomeTransactionsModal')}};
-$('incomeEditForm').addEventListener('submit',saveIncomeEdit);$('deleteIncomeBtn').onclick=deleteIncomeRecord;$('deleteTransactionBtn').onclick=deleteTransactionRecord;
-$('transactionEditForm').addEventListener('submit',saveTransactionEdit);$('editCategory').addEventListener('change',()=>updateEditSavingLinkField());
+$('incomeEditForm').addEventListener('submit',preventDoubleSubmit(saveIncomeEdit));$('deleteIncomeBtn').onclick=deleteIncomeRecord;$('deleteTransactionBtn').onclick=deleteTransactionRecord;
+$('transactionEditForm').addEventListener('submit',preventDoubleSubmit(saveTransactionEdit));$('editCategory').addEventListener('change',()=>updateEditSavingLinkField());
 $('closeModal').onclick=()=>closeModal('modal');document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));document.querySelectorAll('.modal-back').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)closeModal(back.id)}));
 $('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories();updateSavingLinkField()};
-$('category').addEventListener('change',()=>updateSavingLinkField());$('entryForm').addEventListener('submit',saveTransaction);$('financeNoteForm').addEventListener('submit',saveFinanceNoteForm);$('assetForm').addEventListener('submit',saveAsset);$('assetType').addEventListener('change',e=>setSavingFieldsVisible(e.target.value));
+$('category').addEventListener('change',()=>updateSavingLinkField());$('entryForm').addEventListener('submit',preventDoubleSubmit(saveTransaction));$('financeNoteForm').addEventListener('submit',preventDoubleSubmit(saveFinanceNoteForm));$('assetForm').addEventListener('submit',preventDoubleSubmit(saveAsset));$('assetType').addEventListener('change',e=>setSavingFieldsVisible(e.target.value));
 ['assetInterestRate','assetTermMonths','assetTaxRate'].forEach(id=>{
  const el=$(id);
  if(el)el.addEventListener('focus',()=>{el.style.fontSize='16px';});
 });
-$('goalForm').addEventListener('submit',saveGoal);
+$('goalForm').addEventListener('submit',preventDoubleSubmit(saveGoal));
 $('editBudgetSetting').onclick=()=>{renderBudgetEditor();openModal('budgetEditModal')};
 $('addBudgetCategory').onclick=async()=>{
  const name=prompt('새 예산 항목 이름을 입력해 주세요.','새 항목');
