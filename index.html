@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.80 · 적금 만기 예상금액 반영</title>
+<title>monee 가계부 · ver.2.81 · 적금 만기 예상금액 반영</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -590,7 +590,7 @@ nav.nav .icon{
 
 /* ver.2.76: budget page recent-list trailing space — keep the same 12px card rhythm */
 /* ver.2.78: 적금 만기 처리 시 새 자산의 유형을 선택하고 DB 저장값을 정규화 */
-/* ver.2.80: 만기 처리에 만기 예상 금액을 표시하고 실제 입금 금액 기본값에 반영 */
+/* ver.2.81: 만기 처리에 만기 예상 금액을 표시하고 실제 입금 금액 기본값에 반영 */
 #budget.active{padding-bottom:0;margin-bottom:-128px}
 
 /* ver.2.70: budget heading restored to the card inner alignment */
@@ -622,6 +622,15 @@ nav.nav .icon{
 .maturity-destination-note{font-size:9px;color:var(--muted);line-height:1.5;margin-top:7px}
 .maturity-new-asset{display:none}
 .maturity-new-asset.show{display:block}
+.maturity-allocations{display:grid;gap:8px}
+.maturity-allocation-row{background:#f7fafc;border:1px solid var(--line);border-radius:10px;padding:9px;display:grid;grid-template-columns:minmax(0,1fr) 118px auto;gap:7px;align-items:start}
+.maturity-allocation-row select,.maturity-allocation-row input{width:100%;min-width:0}
+.maturity-allocation-row .maturity-allocation-extra{grid-column:1/-1;display:grid;gap:7px}
+.maturity-allocation-remove{border:0;background:#fbecec;color:#d05c5c;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer}
+.maturity-add-allocation{margin-top:7px;width:100%;border:1px dashed #b8c7d7;background:#f7fafc;color:#58799d;border-radius:9px;padding:9px;font-weight:700;cursor:pointer}
+.maturity-allocation-status{font-size:9px;color:var(--muted);margin-top:6px;line-height:1.5}
+.maturity-allocation-status.ok{color:#58799d}
+.maturity-allocation-status.error{color:#d05c5c}
 .maturity-history-badge{font-size:8px;color:#718096;background:#f1f5f9;border-radius:999px;padding:3px 6px;white-space:nowrap}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -674,7 +683,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.80">ver.2.80</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.80">ver.2.81</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -783,8 +792,7 @@ const supabaseClient = window.supabase.createClient(
 <div class="maturity-summary"><div class="maturity-summary-row"><span class="maturity-summary-label">만기 적금</span><strong class="maturity-summary-value" id="maturitySourceName">-</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">현재 적금 금액</span><strong class="maturity-summary-value" id="maturitySourceAmount">₩0</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">만기 예상 금액</span><strong class="maturity-summary-value" id="maturityExpectedAmount">₩0</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">실제 입금 금액</span><strong class="maturity-summary-value" id="maturityTransferAmount">₩0</strong></div><div class="maturity-destination-note">이자는 실제 입금 금액에 포함해 입력할 수 있어요. 기존 자산으로 옮기면 해당 자산에 더하고, 새 자산을 만들면 원하는 자산 유형으로 등록해요.</div></div>
 <form id="maturityTransferForm" class="form-grid"><input type="hidden" id="maturitySourceId">
 <div class="field full"><label>실제 입금 금액 (원)</label><input id="maturityReceivedAmount" type="text" inputmode="numeric" required></div>
-<div class="field full"><label>받을 자산</label><select id="maturityDestination"><option value="">받을 자산을 선택해 주세요</option></select></div>
-<div class="field full maturity-new-asset" id="maturityNewAssetTypeField"><label>새 자산 종류</label><select id="maturityNewAssetType"><option value="저축" selected>저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field full maturity-new-asset" id="maturityNewAssetField"><label>새 자산 이름</label><input id="maturityNewAssetName" type="text" placeholder="예: 우리은행 정기예금"></div>
+<div class="field full maturity-allocation-field"><label>받을 자산</label><div id="maturityAllocations" class="maturity-allocations"></div><button type="button" id="addMaturityAllocation" class="maturity-add-allocation">＋ 받을 자산 추가</button><div id="maturityAllocationStatus" class="maturity-allocation-status"></div></div>
 <button class="primary full" type="submit" id="maturityTransferSubmit">만기 처리하기</button>
 </form></div></div>
 <div class="modal-back" id="goalModal"><div class="modal"><div class="modal-head"><h3 id="goalModalTitle">새 목표 만들기</h3><button class="x" data-close-modal="goalModal">×</button></div><form id="goalForm" class="form-grid"><input type="hidden" id="goalId"><div class="field full"><label>목표 이름</label><input id="goalName" required placeholder="예: 유럽 여행"></div><div class="field"><label>목표 금액</label><input id="goalTarget" type="number" min="0" step="10000" required placeholder="3000000"></div><div class="field"><label>현재 모은 금액</label><input id="goalCurrent" type="number" min="0" step="10000" required placeholder="500000"></div><div class="field full"><label>추가할 금액</label><input id="goalAddAmount" type="number" min="0" step="10000" placeholder="0"></div><button class="primary full" type="submit" id="goalSubmitBtn">목표 추가하기</button></form></div></div>
@@ -1666,14 +1674,95 @@ function setSavingFieldsVisible(type){document.querySelectorAll('.saving-only-fi
 
 let maturityTransferLock=false;
 let maturitySourceAssetId='';
-function fillMaturityDestinations(){
-  const select=$('maturityDestination');
-  if(!select)return;
+function maturityAssetChoices(){
   const current=maturitySourceAssetId;
-  const choices=assets.filter(a=>String(a.id)!==String(current)&&!isMaturityCompleted(a.id));
-  select.innerHTML='<option value="">받을 자산을 선택해 주세요</option>'+
-    choices.map(a=>`<option value="${escapeText(String(a.id))}">${escapeText(a.name)} · ${escapeText(assetTypeLabel(a.asset_type))}</option>`).join('')+
+  return assets.filter(a=>String(a.id)!==String(current)&&!isMaturityCompleted(a.id));
+}
+function maturityAssetOptions(){
+  return '<option value="">받을 자산을 선택해 주세요</option>'+
+    maturityAssetChoices().map(a=>`<option value="${escapeText(String(a.id))}">${escapeText(a.name)} · ${escapeText(assetTypeLabel(a.asset_type))}</option>`).join('')+
     '<option value="__new__">＋ 새 자산 만들기</option>';
+}
+function addMaturityAllocationRow(initialAmount=0){
+  const wrap=$('maturityAllocations');
+  if(!wrap)return;
+  const row=document.createElement('div');
+  row.className='maturity-allocation-row';
+  row.innerHTML=`
+    <select class="maturity-allocation-destination" aria-label="받을 자산">${maturityAssetOptions()}</select>
+    <input class="maturity-allocation-amount" type="text" inputmode="numeric" value="${formatCurrencyInputValue(initialAmount)}" aria-label="배분 금액" placeholder="금액">
+    <button type="button" class="maturity-allocation-remove" aria-label="받을 자산 삭제">×</button>
+    <div class="maturity-allocation-extra" hidden>
+      <select class="maturity-allocation-type" aria-label="새 자산 종류">
+        <option value="저축" selected>저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option>
+      </select>
+      <input class="maturity-allocation-name" type="text" placeholder="새 자산 이름 (예: 신한 정기예금)" aria-label="새 자산 이름">
+    </div>`;
+  wrap.appendChild(row);
+  const amount=row.querySelector('.maturity-allocation-amount');
+  bindCurrencyInputElement(amount);
+  const destination=row.querySelector('.maturity-allocation-destination');
+  const extra=row.querySelector('.maturity-allocation-extra');
+  const remove=row.querySelector('.maturity-allocation-remove');
+  destination.addEventListener('change',()=>{
+    extra.hidden=destination.value!=='__new__';
+    if(destination.value!=='__new__'){
+      row.querySelector('.maturity-allocation-name').value='';
+      row.querySelector('.maturity-allocation-type').value='저축';
+    }
+    updateMaturityAllocationStatus();
+  });
+  amount.addEventListener('input',updateMaturityAllocationStatus);
+  remove.addEventListener('click',()=>{
+    const rows=wrap.querySelectorAll('.maturity-allocation-row');
+    if(rows.length<=1){amount.value='0';updateMaturityAllocationStatus();return;}
+    row.remove();
+    updateMaturityAllocationStatus();
+  });
+  updateMaturityAllocationStatus();
+  return row;
+}
+function bindCurrencyInputElement(el){
+  if(!el||el.dataset.currencyBound==='1')return;
+  el.dataset.currencyBound='1';
+  el.addEventListener('input',()=>{el.value=formatCurrencyInputValue(el.value.replace(/[^\d]/g,''));});
+  el.addEventListener('focus',()=>{el.value=formatCurrencyInputValue(el.value);});
+  el.addEventListener('blur',()=>{el.value=formatCurrencyInputValue(el.value);});
+}
+function getMaturityAllocations(){
+  return [...document.querySelectorAll('#maturityAllocations .maturity-allocation-row')].map(row=>({
+    destination:row.querySelector('.maturity-allocation-destination')?.value||'',
+    amount:Number(String(row.querySelector('.maturity-allocation-amount')?.value||'').replace(/[^\d]/g,''))||0,
+    newType:row.querySelector('.maturity-allocation-type')?.value||'저축',
+    newName:row.querySelector('.maturity-allocation-name')?.value.trim()||''
+  }));
+}
+function updateMaturityAllocationStatus(){
+  const status=$('maturityAllocationStatus');
+  const received=currencyNumber('maturityReceivedAmount');
+  const allocations=getMaturityAllocations();
+  const total=allocations.reduce((sum,a)=>sum+a.amount,0);
+  const diff=received-total;
+  if(!status)return;
+  if(diff===0){status.textContent=`배분 완료 · ${money(total)} / ${money(received)}`;status.className='maturity-allocation-status ok';}
+  else if(diff>0){status.textContent=`${money(diff)} 남음 · 실제 입금 금액과 배분 금액을 맞춰주세요.`;status.className='maturity-allocation-status error';}
+  else{status.textContent=`${money(-diff)} 초과 · 실제 입금 금액보다 많이 배분할 수 없어요.`;status.className='maturity-allocation-status error';}
+}
+function validateMaturityAllocations(received){
+  const allocations=getMaturityAllocations();
+  if(!allocations.length)return {ok:false,message:'받을 자산을 하나 이상 추가해 주세요.'};
+  const positive=allocations.filter(a=>a.amount>0);
+  if(positive.length!==allocations.length)return {ok:false,message:'각 받을 자산의 배분 금액을 입력해 주세요.'};
+  const existingIds=positive.filter(a=>a.destination!=='__new__').map(a=>a.destination);
+  if(new Set(existingIds).size!==existingIds.length)return {ok:false,message:'같은 기존 자산은 한 번만 선택해 주세요.'};
+  for(const a of positive){
+    if(!a.destination)return {ok:false,message:'받을 자산을 모두 선택해 주세요.'};
+    if(a.destination==='__new__'&&!a.newType)return {ok:false,message:'새 자산 종류를 선택해 주세요.'};
+    if(a.destination==='__new__'&&!a.newName)return {ok:false,message:'새 자산 이름을 입력해 주세요.'};
+  }
+  const total=positive.reduce((sum,a)=>sum+a.amount,0);
+  if(total!==received)return {ok:false,message:`배분 금액 합계가 실제 입금 금액과 맞지 않아요.\n\n실제 입금: ${money(received)}\n배분 합계: ${money(total)}`};
+  return {ok:true,allocations:positive};
 }
 function openMaturityTransfer(assetId){
   const asset=assets.find(a=>String(a.id)===String(assetId));
@@ -1688,12 +1777,9 @@ function openMaturityTransfer(assetId){
   $('maturityExpectedAmount').textContent=money(maturityEstimate.expectedTotal);
   $('maturityReceivedAmount').value=formatCurrencyInputValue(maturityEstimate.expectedTotal);
   $('maturityTransferAmount').textContent=money(maturityEstimate.expectedTotal);
-  $('maturityDestination').value='';
-  $('maturityNewAssetField').classList.remove('show');
-  $('maturityNewAssetTypeField').classList.remove('show');
-  $('maturityNewAssetType').value='저축';
-  $('maturityNewAssetName').value='';
-  fillMaturityDestinations();
+  $('maturityAllocations').innerHTML='';
+  addMaturityAllocationRow(maturityEstimate.expectedTotal);
+  updateMaturityAllocationStatus();
   openModal('maturityTransferModal');
 }
 async function saveMaturityTransfer(e){
@@ -1705,67 +1791,56 @@ async function saveMaturityTransfer(e){
   if(isMaturityCompleted(source.id))return alert('이미 만기 처리된 적금이에요.');
   const received=currencyNumber('maturityReceivedAmount');
   if(received<0)return alert('실제 입금 금액을 확인해 주세요.');
-  const destination=$('maturityDestination').value;
-  if(!destination)return alert('받을 자산을 선택해 주세요.');
-  if(destination==='__new__'&&!$('maturityNewAssetType').value)return alert('새 자산 종류를 선택해 주세요.');
-  if(destination==='__new__'&&!$('maturityNewAssetName').value.trim())return alert('새 자산 이름을 입력해 주세요.');
+  const validation=validateMaturityAllocations(received);
+  if(!validation.ok)return alert(validation.message);
+  const allocations=validation.allocations;
 
   maturityTransferLock=true;
   const records={...(moneePrivateData.maturityRecords||{})};
   if(records[sourceId]?.status==='processing'){maturityTransferLock=false;return alert('이미 처리 중인 만기 건이에요. 잠시 후 다시 확인해 주세요.');}
   const originalSourceAmount=Number(source.amount)||0;
   const record={
-    status:'processing',
-    sourceAssetId:sourceId,
-    sourceName:source.name||'적금',
-    maturityDate:getAssetMeta(source).maturityDate||'',
-    originalAmount:originalSourceAmount,
-    receivedAmount:received,
-    startedAt:new Date().toISOString()
+    status:'processing',sourceAssetId:sourceId,sourceName:source.name||'적금',
+    maturityDate:getAssetMeta(source).maturityDate||'',originalAmount:originalSourceAmount,
+    receivedAmount:received,allocations:allocations.map(a=>({...a})),startedAt:new Date().toISOString()
   };
   records[sourceId]=record;
   moneePrivateData.maturityRecords=records;
   const marked=await savePrivateData();
-  if(!marked){
-    maturityTransferLock=false;
-    return alert('만기 처리 준비에 실패했어요. 자산 금액은 변경되지 않았어요.');
-  }
+  if(!marked){maturityTransferLock=false;return alert('만기 처리 준비에 실패했어요. 자산 금액은 변경되지 않았어요.');}
 
-  let targetId='';
-  let targetName='';
-  let targetOriginalAmount=0;
-  let targetAssetType='';
-  let createdNew=false;
+  const changedTargets=[];
+  const createdTargetIds=[];
   try{
-    if(destination==='__new__'){
-      targetName=$('maturityNewAssetName').value.trim();
-      const selectedType=$('maturityNewAssetType').value;
-      // DB에서는 현금성으로 저장하고 화면에서는 입출금으로 표시합니다.
-      targetAssetType=selectedType==='입출금'?'현금성':selectedType;
-      const result=await supabaseClient.from('assets').insert({
-        user_id:currentUser.id,name:targetName,asset_type:targetAssetType,amount:received
-      }).select('id').single();
-      if(result.error||!result.data?.id)throw result.error||new Error('새 자산을 만들지 못했어요.');
-      targetId=String(result.data.id);
-      createdNew=true;
-    }else{
-      const target=assets.find(a=>String(a.id)===String(destination));
-      if(!target)throw new Error('받을 자산을 찾을 수 없어요.');
-      targetId=String(target.id);
-      targetName=target.name||'받을 자산';
-      targetAssetType=target.asset_type||'기타';
-      targetOriginalAmount=Number(target.amount)||0;
-      const {error}=await supabaseClient.from('assets').update({amount:targetOriginalAmount+received}).eq('id',target.id).eq('user_id',currentUser.id);
-      if(error)throw error;
+    for(const allocation of allocations){
+      if(allocation.destination==='__new__'){
+        const targetAssetType=allocation.newType==='입출금'?'현금성':allocation.newType;
+        const result=await supabaseClient.from('assets').insert({
+          user_id:currentUser.id,name:allocation.newName,asset_type:targetAssetType,amount:allocation.amount
+        }).select('id').single();
+        if(result.error||!result.data?.id)throw result.error||new Error('새 자산을 만들지 못했어요.');
+        const targetId=String(result.data.id);
+        createdTargetIds.push(targetId);
+        changedTargets.push({id:targetId,name:allocation.newName,assetType:targetAssetType,amount:allocation.amount,originalAmount:0,createdNew:true});
+      }else{
+        const target=assets.find(a=>String(a.id)===String(allocation.destination));
+        if(!target)throw new Error('받을 자산을 찾을 수 없어요.');
+        const originalAmount=Number(target.amount)||0;
+        const nextAmount=originalAmount+allocation.amount;
+        const {error}=await supabaseClient.from('assets').update({amount:nextAmount}).eq('id',target.id).eq('user_id',currentUser.id);
+        if(error)throw error;
+        changedTargets.push({id:String(target.id),name:target.name||'받을 자산',assetType:target.asset_type||'기타',amount:allocation.amount,originalAmount,createdNew:false});
+      }
     }
 
     const {error:sourceError}=await supabaseClient.from('assets').update({amount:0}).eq('id',source.id).eq('user_id',currentUser.id);
     if(sourceError)throw sourceError;
 
     record.status='completed';
-    record.targetAssetId=targetId;
-    record.targetName=targetName;
-    record.targetAssetType=targetAssetType||'기타';
+    record.allocations=changedTargets.map(t=>({destination:t.id,name:t.name,amount:t.amount,assetType:t.assetType,createdNew:t.createdNew}));
+    record.targetAssetId=changedTargets.length===1?changedTargets[0].id:null;
+    record.targetName=changedTargets.length===1?changedTargets[0].name:null;
+    record.targetAssetType=changedTargets.length===1?changedTargets[0].assetType:null;
     record.processedAt=new Date().toISOString();
     moneePrivateData.maturityRecords[sourceId]=record;
     const saved=await savePrivateData();
@@ -1774,12 +1849,10 @@ async function saveMaturityTransfer(e){
     maturitySourceAssetId='';
     await loadAll();
   }catch(err){
-    // Roll back any partial movement made during this attempt.
     try{
-      if(createdNew&&targetId){
-        await supabaseClient.from('assets').delete().eq('id',targetId).eq('user_id',currentUser.id);
-      }else if(targetId){
-        await supabaseClient.from('assets').update({amount:targetOriginalAmount}).eq('id',targetId).eq('user_id',currentUser.id);
+      for(const target of [...changedTargets].reverse()){
+        if(target.createdNew){await supabaseClient.from('assets').delete().eq('id',target.id).eq('user_id',currentUser.id);}
+        else{await supabaseClient.from('assets').update({amount:target.originalAmount}).eq('id',target.id).eq('user_id',currentUser.id);}
       }
       await supabaseClient.from('assets').update({amount:originalSourceAmount}).eq('id',source.id).eq('user_id',currentUser.id);
     }catch(rollbackErr){console.error('만기 처리 롤백 실패:',rollbackErr);}
@@ -1790,6 +1863,7 @@ async function saveMaturityTransfer(e){
     maturityTransferLock=false;
   }
 }
+
 function openAsset(id){const a=assets.find(x=>x.id===id);const type=a?(a.asset_type==='현금성'?'입출금':a.asset_type):'입출금';const meta=getAssetMeta(a);$('assetId').value=a?.id||'';$('assetName').value=a?.name||'';$('assetType').value=type;$('assetAmount').value=formatCurrencyInputValue(a?.amount??'');$('assetInterestRate').value=meta.interestRate??'';$('assetTermMonths').value=meta.termMonths??'';$('assetTaxRate').value=meta.taxRate??'';$('assetMaturityDate').value=meta.maturityDate??'';setSavingFieldsVisible(type);$('assetModalTitle').textContent=a?'자산 수정':'자산 추가';openModal('assetModal')}
 async function deleteAsset(id){if(!confirm('이 자산을 삭제할까요?'))return;const {error}=await supabaseClient.from('assets').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
 function openGoal(id){const g=goals.find(x=>x.id===id);$('goalId').value=g?.id||'';$('goalName').value=g?.name||'';$('goalTarget').value=g?.target_amount||'';$('goalCurrent').value=g?.current_amount||'';$('goalAddAmount').value='';$('goalModalTitle').textContent=g?'목표 수정':'새 목표 만들기';$('goalSubmitBtn').textContent=g?'수정하기':'목표 추가하기';openModal('goalModal')}
@@ -2220,12 +2294,8 @@ function preventDoubleSubmit(handler){
 }
 
 bindAllCurrencyInputs();$('loginForm').addEventListener('submit',login);$('settingsLogoutBtn').addEventListener('click',()=>supabaseClient.auth.signOut());
-$('maturityDestination').addEventListener('change',e=>{
-  const isNew=e.target.value==='__new__';
-  $('maturityNewAssetField').classList.toggle('show',isNew);
-  $('maturityNewAssetTypeField').classList.toggle('show',isNew);
-});
-$('maturityReceivedAmount').addEventListener('input',()=>{ $('maturityTransferAmount').textContent=money(currencyNumber('maturityReceivedAmount')); });
+$('addMaturityAllocation').addEventListener('click',()=>addMaturityAllocationRow(0));
+$('maturityReceivedAmount').addEventListener('input',()=>{ $('maturityTransferAmount').textContent=money(currencyNumber('maturityReceivedAmount')); updateMaturityAllocationStatus(); });
 $('maturityTransferForm').addEventListener('submit',preventDoubleSubmit(saveMaturityTransfer));
 $('openAssetsSetting').onclick=()=>{renderAssets();openModal('assetManageModal')};
 function setModalLock(locked){document.body.classList.toggle('modal-open',locked)}
