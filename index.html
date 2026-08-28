@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.81 · 적금 만기 예상금액 반영</title>
+<title>monee 가계부 · ver.2.82 · 만기 저축 기록 숨기기</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -591,6 +591,7 @@ nav.nav .icon{
 /* ver.2.76: budget page recent-list trailing space — keep the same 12px card rhythm */
 /* ver.2.78: 적금 만기 처리 시 새 자산의 유형을 선택하고 DB 저장값을 정규화 */
 /* ver.2.81: 만기 처리에 만기 예상 금액을 표시하고 실제 입금 금액 기본값에 반영 */
+/* ver.2.82: 만기된 저축 기록은 자산/거래내역을 건드리지 않고 만기 목록에서만 숨길 수 있습니다. */
 #budget.active{padding-bottom:0;margin-bottom:-128px}
 
 /* ver.2.70: budget heading restored to the card inner alignment */
@@ -613,6 +614,7 @@ nav.nav .icon{
 .maturity-history-meta{font-size:9px;color:var(--muted);line-height:1.5}
 .maturity-history-amount{text-align:right;font-size:11px;font-weight:700;color:#58799d;white-space:nowrap}
 .maturity-history-target{text-align:right;font-size:9px;color:#718096;white-space:nowrap}
+.maturity-history-hide{margin-left:6px;border:0;background:transparent;color:#9aa6b2;font-size:8px;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .maturity-transfer-modal{max-width:460px}
 .maturity-summary{background:#f7fafc;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
 .maturity-summary-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -683,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.80">ver.2.81</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.82">ver.2.82</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1460,7 +1462,7 @@ function renderAssets(){
   });
   document.querySelectorAll('[data-manage-delete-asset]').forEach(b=>b.onclick=()=>deleteAsset(b.dataset.manageDeleteAsset));
 
-  const completed=assets.filter(a=>savingAssetType(a)&&isMaturityCompleted(a.id));
+  const completed=assets.filter(a=>savingAssetType(a)&&isMaturityCompleted(a.id)&&!getMaturityRecord(a.id)?.hidden);
   let history=document.getElementById('maturityHistory');
   if(!history){
     history=document.createElement('div');
@@ -1474,9 +1476,23 @@ function renderAssets(){
       const r=getMaturityRecord(a.id)||{};
       const date=r.maturityDate||getAssetMeta(a).maturityDate||'';
       const target=r.targetName||'받을 자산';
-      return `<div class="maturity-history-item"><div><div class="maturity-history-name">${escapeText(a.name)}</div><div class="maturity-history-meta">${date?escapeText(String(date).replace(/-/g,'.'))+' 만기 · '+escapeText(target):escapeText(target)}</div></div><div><div class="maturity-history-amount">${money(r.receivedAmount||0)}</div><div class="maturity-history-target"><span class="maturity-history-badge">만기 처리됨</span></div></div></div>`;
+      return `<div class="maturity-history-item"><div><div class="maturity-history-name">${escapeText(a.name)}</div><div class="maturity-history-meta">${date?escapeText(String(date).replace(/-/g,'.'))+' 만기 · '+escapeText(target):escapeText(target)}</div></div><div><div class="maturity-history-amount">${money(r.receivedAmount||0)}</div><div class="maturity-history-target"><span class="maturity-history-badge">만기 처리됨</span><button type="button" class="maturity-history-hide" data-hide-maturity="${escapeText(String(a.id))}">숨기기</button></div></div></div>`;
     }).join('')
   }</div>`:'';
+  document.querySelectorAll('[data-hide-maturity]').forEach(b=>b.onclick=()=>hideMaturityHistory(b.dataset.hideMaturity));
+}
+async function hideMaturityHistory(assetId){
+  const id=String(assetId||'');
+  const record=getMaturityRecord(id);
+  if(!record||record.status!=='completed')return;
+  if(!confirm('이 만기 기록을 만기된 저축 목록에서 숨길까요?\n\n과거 거래내역과 자산 금액은 변경되지 않아요.'))return;
+  moneePrivateData.maturityRecords[id]={...record,hidden:true,hiddenAt:new Date().toISOString()};
+  const saved=await savePrivateData();
+  if(!saved){
+    moneePrivateData.maturityRecords[id]=record;
+    return alert('숨김 처리에 실패했어요. 데이터는 변경되지 않았어요.');
+  }
+  renderAssets();
 }
 function renderGoals(){$('goalList').innerHTML=goals.length?goals.map(g=>{const pct=g.target_amount?Math.min(100,Math.round(g.current_amount/g.target_amount*100)):0;const remain=Math.max(0,g.target_amount-g.current_amount);return `<div class="goal"><div class="goal-top"><b>${escapeText(g.name)}</b><div class="goal-actions"><button class="row-action" data-edit-goal="${g.id}">수정</button><button class="row-action delete" data-delete-goal="${g.id}">삭제</button></div></div><div class="goal-summary"><span>${money(g.current_amount)} / ${money(g.target_amount)}</span><em>(${money(remain)} 남음)</em></div><div class="goal-track"><i style="width:${pct}%"></i></div><div class="goal-foot"><span>${pct}% 달성</span></div></div>`}).join(''):'<div class="empty-state">아직 목표가 없어요. 오른쪽 아래 ＋ 버튼으로 추가해 주세요.</div>';document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openGoal(b.dataset.editGoal));document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal))}
 
