@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.77 · 적금 만기 자산 생성 오류 수정</title>
+<title>monee 가계부 · ver.2.78 · 만기처리 새 자산 유형 선택</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -589,7 +589,7 @@ nav.nav .icon{
 }
 
 /* ver.2.76: budget page recent-list trailing space — keep the same 12px card rhythm */
-/* ver.2.77: 적금 만기 처리로 새 자산 생성 시 DB 자산유형 제약에 맞게 저장 */
+/* ver.2.78: 적금 만기 처리 시 새 자산의 유형을 선택하고 DB 저장값을 정규화 */
 #budget.active{padding-bottom:0;margin-bottom:-128px}
 
 /* ver.2.70: budget heading restored to the card inner alignment */
@@ -779,11 +779,11 @@ const supabaseClient = window.supabase.createClient(
 <div class="modal-back" id="assetManageModal"><div class="modal"><div class="modal-head"><div><h3>자산 관리</h3><p class="modal-help">등록된 자산을 수정하거나 삭제할 수 있어요.</p></div><button class="x" data-close-modal="assetManageModal">×</button></div><div class="asset-manage-list" id="assetManageList"></div><div class="modal-actions"><button class="secondary-btn" data-close-modal="assetManageModal" type="button">닫기</button></div></div></div>
 
 <div class="modal-back" id="maturityTransferModal"><div class="modal maturity-transfer-modal"><div class="modal-head"><div><h3>적금 만기 처리</h3><p class="modal-help">만기된 적금의 돈을 받을 자산으로 이동해요.</p></div><button class="x" data-close-modal="maturityTransferModal">×</button></div>
-<div class="maturity-summary"><div class="maturity-summary-row"><span class="maturity-summary-label">만기 적금</span><strong class="maturity-summary-value" id="maturitySourceName">-</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">현재 적금 금액</span><strong class="maturity-summary-value" id="maturitySourceAmount">₩0</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">실제 입금 금액</span><strong class="maturity-summary-value" id="maturityTransferAmount">₩0</strong></div><div class="maturity-destination-note">이자는 실제 입금 금액에 포함해 입력할 수 있어요. 기존 자산으로 옮기면 해당 자산에 더하고, 새 예금/계좌를 만들면 새 자산으로 등록해요.</div></div>
+<div class="maturity-summary"><div class="maturity-summary-row"><span class="maturity-summary-label">만기 적금</span><strong class="maturity-summary-value" id="maturitySourceName">-</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">현재 적금 금액</span><strong class="maturity-summary-value" id="maturitySourceAmount">₩0</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">실제 입금 금액</span><strong class="maturity-summary-value" id="maturityTransferAmount">₩0</strong></div><div class="maturity-destination-note">이자는 실제 입금 금액에 포함해 입력할 수 있어요. 기존 자산으로 옮기면 해당 자산에 더하고, 새 자산을 만들면 원하는 자산 유형으로 등록해요.</div></div>
 <form id="maturityTransferForm" class="form-grid"><input type="hidden" id="maturitySourceId">
 <div class="field full"><label>실제 입금 금액 (원)</label><input id="maturityReceivedAmount" type="text" inputmode="numeric" required></div>
 <div class="field full"><label>받을 자산</label><select id="maturityDestination"><option value="">받을 자산을 선택해 주세요</option></select></div>
-<div class="field full maturity-new-asset" id="maturityNewAssetField"><label>새 예금/계좌 이름</label><input id="maturityNewAssetName" type="text" placeholder="예: 우리은행 정기예금"></div>
+<div class="field full maturity-new-asset" id="maturityNewAssetTypeField"><label>새 자산 종류</label><select id="maturityNewAssetType"><option value="저축" selected>저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field full maturity-new-asset" id="maturityNewAssetField"><label>새 자산 이름</label><input id="maturityNewAssetName" type="text" placeholder="예: 우리은행 정기예금"></div>
 <button class="primary full" type="submit" id="maturityTransferSubmit">만기 처리하기</button>
 </form></div></div>
 <div class="modal-back" id="goalModal"><div class="modal"><div class="modal-head"><h3 id="goalModalTitle">새 목표 만들기</h3><button class="x" data-close-modal="goalModal">×</button></div><form id="goalForm" class="form-grid"><input type="hidden" id="goalId"><div class="field full"><label>목표 이름</label><input id="goalName" required placeholder="예: 유럽 여행"></div><div class="field"><label>목표 금액</label><input id="goalTarget" type="number" min="0" step="10000" required placeholder="3000000"></div><div class="field"><label>현재 모은 금액</label><input id="goalCurrent" type="number" min="0" step="10000" required placeholder="500000"></div><div class="field full"><label>추가할 금액</label><input id="goalAddAmount" type="number" min="0" step="10000" placeholder="0"></div><button class="primary full" type="submit" id="goalSubmitBtn">목표 추가하기</button></form></div></div>
@@ -1654,7 +1654,7 @@ function fillMaturityDestinations(){
   const choices=assets.filter(a=>String(a.id)!==String(current)&&!isMaturityCompleted(a.id));
   select.innerHTML='<option value="">받을 자산을 선택해 주세요</option>'+
     choices.map(a=>`<option value="${escapeText(String(a.id))}">${escapeText(a.name)} · ${escapeText(assetTypeLabel(a.asset_type))}</option>`).join('')+
-    '<option value="__new__">＋ 새 예금/계좌 만들기</option>';
+    '<option value="__new__">＋ 새 자산 만들기</option>';
 }
 function openMaturityTransfer(assetId){
   const asset=assets.find(a=>String(a.id)===String(assetId));
@@ -1667,6 +1667,8 @@ function openMaturityTransfer(assetId){
   $('maturityReceivedAmount').value=formatCurrencyInputValue(asset.amount);
   $('maturityDestination').value='';
   $('maturityNewAssetField').classList.remove('show');
+  $('maturityNewAssetTypeField').classList.remove('show');
+  $('maturityNewAssetType').value='저축';
   $('maturityNewAssetName').value='';
   fillMaturityDestinations();
   openModal('maturityTransferModal');
@@ -1682,7 +1684,8 @@ async function saveMaturityTransfer(e){
   if(received<0)return alert('실제 입금 금액을 확인해 주세요.');
   const destination=$('maturityDestination').value;
   if(!destination)return alert('받을 자산을 선택해 주세요.');
-  if(destination==='__new__'&&!$('maturityNewAssetName').value.trim())return alert('새 예금/계좌 이름을 입력해 주세요.');
+  if(destination==='__new__'&&!$('maturityNewAssetType').value)return alert('새 자산 종류를 선택해 주세요.');
+  if(destination==='__new__'&&!$('maturityNewAssetName').value.trim())return alert('새 자산 이름을 입력해 주세요.');
 
   maturityTransferLock=true;
   const records={...(moneePrivateData.maturityRecords||{})};
@@ -1708,12 +1711,16 @@ async function saveMaturityTransfer(e){
   let targetId='';
   let targetName='';
   let targetOriginalAmount=0;
+  let targetAssetType='';
   let createdNew=false;
   try{
     if(destination==='__new__'){
       targetName=$('maturityNewAssetName').value.trim();
+      const selectedType=$('maturityNewAssetType').value;
+      // DB에서는 현금성으로 저장하고 화면에서는 입출금으로 표시합니다.
+      targetAssetType=selectedType==='입출금'?'현금성':selectedType;
       const result=await supabaseClient.from('assets').insert({
-        user_id:currentUser.id,name:targetName,asset_type:'현금성',amount:received
+        user_id:currentUser.id,name:targetName,asset_type:targetAssetType,amount:received
       }).select('id').single();
       if(result.error||!result.data?.id)throw result.error||new Error('새 자산을 만들지 못했어요.');
       targetId=String(result.data.id);
@@ -1723,6 +1730,7 @@ async function saveMaturityTransfer(e){
       if(!target)throw new Error('받을 자산을 찾을 수 없어요.');
       targetId=String(target.id);
       targetName=target.name||'받을 자산';
+      targetAssetType=target.asset_type||'기타';
       targetOriginalAmount=Number(target.amount)||0;
       const {error}=await supabaseClient.from('assets').update({amount:targetOriginalAmount+received}).eq('id',target.id).eq('user_id',currentUser.id);
       if(error)throw error;
@@ -1734,7 +1742,7 @@ async function saveMaturityTransfer(e){
     record.status='completed';
     record.targetAssetId=targetId;
     record.targetName=targetName;
-    record.targetAssetType=createdNew?'입출금':(assets.find(a=>String(a.id)===targetId)?.asset_type||'입출금');
+    record.targetAssetType=targetAssetType||'기타';
     record.processedAt=new Date().toISOString();
     moneePrivateData.maturityRecords[sourceId]=record;
     const saved=await savePrivateData();
@@ -2088,7 +2096,8 @@ async function saveAsset(e){
  const basePayload={
    user_id:currentUser.id,
    name,
-   asset_type:type,
+   // Supabase assets table uses '현금성' for the UI's '입출금' category.
+   asset_type:type==='입출금'?'현금성':type,
    amount:currencyNumber('assetAmount')
  };
 
@@ -2189,7 +2198,9 @@ function preventDoubleSubmit(handler){
 
 bindAllCurrencyInputs();$('loginForm').addEventListener('submit',login);$('settingsLogoutBtn').addEventListener('click',()=>supabaseClient.auth.signOut());
 $('maturityDestination').addEventListener('change',e=>{
-  $('maturityNewAssetField').classList.toggle('show',e.target.value==='__new__');
+  const isNew=e.target.value==='__new__';
+  $('maturityNewAssetField').classList.toggle('show',isNew);
+  $('maturityNewAssetTypeField').classList.toggle('show',isNew);
 });
 $('maturityTransferForm').addEventListener('submit',preventDoubleSubmit(saveMaturityTransfer));
 $('openAssetsSetting').onclick=()=>{renderAssets();openModal('assetManageModal')};
