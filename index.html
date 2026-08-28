@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.91 · 월별 항목 이력 보존</title>
+<title>monee 가계부 · ver.2.92 · 월별 항목·예산 승계 안정화</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.91">ver.2.91</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.92">ver.2.92</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1095,6 +1095,30 @@ async function seedDemo(){
     if(goalErr)throw goalErr;
   }
 }
+async function ensureBudgetInheritance(){
+  if(!currentUser||!budgetCategories.length)return;
+  const {data:allBudgets,error}=await supabaseClient.from('budgets').select('id,year,month,category_id,amount').eq('user_id',currentUser.id);
+  if(error)throw error;
+  const keyOf=(year,month,categoryId)=>`${year}-${month}-${categoryId}`;
+  const existing=new Map((allBudgets||[]).map(b=>[keyOf(Number(b.year),Number(b.month),String(b.category_id)),b]));
+  const targetYear=Number(viewYear),targetMonth=Number(viewMonth)+1,targetKey=targetYear*100+targetMonth;
+  const inserts=[];
+  for(const cat of budgetCategories){
+    if(existing.has(keyOf(targetYear,targetMonth,String(cat.id))))continue;
+    let latest=null;
+    for(const b of (allBudgets||[])){
+      if(String(b.category_id)!==String(cat.id))continue;
+      const y=Number(b.year),m=Number(b.month),key=y*100+m;
+      if(key>=targetKey)continue;
+      if(!latest||key>(Number(latest.year)*100+Number(latest.month)))latest=b;
+    }
+    if(latest)inserts.push({user_id:currentUser.id,year:targetYear,month:targetMonth,category_id:cat.id,amount:Math.max(0,Number(latest.amount)||0)});
+  }
+  if(!inserts.length)return;
+  const {error:insertError}=await supabaseClient.from('budgets').insert(inserts);
+  if(insertError)throw insertError;
+}
+
 async function loadAll(){
  const [c,t,b,a,g]=await Promise.all([
   supabaseClient.from('categories').select('*').eq('user_id',currentUser.id).order('created_at'),
@@ -1119,7 +1143,16 @@ async function loadAll(){
  incomeCategories=(c.data||[]).filter(x=>x.type==='income');
  budgetCategories=c.data.filter(x=>x.type==='expense').map(c=>({...c,budget:0,spent:0,budgetId:null}))
    .sort((a,b)=>catOrder(a)-catOrder(b));
- const budgets=b.data;budgetCategories.forEach(c=>{const x=budgets.find(b=>b.category_id===c.id&&Number(b.year)===viewYear&&Number(b.month)===viewMonth+1);c.budget=Number(x?.amount||0);c.budgetId=x?.id||null;});
+ let budgets=b.data||[];
+ await ensureBudgetInheritance();
+ const refreshed=await supabaseClient.from('budgets').select('*').eq('user_id',currentUser.id);
+ if(refreshed.error)throw refreshed.error;
+ budgets=refreshed.data||[];
+ budgetCategories.forEach(c=>{
+   const x=budgets.find(b=>String(b.category_id)===String(c.id)&&Number(b.year)===viewYear&&Number(b.month)===viewMonth+1);
+   c.budget=Number(x?.amount||0);
+   c.budgetId=x?.id||null;
+ });
  transactions=t.data||[];assets=a.data||[];goals=g.data||[];
  renderAll();
 }
@@ -1376,12 +1409,17 @@ async function openSavingDetail(assetId){
  });
  maturityEvents.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
  const target=$('savingDepositList');
- const depositHtml=list.map(({tx,amount})=>{
-   const displayName=categoryDisplayName(tx.category_id,tx.transaction_date,'적금');
-   return `<div class="saving-deposit" data-saving-tx-id="${escapeText(tx.id)}"><span class="saving-deposit-date">${formatSavingDate(tx.transaction_date)}</span><span class="saving-deposit-memo">${escapeText(displayName)}</span><span class="saving-deposit-amount">+${money(amount)}</span></div>`;
- }).join('');
- const maturityHtml=maturityEvents.map(ev=>`<div class="saving-deposit"><span class="saving-deposit-date">${formatSavingDate(String(ev.date).slice(0,10))}</span><span class="saving-deposit-memo">${escapeText(ev.name)}</span><span class="saving-deposit-amount">+${money(ev.amount)}</span></div>`).join('');
- target.innerHTML=(depositHtml||maturityHtml)?depositHtml+maturityHtml:'<div class="saving-empty">아직 반영된 입금 내역이 없어요.</div>';
+ const savingEvents=[
+   ...list.map(({tx,amount})=>({date:String(tx.transaction_date||''),memo:categoryDisplayName(tx.category_id,tx.transaction_date,'적금'),amount:Number(amount)||0,txId:tx.id})),
+   ...maturityEvents.map(ev=>({date:String(ev.date||'').slice(0,10),memo:ev.name,amount:Number(ev.amount)||0,txId:''}))
+ ].sort((a,b)=>{
+   const ad=new Date((a.date||'')+'T00:00:00').getTime()||0;
+   const bd=new Date((b.date||'')+'T00:00:00').getTime()||0;
+   return bd-ad;
+ });
+ target.innerHTML=savingEvents.length
+   ? savingEvents.map(ev=>`<div class="saving-deposit"${ev.txId?` data-saving-tx-id="${escapeText(ev.txId)}"`:''}><span class="saving-deposit-date">${formatSavingDate(ev.date)}</span><span class="saving-deposit-memo">${escapeText(ev.memo)}</span><span class="saving-deposit-amount">+${money(ev.amount)}</span></div>`).join('')
+   : '<div class="saving-empty">아직 반영된 입금 내역이 없어요.</div>';
  target.querySelectorAll('[data-saving-tx-id]').forEach(row=>{
    row.onclick=()=>{
      closeModal('savingDetailModal');
@@ -1641,7 +1679,8 @@ function updateSavingLinkField(selectedId=''){
   const field=$('savingLinkField');
   const select=$('category');
   if(!field||!select)return;
-  const isSaving=entryType==='expense'&&select.value==='적금';
+  const selectedCat=entryType==='expense'?budgetCategories.find(c=>String(c.id)===String(select.value)):null;
+  const isSaving=entryType==='expense'&&selectedCat?.name==='적금';
   field.style.display=isSaving?'block':'none';
   if(isSaving)fillSavingAssets(selectedId);
   else if($('savingAssetSelect'))$('savingAssetSelect').value='';
@@ -1728,7 +1767,17 @@ function updateEditSavingLinkField(selectedId=''){
   if(isSaving)fillEditSavingAssets(selectedId);
   else if($('editSavingAssetSelect'))$('editSavingAssetSelect').value='';
 }
-function fillCategories(){const list=entryType==='income'?incomeCats:budgetCategories.map(c=>c.name);$('category').innerHTML=list.map(c=>`<option>${escapeText(c)}</option>`).join('');$('methodBox').style.display=entryType==='income'?'none':'block'}
+function fillCategories(){
+  if(entryType==='income'){
+    $('category').innerHTML=incomeCategories.map(c=>`<option value="${escapeText(c.name)}">${escapeText(c.name)}</option>`).join('');
+  }else{
+    $('category').innerHTML=budgetCategories.map(c=>{
+      const displayName=categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name);
+      return `<option value="${escapeText(String(c.id))}">${escapeText(displayName)}</option>`;
+    }).join('');
+  }
+  $('methodBox').style.display=entryType==='income'?'none':'block';
+}
 function setModalLock(locked){document.body.style.overflow=locked?'hidden':''}function getAssetMeta(a){
  let meta={interestRate:a?.interest_rate??'',maturityDate:a?.maturity_date??'',termMonths:a?.term_months??'',taxRate:a?.tax_rate??''};
  const saved=(moneePrivateData.assetMeta||{})[a?.id]||{};
@@ -2332,9 +2381,9 @@ async function saveTransaction(e){
   const amount=currencyNumber('amount');
   if(amount<=0)return;
 
-  const name=$('category').value;
+  const categoryValue=$('category').value;
   const type=entryType;
-  const cat=type==='income'?null:budgetCategories.find(c=>c.name===name);
+  const cat=type==='income'?null:budgetCategories.find(c=>String(c.id)===String(categoryValue));
   let incomeCatId=null;
 
   if(type==='income'){
@@ -2343,7 +2392,7 @@ async function saveTransaction(e){
       .select('id')
       .eq('user_id',currentUser.id)
       .eq('type','income')
-      .eq('name',name)
+      .eq('name',categoryValue)
       .single();
     if(catError)return alert(catError.message);
     incomeCatId=data?.id;
@@ -2367,7 +2416,7 @@ async function saveTransaction(e){
   // 지출을 적금에 연결한 경우에는 거래 저장과 자산 반영이 모두 성공해야 완료된 것으로 봅니다.
   const savingId=$('savingAssetSelect')?.value||'';
   try{
-    if(type==='expense'&&name==='적금'&&savingId){
+    if(type==='expense'&&cat?.name==='적금'&&savingId){
       await applySavingLink(transactionId,savingId,amount);
     }else{
       await saveSavingLink(transactionId,null,0);
@@ -2542,7 +2591,10 @@ $('addBudgetCategory').onclick=async()=>{
  if(!normalizedName)return;
  // categories 테이블은 같은 사용자·유형·이름을 중복으로 저장할 수 없으므로
  // DB에 보내기 전에 현재 계정의 실제 카테고리와 먼저 확인합니다.
- const duplicate=budgetCategories.some(c=>String(c.name||'').trim()===normalizedName);
+ const duplicate=budgetCategories.some(c=>{
+   const currentName=categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name);
+   return String(currentName||'').trim()===normalizedName;
+ });
  if(duplicate){alert(`'${normalizedName}' 항목이 이미 있어요.
 
 기존 항목의 이름을 수정하거나 다른 이름을 사용해 주세요.`);return;}
