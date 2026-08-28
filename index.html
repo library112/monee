@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.84 · 만기 저축 기록 숨기기</title>
+<title>monee 가계부 · ver.2.85 · 월별 항목 이력 보존</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.82">ver.2.84</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.85">ver.2.85</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1097,6 +1097,7 @@ async function loadAll(){
  ]);
  for(const r of [c,t,b,a,g])if(r.error)throw r.error;
  loadLocalCategoryPrefs();
+ migrateLegacyExpenseTypeHistory();
  categoryPrefsSupported=(c.data||[]).some(x=>Object.prototype.hasOwnProperty.call(x,'icon')||Object.prototype.hasOwnProperty.call(x,'sort_order'));
  if(categoryPrefsSupported){
    (c.data||[]).filter(x=>x.type==='expense').forEach(c=>{
@@ -1115,6 +1116,24 @@ async function loadAll(){
  renderAll();
 }
 function renderLucideIcons(root=document){if(window.lucide?.createIcons)window.lucide.createIcons({root});}
+function migrateLegacyExpenseTypeHistory(){
+  const history=loadCategoryExpenseTypeHistory();let changed=false;
+  for(const key of Object.keys(history)){
+    const raw=Array.isArray(history[key])?history[key]:[];
+    if(raw.some(x=>Object.prototype.hasOwnProperty.call(x,'before'))) {
+      const normalized=normalizeHistoryList(raw,'expense_type');
+      if(JSON.stringify(normalized)!==JSON.stringify(raw)) {history[key]=normalized;changed=true;}
+      continue;
+    }
+    const normalized=normalizeHistoryList(raw,'expense_type');
+    if(normalized.length && monthKey(normalized[0].year,normalized[0].month)>0){
+      const first=normalized[0], opposite=first.expense_type==='fixed'?'variable':'fixed',p=prevMonth(first.year,first.month);
+      if(!normalized.some(x=>monthKey(x.year,x.month)===monthKey(p.year,p.month))) normalized.unshift({year:p.year,month:p.month,expense_type:opposite});
+      history[key]=normalized;changed=true;
+    }
+  }
+  if(changed)saveCategoryExpenseTypeHistory(history);
+}
 function renderBudget(){
  updateMonthLabel();
  const rows=computeBudgetRows();
@@ -1151,7 +1170,7 @@ function renderBudget(){
    const barColor=rawPct>100?'#ef4444':rawPct===100?'var(--orange)':'var(--blue-dark)';
    const rateClass=rawPct>100?'over':rawPct===100?'warn':(budget===0&&spent>0?'has-spent':'');
    return `<div class="tr">
-     <div class="cat-label"><span class="cat-icon"><i data-lucide="${escapeText(catIcon(c))}"></i></span><span class="cat-name">${escapeText(c.name)}</span></div>
+     <div class="cat-label"><span class="cat-icon"><i data-lucide="${escapeText(catIcon(c))}"></i></span><span class="cat-name">${escapeText(categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name))}</span></div>
      <div class="bar-wrap">
        <div class="bar-track" aria-label="${escapeText(c.name)} 사용률 ${pctText}">
          <span class="bar-fill ${rateClass}" style="display:block!important;width:${barPct.toFixed(2)}%!important;min-width:${barPct>0?'2px':'0'};height:100%;background:${barColor};border-radius:999px;"></span>
@@ -1886,18 +1905,18 @@ function openGoal(id){const g=goals.find(x=>x.id===id);$('goalId').value=g?.id||
 async function deleteGoal(id){if(!confirm('이 목표를 삭제할까요?'))return;const {error}=await supabaseClient.from('goals').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
 function renderBudgetEditor(){
  const list=$('budgetEditList');
- list.innerHTML=budgetCategories.map(c=>`
+ list.innerHTML=budgetCategories.map(c=>{const displayName=categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name);const displayType=categoryDisplayExpenseType(c.id,viewYear,viewMonth+1);return `
   <div class="budget-edit-row" data-id="${c.id}" draggable="true">
    <div class="drag-handle" title="드래그해서 순서 변경">⋮⋮</div>
    <input class="emoji-input" maxlength="40" value="${escapeText(catIcon(c))}" aria-label="Lucide 아이콘 이름">
-   <input class="edit-name" value="${escapeText(c.name)}" aria-label="항목명">
+   <input class="edit-name" value="${escapeText(displayName)}" aria-label="항목명">
    <select class="edit-type" aria-label="지출 유형">
-    <option value="fixed" ${c.expense_type==='fixed'?'selected':''}>고정</option>
-    <option value="variable" ${c.expense_type!=='fixed'?'selected':''}>비고정</option>
+    <option value="fixed" ${displayType==='fixed'?'selected':''}>고정</option>
+    <option value="variable" ${displayType!=='fixed'?'selected':''}>비고정</option>
    </select>
    <input class="edit-budget" type="number" min="0" step="10000" value="${c.budget}" aria-label="월 예산">
    <button class="delete-category" type="button" data-delete-index="${c.id}" aria-label="항목 삭제">×</button>
-  </div>`).join('')||'<div class="empty">항목이 없습니다.</div>';
+  </div>`}).join('')||'<div class="empty">항목이 없습니다.</div>';
 
  let dragged=null;
  let pointerDragging=false;
@@ -1999,82 +2018,51 @@ function renderBudgetEditor(){
  list.addEventListener('pointerup',finishPointerDrag);
  list.addEventListener('pointercancel',finishPointerDrag);
 }
-function loadCategoryNameHistory(){
-  try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}
-}
-function saveCategoryNameHistory(history){localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}
+/* ver.2.85: 항목 이름/지출 유형은 월별 이력으로 보존하고, 거래·카테고리 ID 연결은 유지합니다. */
 function monthKey(year,month){return Number(year)*100+Number(month)}
+function prevMonth(year,month){const d=new Date(Number(year),Number(month)-2,1);return {year:d.getFullYear(),month:d.getMonth()+1}}
+function loadCategoryNameHistory(){try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}}
+function saveCategoryNameHistory(history){try{localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}catch(e){}}
+function normalizeHistoryList(list,valueKey){
+  if(!Array.isArray(list))return [];
+  const out=list.map(x=>({year:Number(x.year),month:Number(x.month),[valueKey]:x[valueKey]})).filter(x=>Number.isFinite(x.year)&&Number.isFinite(x.month)&&x[valueKey]!==undefined);
+  out.sort((a,b)=>monthKey(a.year,a.month)-monthKey(b.year,b.month));
+  const compact=[];
+  for(const item of out){const last=compact[compact.length-1];if(last&&monthKey(last.year,last.month)===monthKey(item.year,item.month))compact[compact.length-1]=item;else compact.push(item)}
+  return compact;
+}
 function rememberCategoryRename(categoryId,oldName,newName,year,month){
   if(!categoryId||!oldName||!newName||oldName===newName)return;
-  const history=loadCategoryNameHistory();
-  const key=String(categoryId);
-  const list=Array.isArray(history[key])?history[key]:[];
-  const effective=monthKey(year,month);
-  // 최초 변경 시에는 변경월 이전의 이름도 명시적으로 보존합니다.
-  if(!list.some(x=>Number(x.year)*100+Number(x.month)<effective)){
-    list.push({year:Number(year),month:Number(month),name:oldName,before:true});
-  }
-  list.push({year:Number(year),month:Number(month),name:newName,before:false});
-  list.sort((a,b)=>monthKey(a.year,a.month)-monthKey(b.year,b.month)||(a.before?0:1)-(b.before?0:1));
-  // 같은 월에 여러 번 이름을 바꿨다면 마지막 변경 이름만 사용합니다.
-  const compact=[];
-  for(const item of list){
-    const last=compact[compact.length-1];
-    if(last && monthKey(last.year,last.month)===monthKey(item.year,item.month)) compact[compact.length-1]=item;
-    else compact.push(item);
-  }
-  history[key]=compact;
-  saveCategoryNameHistory(history);
+  const history=loadCategoryNameHistory(),key=String(categoryId),list=normalizeHistoryList(history[key],'name'),effective=monthKey(year,month);
+  if(!list.some(x=>monthKey(x.year,x.month)<effective)){const p=prevMonth(year,month);list.push({year:p.year,month:p.month,name:oldName});}
+  list.push({year:Number(year),month:Number(month),name:newName});
+  history[key]=normalizeHistoryList(list,'name');saveCategoryNameHistory(history);
 }
-function categoryDisplayName(categoryId,transactionDate,fallback='기타'){
-  const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));
-  if(!cat)return fallback;
-  const history=loadCategoryNameHistory()[String(categoryId)];
-  if(!Array.isArray(history)||!history.length)return cat.name||fallback;
-  const d=String(transactionDate||'');
-  const m=d.match(/^(\d{4})-(\d{1,2})/);
-  if(!m)return cat.name||fallback;
-  const txKey=monthKey(Number(m[1]),Number(m[2]));
-  let chosen=null;
-  for(const item of history){
-    if(monthKey(item.year,item.month)<=txKey)chosen=item.name;
-    else break;
-  }
+function categoryDisplayNameForMonth(categoryId,year,month,fallback='기타'){
+  const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));if(!cat)return fallback;
+  const history=normalizeHistoryList(loadCategoryNameHistory()[String(categoryId)],'name');if(!history.length)return cat.name||fallback;
+  const key=monthKey(year,month);let chosen=null;for(const item of history){if(monthKey(item.year,item.month)<=key)chosen=item.name;else break}
   return chosen||history[0].name||cat.name||fallback;
 }
+function categoryDisplayName(categoryId,transactionDate,fallback='기타'){const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);return m?categoryDisplayNameForMonth(categoryId,Number(m[1]),Number(m[2]),fallback):fallback}
 
-/* ver.2.84: 카테고리 고정/비고정 변경 이력도 월별로 보존합니다. */
 function loadCategoryExpenseTypeHistory(){try{return JSON.parse(localStorage.getItem('monee_category_expense_type_history')||'{}')||{}}catch(e){return {}}}
 function saveCategoryExpenseTypeHistory(history){try{localStorage.setItem('monee_category_expense_type_history',JSON.stringify(history||{}))}catch(e){}}
 function rememberCategoryExpenseTypeChange(categoryId,oldType,newType,year,month){
   if(!categoryId||!oldType||!newType||oldType===newType)return;
-  const history=loadCategoryExpenseTypeHistory(),key=String(categoryId),list=Array.isArray(history[key])?history[key]:[],effective=monthKey(year,month);
-  if(!list.some(x=>monthKey(x.year,x.month)<effective))list.push({year:Number(year),month:Number(month),expense_type:oldType,before:true});
-  list.push({year:Number(year),month:Number(month),expense_type:newType,before:false});
-  list.sort((a,b)=>monthKey(a.year,a.month)-monthKey(b.year,b.month)||(a.before?0:1)-(b.before?0:1));
-  const compact=[];
-  for(const item of list){const last=compact[compact.length-1];if(last&&monthKey(last.year,last.month)===monthKey(item.year,item.month))compact[compact.length-1]=item;else compact.push(item)}
-  history[key]=compact;saveCategoryExpenseTypeHistory(history);
+  const history=loadCategoryExpenseTypeHistory(),key=String(categoryId),list=normalizeHistoryList(history[key],'expense_type'),effective=monthKey(year,month);
+  if(!list.some(x=>monthKey(x.year,x.month)<effective)){const p=prevMonth(year,month);list.push({year:p.year,month:p.month,expense_type:oldType});}
+  list.push({year:Number(year),month:Number(month),expense_type:newType});
+  history[key]=normalizeHistoryList(list,'expense_type');saveCategoryExpenseTypeHistory(history);
 }
 function categoryDisplayExpenseType(categoryId,year,month,fallback='variable'){
-  const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));
-  const current=cat?.expense_type==='fixed'?'fixed':'variable';
-  const history=loadCategoryExpenseTypeHistory()[String(categoryId)];
-  if(!Array.isArray(history)||!history.length)return current||fallback;
-  const key=monthKey(year,month);let chosen=null;
-  for(const item of history){if(monthKey(item.year,item.month)<=key)chosen=item.expense_type;else break}
+  const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));const current=cat?.expense_type==='fixed'?'fixed':'variable';
+  const history=normalizeHistoryList(loadCategoryExpenseTypeHistory()[String(categoryId)],'expense_type');if(!history.length)return current||fallback;
+  const key=monthKey(year,month);let chosen=null;for(const item of history){if(monthKey(item.year,item.month)<=key)chosen=item.expense_type;else break}
   return chosen||history[0].expense_type||current||fallback;
 }
-function categoryDisplayExpenseTypeForTransaction(categoryId,transactionDate,fallback='variable'){
-  const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);
-  return m?categoryDisplayExpenseType(categoryId,Number(m[1]),Number(m[2]),fallback):fallback;
-}
+function categoryDisplayExpenseTypeForTransaction(categoryId,transactionDate,fallback='variable'){const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);return m?categoryDisplayExpenseType(categoryId,Number(m[1]),Number(m[2]),fallback):fallback}
 
-function loadCategoryNameHistory(){try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}}
-function saveCategoryNameHistory(history){localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}
-function monthKey(year,month){return Number(year)*100+Number(month)}
-function rememberCategoryRename(categoryId,oldName,newName,year,month){if(!categoryId||!oldName||!newName||oldName===newName)return;const history=loadCategoryNameHistory(),key=String(categoryId),list=Array.isArray(history[key])?history[key]:[],effective=monthKey(year,month);if(!list.some(x=>monthKey(x.year,x.month)<effective))list.push({year:Number(year),month:Number(month),name:oldName,before:true});list.push({year:Number(year),month:Number(month),name:newName,before:false});list.sort((a,b)=>monthKey(a.year,a.month)-monthKey(b.year,b.month)||(a.before?0:1)-(b.before?0:1));const compact=[];for(const item of list){const last=compact[compact.length-1];if(last&&monthKey(last.year,last.month)===monthKey(item.year,item.month))compact[compact.length-1]=item;else compact.push(item)}history[key]=compact;saveCategoryNameHistory(history)}
-function categoryDisplayName(categoryId,transactionDate,fallback='기타'){const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));if(!cat)return fallback;const history=loadCategoryNameHistory()[String(categoryId)];if(!Array.isArray(history)||!history.length)return cat.name||fallback;const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);if(!m)return cat.name||fallback;const txKey=monthKey(Number(m[1]),Number(m[2]));let chosen=null;for(const item of history){if(monthKey(item.year,item.month)<=txKey)chosen=item.name;else break}return chosen||history[0].name||cat.name||fallback}
 async function saveBudgetCategories(){
   const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
   for(let index=0;index<rows.length;index++){
@@ -2086,9 +2074,10 @@ async function saveBudgetCategories(){
     const amount=Math.max(0,Number(row.querySelector('.edit-budget').value)||0);
     if(!name)continue;
     const categoryPatch={};
-    if(name!==old.name){ rememberCategoryRename(id,old.name,name,viewYear,viewMonth+1); categoryPatch.name=name; }
-    const oldExpenseType=old.expense_type==='fixed'?'fixed':'variable';
-    if(expenseType!==oldExpenseType){ rememberCategoryExpenseTypeChange(id,oldExpenseType,expenseType,viewYear,viewMonth+1); categoryPatch.expense_type=expenseType; }
+    const oldNameForMonth=categoryDisplayNameForMonth(id,viewYear,viewMonth+1,old.name);
+    const oldExpenseTypeForMonth=categoryDisplayExpenseType(id,viewYear,viewMonth+1);
+    if(name!==oldNameForMonth){ rememberCategoryRename(id,oldNameForMonth,name,viewYear,viewMonth+1); categoryPatch.name=name; }
+    if(expenseType!==oldExpenseTypeForMonth){ rememberCategoryExpenseTypeChange(id,oldExpenseTypeForMonth,expenseType,viewYear,viewMonth+1); categoryPatch.expense_type=expenseType; }
     if(categoryPrefsSupported){
       if(icon!==catIcon(old))categoryPatch.icon=icon;
       if(index!==catOrder(old))categoryPatch.sort_order=index;
