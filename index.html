@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.87 · 월별 항목 이력 보존</title>
+<title>monee 가계부 · ver.2.88 · 월별 항목 이력 보존</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.87">ver.2.87</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.88">ver.2.88</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -2026,7 +2026,8 @@ function renderBudgetEditor(){
  list.addEventListener('pointerup',finishPointerDrag);
  list.addEventListener('pointercancel',finishPointerDrag);
 }
-/* ver.2.87: 항목 이름/지출 유형은 categories 본체를 변경하지 않고 월별 이력으로만 관리해 과거 데이터와 고유키를 보호합니다. */
+/* ver.2.88: 항목 이름/지출 유형은 categories 본체를 변경하지 않고 월별 이력으로 관리합니다.
+   같은 달에는 지출 유형과 관계없이 동일한 항목명이 중복되지 않도록 저장 전에 전체 행을 검증합니다. */
 function monthKey(year,month){return Number(year)*100+Number(month)}
 function prevMonth(year,month){const d=new Date(Number(year),Number(month)-2,1);return {year:d.getFullYear(),month:d.getMonth()+1}}
 function loadCategoryNameHistory(){const h=moneePrivateData?.categoryHistory?.name;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}}
@@ -2073,6 +2074,11 @@ function categoryDisplayExpenseTypeForTransaction(categoryId,transactionDate,fal
 
 async function saveBudgetCategories(){
   const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
+  const changes=[];
+
+  // ver.2.88: 먼저 화면의 모든 변경사항을 메모리에서 검증합니다.
+  // 일부 행을 먼저 저장한 뒤 뒤에서 오류가 나면 월별 이력이 반쪽만 저장되는
+  // 문제가 생길 수 있으므로, 검증이 모두 끝나기 전에는 DB/localStorage를 변경하지 않습니다.
   for(let index=0;index<rows.length;index++){
     const row=rows[index],id=row.dataset.id,old=budgetCategories.find(c=>c.id===id);
     if(!old)continue;
@@ -2086,19 +2092,38 @@ async function saveBudgetCategories(){
     const oldExpenseTypeForMonth=categoryDisplayExpenseType(id,viewYear,viewMonth+1);
     const nameChanged=name!==oldNameForMonth;
     const typeChanged=expenseType!==oldExpenseTypeForMonth;
+    changes.push({row,id,old,index,name,icon,expenseType,amount,oldNameForMonth,oldExpenseTypeForMonth,nameChanged,typeChanged});
+  }
 
-    // 이름/고정·비고정 변경은 categories 테이블의 본체(name/expense_type)를 수정하지 않습니다.
-    // 본체를 수정하면 과거 거래까지 이름/유형이 바뀌거나, 다른 카테고리와
-    // user_id + name + type 고유키가 충돌할 수 있습니다. 월별 이력만 저장합니다.
-    if(nameChanged||typeChanged){
-      const collision=budgetCategories.find(c=>String(c.id)!==String(id)
-        && categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name)===name
-        && categoryDisplayExpenseType(c.id,viewYear,viewMonth+1)===(expenseType==='fixed'?'fixed':'variable'));
-      if(collision){
-        alert(`'${name}' 항목이 이미 같은 지출 유형으로 존재해요.\n\n다른 이름을 사용해 주세요.`);
-        return;
-      }
+  // 같은 달의 '항목명'은 고정/비고정 여부와 관계없이 하나만 존재해야 합니다.
+  // 유형이 다르다는 이유로 같은 이름을 허용하면 화면에서는 동일한 항목이 두 개로 보이고,
+  // 이후 거래/예산 연결을 사용자가 구분할 수 없게 됩니다.
+  const namesSeen=new Map();
+  for(const change of changes){
+    const normalized=change.name.trim();
+    const previous=namesSeen.get(normalized);
+    if(previous){
+      alert(`'${normalized}' 항목이 현재 달에 이미 있어요.\n\n같은 이름의 항목은 고정/비고정으로 나누어 만들 수 없어요.\n다른 이름을 사용해 주세요.`);
+      return;
     }
+    namesSeen.set(normalized,change);
+  }
+
+  // DB에 이미 존재하는 다른 카테고리와의 충돌도 유형과 관계없이 차단합니다.
+  // 현재 화면의 변경사항에서 이름이 실제로 달라지는 경우만 검사합니다.
+  for(const change of changes){
+    if(!change.nameChanged)continue;
+    const collision=budgetCategories.find(c=>String(c.id)!==String(change.id)
+      && categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name)===change.name);
+    if(collision){
+      alert(`'${change.name}' 항목이 현재 달에 이미 있어요.\n\n같은 이름의 항목은 고정/비고정으로 나누어 만들 수 없어요.\n다른 이름을 사용해 주세요.`);
+      return;
+    }
+  }
+
+  // 모든 검증이 끝난 뒤에만 월별 이력/DB 저장을 시작합니다.
+  for(const change of changes){
+    const {id,old,index,name,icon,expenseType,amount,oldNameForMonth,oldExpenseTypeForMonth,nameChanged,typeChanged}=change;
 
     if(nameChanged)rememberCategoryRename(id,oldNameForMonth,name,viewYear,viewMonth+1);
     if(typeChanged)rememberCategoryExpenseTypeChange(id,oldExpenseTypeForMonth,expenseType,viewYear,viewMonth+1);
@@ -2133,7 +2158,6 @@ async function saveBudgetCategories(){
   await savePrivateData();
   closeModal('budgetEditModal');await loadAll();
 }
-
 function fillEditCategories(selectedId){$("editCategory").innerHTML=budgetCategories.map(c=>`<option value="${escapeText(c.id)}">${escapeText(c.name)}</option>`).join('');if(selectedId)$("editCategory").value=selectedId}
 function openTransactionEdit(id){const t=transactions.find(x=>x.id===id);if(!t||t.type!=='expense')return;$("editTransactionId").value=t.id;$("editDate").value=t.transaction_date||todayLocal();$("editAmount").value=formatCurrencyInputValue(t.amount||'');fillEditCategories(t.category_id);const link=findSavingLink(t.id);updateEditSavingLinkField(link?.assetId||'');$("editMethod").value=t.payment_method||'카드';$("editMemo").value=t.memo||'';openModal('transactionEditModal')}
 function fillIncomeEditCategories(selectedId){
