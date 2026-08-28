@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.78 · 만기처리 새 자산 유형 선택</title>
+<title>monee 가계부 · ver.2.79 · 적금 만기 예상금액 반영</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -590,6 +590,7 @@ nav.nav .icon{
 
 /* ver.2.76: budget page recent-list trailing space — keep the same 12px card rhythm */
 /* ver.2.78: 적금 만기 처리 시 새 자산의 유형을 선택하고 DB 저장값을 정규화 */
+/* ver.2.79: 만기 처리에 만기 예상 금액을 표시하고 실제 입금 금액 기본값에 반영 */
 #budget.active{padding-bottom:0;margin-bottom:-128px}
 
 /* ver.2.70: budget heading restored to the card inner alignment */
@@ -673,7 +674,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.77">ver.2.77</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.79">ver.2.79</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -779,7 +780,7 @@ const supabaseClient = window.supabase.createClient(
 <div class="modal-back" id="assetManageModal"><div class="modal"><div class="modal-head"><div><h3>자산 관리</h3><p class="modal-help">등록된 자산을 수정하거나 삭제할 수 있어요.</p></div><button class="x" data-close-modal="assetManageModal">×</button></div><div class="asset-manage-list" id="assetManageList"></div><div class="modal-actions"><button class="secondary-btn" data-close-modal="assetManageModal" type="button">닫기</button></div></div></div>
 
 <div class="modal-back" id="maturityTransferModal"><div class="modal maturity-transfer-modal"><div class="modal-head"><div><h3>적금 만기 처리</h3><p class="modal-help">만기된 적금의 돈을 받을 자산으로 이동해요.</p></div><button class="x" data-close-modal="maturityTransferModal">×</button></div>
-<div class="maturity-summary"><div class="maturity-summary-row"><span class="maturity-summary-label">만기 적금</span><strong class="maturity-summary-value" id="maturitySourceName">-</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">현재 적금 금액</span><strong class="maturity-summary-value" id="maturitySourceAmount">₩0</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">실제 입금 금액</span><strong class="maturity-summary-value" id="maturityTransferAmount">₩0</strong></div><div class="maturity-destination-note">이자는 실제 입금 금액에 포함해 입력할 수 있어요. 기존 자산으로 옮기면 해당 자산에 더하고, 새 자산을 만들면 원하는 자산 유형으로 등록해요.</div></div>
+<div class="maturity-summary"><div class="maturity-summary-row"><span class="maturity-summary-label">만기 적금</span><strong class="maturity-summary-value" id="maturitySourceName">-</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">현재 적금 금액</span><strong class="maturity-summary-value" id="maturitySourceAmount">₩0</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">만기 예상 금액</span><strong class="maturity-summary-value" id="maturityExpectedAmount">₩0</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">실제 입금 금액</span><strong class="maturity-summary-value" id="maturityTransferAmount">₩0</strong></div><div class="maturity-destination-note">이자는 실제 입금 금액에 포함해 입력할 수 있어요. 기존 자산으로 옮기면 해당 자산에 더하고, 새 자산을 만들면 원하는 자산 유형으로 등록해요.</div></div>
 <form id="maturityTransferForm" class="form-grid"><input type="hidden" id="maturitySourceId">
 <div class="field full"><label>실제 입금 금액 (원)</label><input id="maturityReceivedAmount" type="text" inputmode="numeric" required></div>
 <div class="field full"><label>받을 자산</label><select id="maturityDestination"><option value="">받을 자산을 선택해 주세요</option></select></div>
@@ -1222,6 +1223,34 @@ function formatSavingDate(dateStr){
   if(Number.isNaN(d.getTime()))return dateStr;
   return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`;
 }
+function calculateSavingMaturityEstimate(asset,meta=getAssetMeta(asset)){
+ const rate=Number(meta?.interestRate??asset?.interest_rate??0)||0;
+ const taxRate=Number(meta?.taxRate??asset?.tax_rate??0)||0;
+ const maturityDate=meta?.maturityDate||asset?.maturity_date||'';
+ const links=moneePrivateData.savingLinks||{};
+ const linkedIds=Object.keys(links).filter(id=>String(links[id]?.assetId)===String(asset?.id));
+ const list=[];
+ linkedIds.forEach(id=>{
+   const tx=transactions.find(t=>String(t.id)===String(id));
+   const link=links[id];
+   if(tx&&Number(link.amount||0)>0)list.push({tx,amount:Number(link.amount)||0});
+ });
+ let grossInterest=0;
+ if(rate>0&&maturityDate&&list.length){
+   const maturityMs=new Date(maturityDate+'T00:00:00').getTime();
+   list.forEach(({tx,amount})=>{
+     const depositMs=new Date((tx.transaction_date||'')+'T00:00:00').getTime();
+     if(!Number.isNaN(maturityMs)&&!Number.isNaN(depositMs)){
+       const days=Math.max(0,Math.round((maturityMs-depositMs)/86400000));
+       grossInterest += amount*(rate/100)*(days/365);
+     }
+   });
+ }
+ const interest=Math.round(grossInterest);
+ const tax=Math.round(interest*(taxRate/100));
+ const expectedTotal=Math.max(0,Number(asset?.amount)||0)+interest-tax;
+ return {interest,tax,expectedTotal};
+}
 async function openSavingDetail(assetId){
  const asset=assets.find(a=>String(a.id)===String(assetId));
  if(!asset)return;
@@ -1255,20 +1284,10 @@ async function openSavingDetail(assetId){
  });
 
  // ① 현재금액 기준: 지금까지 실제 적금에 반영된 입금액을 기준으로 계산.
- let grossInterest=0;
- if(rate>0&&maturityDate&&list.length){
-   const maturityMs=new Date(maturityDate+'T00:00:00').getTime();
-   list.forEach(({tx,amount})=>{
-     const depositMs=new Date((tx.transaction_date||'')+'T00:00:00').getTime();
-     if(!Number.isNaN(maturityMs)&&!Number.isNaN(depositMs)){
-       const days=Math.max(0,Math.round((maturityMs-depositMs)/86400000));
-       grossInterest += amount*(rate/100)*(days/365);
-     }
-   });
- }
- const interest=Math.round(grossInterest);
- const tax=Math.round(interest*(taxRate/100));
- const expectedTotal=Math.max(0,Number(asset.amount)||0)+interest-tax;
+ const maturityEstimate=calculateSavingMaturityEstimate(asset,meta);
+ const interest=maturityEstimate.interest;
+ const tax=maturityEstimate.tax;
+ const expectedTotal=maturityEstimate.expectedTotal;
 
  // ② 월 납입액 × 가입기간 기준:
  //    현재 적금에 연결된 입금내역 중 가장 최근 금액을 월 납입액으로 보고,
@@ -1663,8 +1682,12 @@ function openMaturityTransfer(assetId){
   maturitySourceAssetId=String(asset.id);
   $('maturitySourceId').value=String(asset.id);
   $('maturitySourceName').textContent=asset.name||'적금';
-  $('maturitySourceAmount').textContent=money(asset.amount);
-  $('maturityReceivedAmount').value=formatCurrencyInputValue(asset.amount);
+  const sourceAmount=Number(asset.amount)||0;
+  const maturityEstimate=calculateSavingMaturityEstimate(asset,getAssetMeta(asset));
+  $('maturitySourceAmount').textContent=money(sourceAmount);
+  $('maturityExpectedAmount').textContent=money(maturityEstimate.expectedTotal);
+  $('maturityReceivedAmount').value=formatCurrencyInputValue(maturityEstimate.expectedTotal);
+  $('maturityTransferAmount').textContent=money(maturityEstimate.expectedTotal);
   $('maturityDestination').value='';
   $('maturityNewAssetField').classList.remove('show');
   $('maturityNewAssetTypeField').classList.remove('show');
@@ -2202,6 +2225,7 @@ $('maturityDestination').addEventListener('change',e=>{
   $('maturityNewAssetField').classList.toggle('show',isNew);
   $('maturityNewAssetTypeField').classList.toggle('show',isNew);
 });
+$('maturityReceivedAmount').addEventListener('input',()=>{ $('maturityTransferAmount').textContent=money(currencyNumber('maturityReceivedAmount')); });
 $('maturityTransferForm').addEventListener('submit',preventDoubleSubmit(saveMaturityTransfer));
 $('openAssetsSetting').onclick=()=>{renderAssets();openModal('assetManageModal')};
 function setModalLock(locked){document.body.classList.toggle('modal-open',locked)}
