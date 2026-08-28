@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.82 · 만기 저축 기록 숨기기</title>
+<title>monee 가계부 · ver.2.84 · 만기 저축 기록 숨기기</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -591,7 +591,7 @@ nav.nav .icon{
 /* ver.2.76: budget page recent-list trailing space — keep the same 12px card rhythm */
 /* ver.2.78: 적금 만기 처리 시 새 자산의 유형을 선택하고 DB 저장값을 정규화 */
 /* ver.2.81: 만기 처리에 만기 예상 금액을 표시하고 실제 입금 금액 기본값에 반영 */
-/* ver.2.82: 만기된 저축 기록은 자산/거래내역을 건드리지 않고 만기 목록에서만 숨길 수 있습니다. */
+/* ver.2.84: 만기된 저축 기록은 자산/거래내역을 건드리지 않고 만기 목록에서만 숨길 수 있습니다. */
 #budget.active{padding-bottom:0;margin-bottom:-128px}
 
 /* ver.2.70: budget heading restored to the card inner alignment */
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.82">ver.2.82</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.82">ver.2.84</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1121,7 +1121,7 @@ function renderBudget(){
  const total=rows.reduce((s,c)=>s+c.budget,0),spent=rows.reduce((s,c)=>s+c.spent,0),remain=Math.max(0,total-spent),rate=total?Math.round(spent/total*1000)/10:0;
   const monthIncome=currentMonthTransactions().filter(t=>t.type==='income').reduce((s,t)=>s+Math.max(0,Number(t.amount)||0),0);
   const incomeCount=currentMonthTransactions().filter(t=>t.type==='income').length;
- const isFixedCategory=c=>c.expense_type==='fixed' || (!c.expense_type && ['적금','구독','보험','통신비','기부','교통'].includes(c.name));
+ const isFixedCategory=c=>categoryDisplayExpenseType(c.id,viewYear,viewMonth+1)==='fixed';
  const fixedRows=rows.filter(isFixedCategory),variableRows=rows.filter(c=>!isFixedCategory(c));
  const fixedBudget=fixedRows.reduce((s,c)=>s+c.budget,0),fixedSpent=fixedRows.reduce((s,c)=>s+c.spent,0);
  const variableBudget=variableRows.reduce((s,c)=>s+c.budget,0),variableSpent=variableRows.reduce((s,c)=>s+c.spent,0);
@@ -1173,7 +1173,7 @@ function renderBudget(){
  const recent=sortTransactions(currentMonthTransactions().filter(t=>t.type==='expense')).slice(0,8);
  const recentContainer=document.querySelector('#budget .recent');
  const moreBtn=$('moreTransactions');
- const txHtml=(t,index)=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);const extra=index>=5?' data-extra-recent="true" style="display:none;cursor:pointer"':' style="cursor:pointer"';return `<div class="tx-row"${extra} data-transaction-id="${escapeText(t.id)}"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`};
+ const txHtml=(t,index)=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);const displayCatName=categoryDisplayName(t.category_id,t.transaction_date,'기타');const extra=index>=5?' data-extra-recent="true" style="display:none;cursor:pointer"':' style="cursor:pointer"';return `<div class="tx-row"${extra} data-transaction-id="${escapeText(t.id)}"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||displayCatName||'지출')}</div><div class="tx-cat">${escapeText(displayCatName||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`};
  recentContainer.querySelectorAll('.tx-row').forEach(x=>x.remove());
  if(recent.length){moreBtn.style.display=recent.length>5?'flex':'none';recent.forEach((t,i)=>moreBtn.insertAdjacentHTML('beforebegin',txHtml(t,i)));}
  else{moreBtn.style.display='none';}
@@ -1345,7 +1345,7 @@ async function openSavingDetail(assetId){
  }else{
    target.innerHTML=list.map(({tx,amount})=>{
      const cat=budgetCategories.find(c=>c.id===tx.category_id);
-     return `<div class="saving-deposit" data-saving-tx-id="${escapeText(tx.id)}"><span class="saving-deposit-date">${formatSavingDate(tx.transaction_date)}</span><span class="saving-deposit-memo">${escapeText(tx.memo||cat?.name||'적금')}</span><span class="saving-deposit-amount">+${money(amount)}</span></div>`;
+     return `<div class="saving-deposit" data-saving-tx-id="${escapeText(tx.id)}"><span class="saving-deposit-date">${formatSavingDate(tx.transaction_date)}</span><span class="saving-deposit-memo">${escapeText(tx.memo||displayCatName||'적금')}</span><span class="saving-deposit-amount">+${money(amount)}</span></div>`;
    }).join('');
    target.querySelectorAll('[data-saving-tx-id]').forEach(row=>{
      row.onclick=()=>{
@@ -1999,6 +1999,82 @@ function renderBudgetEditor(){
  list.addEventListener('pointerup',finishPointerDrag);
  list.addEventListener('pointercancel',finishPointerDrag);
 }
+function loadCategoryNameHistory(){
+  try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}
+}
+function saveCategoryNameHistory(history){localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}
+function monthKey(year,month){return Number(year)*100+Number(month)}
+function rememberCategoryRename(categoryId,oldName,newName,year,month){
+  if(!categoryId||!oldName||!newName||oldName===newName)return;
+  const history=loadCategoryNameHistory();
+  const key=String(categoryId);
+  const list=Array.isArray(history[key])?history[key]:[];
+  const effective=monthKey(year,month);
+  // 최초 변경 시에는 변경월 이전의 이름도 명시적으로 보존합니다.
+  if(!list.some(x=>Number(x.year)*100+Number(x.month)<effective)){
+    list.push({year:Number(year),month:Number(month),name:oldName,before:true});
+  }
+  list.push({year:Number(year),month:Number(month),name:newName,before:false});
+  list.sort((a,b)=>monthKey(a.year,a.month)-monthKey(b.year,b.month)||(a.before?0:1)-(b.before?0:1));
+  // 같은 월에 여러 번 이름을 바꿨다면 마지막 변경 이름만 사용합니다.
+  const compact=[];
+  for(const item of list){
+    const last=compact[compact.length-1];
+    if(last && monthKey(last.year,last.month)===monthKey(item.year,item.month)) compact[compact.length-1]=item;
+    else compact.push(item);
+  }
+  history[key]=compact;
+  saveCategoryNameHistory(history);
+}
+function categoryDisplayName(categoryId,transactionDate,fallback='기타'){
+  const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));
+  if(!cat)return fallback;
+  const history=loadCategoryNameHistory()[String(categoryId)];
+  if(!Array.isArray(history)||!history.length)return cat.name||fallback;
+  const d=String(transactionDate||'');
+  const m=d.match(/^(\d{4})-(\d{1,2})/);
+  if(!m)return cat.name||fallback;
+  const txKey=monthKey(Number(m[1]),Number(m[2]));
+  let chosen=null;
+  for(const item of history){
+    if(monthKey(item.year,item.month)<=txKey)chosen=item.name;
+    else break;
+  }
+  return chosen||history[0].name||cat.name||fallback;
+}
+
+/* ver.2.84: 카테고리 고정/비고정 변경 이력도 월별로 보존합니다. */
+function loadCategoryExpenseTypeHistory(){try{return JSON.parse(localStorage.getItem('monee_category_expense_type_history')||'{}')||{}}catch(e){return {}}}
+function saveCategoryExpenseTypeHistory(history){try{localStorage.setItem('monee_category_expense_type_history',JSON.stringify(history||{}))}catch(e){}}
+function rememberCategoryExpenseTypeChange(categoryId,oldType,newType,year,month){
+  if(!categoryId||!oldType||!newType||oldType===newType)return;
+  const history=loadCategoryExpenseTypeHistory(),key=String(categoryId),list=Array.isArray(history[key])?history[key]:[],effective=monthKey(year,month);
+  if(!list.some(x=>monthKey(x.year,x.month)<effective))list.push({year:Number(year),month:Number(month),expense_type:oldType,before:true});
+  list.push({year:Number(year),month:Number(month),expense_type:newType,before:false});
+  list.sort((a,b)=>monthKey(a.year,a.month)-monthKey(b.year,b.month)||(a.before?0:1)-(b.before?0:1));
+  const compact=[];
+  for(const item of list){const last=compact[compact.length-1];if(last&&monthKey(last.year,last.month)===monthKey(item.year,item.month))compact[compact.length-1]=item;else compact.push(item)}
+  history[key]=compact;saveCategoryExpenseTypeHistory(history);
+}
+function categoryDisplayExpenseType(categoryId,year,month,fallback='variable'){
+  const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));
+  const current=cat?.expense_type==='fixed'?'fixed':'variable';
+  const history=loadCategoryExpenseTypeHistory()[String(categoryId)];
+  if(!Array.isArray(history)||!history.length)return current||fallback;
+  const key=monthKey(year,month);let chosen=null;
+  for(const item of history){if(monthKey(item.year,item.month)<=key)chosen=item.expense_type;else break}
+  return chosen||history[0].expense_type||current||fallback;
+}
+function categoryDisplayExpenseTypeForTransaction(categoryId,transactionDate,fallback='variable'){
+  const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);
+  return m?categoryDisplayExpenseType(categoryId,Number(m[1]),Number(m[2]),fallback):fallback;
+}
+
+function loadCategoryNameHistory(){try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}}
+function saveCategoryNameHistory(history){localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}
+function monthKey(year,month){return Number(year)*100+Number(month)}
+function rememberCategoryRename(categoryId,oldName,newName,year,month){if(!categoryId||!oldName||!newName||oldName===newName)return;const history=loadCategoryNameHistory(),key=String(categoryId),list=Array.isArray(history[key])?history[key]:[],effective=monthKey(year,month);if(!list.some(x=>monthKey(x.year,x.month)<effective))list.push({year:Number(year),month:Number(month),name:oldName,before:true});list.push({year:Number(year),month:Number(month),name:newName,before:false});list.sort((a,b)=>monthKey(a.year,a.month)-monthKey(b.year,b.month)||(a.before?0:1)-(b.before?0:1));const compact=[];for(const item of list){const last=compact[compact.length-1];if(last&&monthKey(last.year,last.month)===monthKey(item.year,item.month))compact[compact.length-1]=item;else compact.push(item)}history[key]=compact;saveCategoryNameHistory(history)}
+function categoryDisplayName(categoryId,transactionDate,fallback='기타'){const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));if(!cat)return fallback;const history=loadCategoryNameHistory()[String(categoryId)];if(!Array.isArray(history)||!history.length)return cat.name||fallback;const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);if(!m)return cat.name||fallback;const txKey=monthKey(Number(m[1]),Number(m[2]));let chosen=null;for(const item of history){if(monthKey(item.year,item.month)<=txKey)chosen=item.name;else break}return chosen||history[0].name||cat.name||fallback}
 async function saveBudgetCategories(){
   const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
   for(let index=0;index<rows.length;index++){
@@ -2010,8 +2086,9 @@ async function saveBudgetCategories(){
     const amount=Math.max(0,Number(row.querySelector('.edit-budget').value)||0);
     if(!name)continue;
     const categoryPatch={};
-    if(name!==old.name)categoryPatch.name=name;
-    if(expenseType!==(old.expense_type==='fixed'?'fixed':'variable'))categoryPatch.expense_type=expenseType;
+    if(name!==old.name){ rememberCategoryRename(id,old.name,name,viewYear,viewMonth+1); categoryPatch.name=name; }
+    const oldExpenseType=old.expense_type==='fixed'?'fixed':'variable';
+    if(expenseType!==oldExpenseType){ rememberCategoryExpenseTypeChange(id,oldExpenseType,expenseType,viewYear,viewMonth+1); categoryPatch.expense_type=expenseType; }
     if(categoryPrefsSupported){
       if(icon!==catIcon(old))categoryPatch.icon=icon;
       if(index!==catOrder(old))categoryPatch.sort_order=index;
@@ -2118,7 +2195,7 @@ async function saveTransactionEdit(e){
     moneeSavingLocks.delete(`edit:${id}`);
   }
 }
-function renderAllTransactions(){const list=sortTransactions(currentMonthTransactions().filter(t=>t.type==='expense'));$("allTransactionsList").innerHTML=list.length?list.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);return `<div class="tx-row" data-all-transaction-id="${escapeText(t.id)}" style="cursor:pointer"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||cat?.name||'지출')}</div><div class="tx-cat">${escapeText(cat?.name||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join(''):'<div class="empty-state">등록된 내역이 없어요.</div>';document.querySelectorAll('[data-all-transaction-id]').forEach(x=>x.onclick=()=>openTransactionEdit(x.dataset.allTransactionId));renderLucideIcons($("allTransactionsList"))}
+function renderAllTransactions(){const list=sortTransactions(currentMonthTransactions().filter(t=>t.type==='expense'));$("allTransactionsList").innerHTML=list.length?list.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);const displayCatName=categoryDisplayName(t.category_id,t.transaction_date,'기타');return `<div class="tx-row" data-all-transaction-id="${escapeText(t.id)}" style="cursor:pointer"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||displayCatName||'지출')}</div><div class="tx-cat">${escapeText(displayCatName||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join(''):'<div class="empty-state">등록된 내역이 없어요.</div>';document.querySelectorAll('[data-all-transaction-id]').forEach(x=>x.onclick=()=>openTransactionEdit(x.dataset.allTransactionId));renderLucideIcons($("allTransactionsList"))}
 
 async function saveIncomeEdit(e){
   e.preventDefault();
