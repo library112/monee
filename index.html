@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.85 · 월별 항목 이력 보존</title>
+<title>monee 가계부 · ver.2.86 · 월별 항목 이력 보존</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.85">ver.2.85</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.86">ver.2.86</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -855,7 +855,7 @@ function txSortTime(t){const local=loadEditTimestamps()[t.id];return Number(loca
 /* ver.2.74: 브라우저/Safari 홈 화면(Web App) 간 로컬 데이터 분리 문제를 보완합니다.
    금융정보, 적금 연결, 적금 상세정보처럼 기존 localStorage에만 있던 사용자 데이터는
    로그인 계정의 Supabase user metadata에도 보관하여 같은 계정의 모든 실행환경에서 공유합니다. */
-let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{},maturityRecords:{}};
+let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{},maturityRecords:{},categoryHistory:{name:{},expenseType:{}}};
 let privateDataReady=false;
 let privateDataSaveQueue=Promise.resolve();
 function readJsonLocal(key,fallback){try{const v=JSON.parse(localStorage.getItem(key)||'');return v??fallback}catch(e){return fallback}}
@@ -863,7 +863,8 @@ function localFinanceNotes(){const all=readJsonLocal('monee_finance_notes',[]);r
 function localSavingLinks(){const v=readJsonLocal('monee_saving_links',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
 function localAssetMeta(){const v=readJsonLocal('monee_asset_meta',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
 function localMaturityRecords(){const v=readJsonLocal('monee_maturity_records',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{} }
-function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));localStorage.setItem('monee_maturity_records',JSON.stringify(moneePrivateData.maturityRecords||{}));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
+function localCategoryHistory(){return {name:readJsonLocal('monee_category_name_history',{}),expenseType:readJsonLocal('monee_category_expense_type_history',{})}}
+function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));localStorage.setItem('monee_maturity_records',JSON.stringify(moneePrivateData.maturityRecords||{}));localStorage.setItem('monee_category_name_history',JSON.stringify(moneePrivateData.categoryHistory?.name||{}));localStorage.setItem('monee_category_expense_type_history',JSON.stringify(moneePrivateData.categoryHistory?.expenseType||{}));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
 async function savePrivateData(){
   if(!currentUser)return;
   const snapshot=JSON.parse(JSON.stringify(moneePrivateData));
@@ -887,19 +888,26 @@ async function hydratePrivateData(){
   const hasCloudLinks=cloudData?.savingLinks&&typeof cloudData.savingLinks==='object'&&!Array.isArray(cloudData.savingLinks);
   const hasCloudMeta=cloudData?.assetMeta&&typeof cloudData.assetMeta==='object'&&!Array.isArray(cloudData.assetMeta);
   const hasCloudMaturity=cloudData?.maturityRecords&&typeof cloudData.maturityRecords==='object'&&!Array.isArray(cloudData.maturityRecords);
-  const localF=localFinanceNotes(), localL=localSavingLinks(), localA=localAssetMeta(), localM=localMaturityRecords();
+  const hasCloudCategoryHistory=cloudData?.categoryHistory&&typeof cloudData.categoryHistory==='object'&&!Array.isArray(cloudData.categoryHistory);
+  const hasCloudNameHistory=hasCloudCategoryHistory&&cloudData.categoryHistory.name&&typeof cloudData.categoryHistory.name==='object'&&!Array.isArray(cloudData.categoryHistory.name);
+  const hasCloudExpenseTypeHistory=hasCloudCategoryHistory&&cloudData.categoryHistory.expenseType&&typeof cloudData.categoryHistory.expenseType==='object'&&!Array.isArray(cloudData.categoryHistory.expenseType);
+  const localF=localFinanceNotes(), localL=localSavingLinks(), localA=localAssetMeta(), localM=localMaturityRecords(), localH=localCategoryHistory();
   moneePrivateData={
     financeNotes:hasCloudFinance?cloudData.financeNotes:localF,
     savingLinks:hasCloudLinks?cloudData.savingLinks:localL,
     assetMeta:hasCloudMeta?cloudData.assetMeta:localA,
-    maturityRecords:hasCloudMaturity?cloudData.maturityRecords:localM
+    maturityRecords:hasCloudMaturity?cloudData.maturityRecords:localM,
+    categoryHistory:{
+      name:hasCloudNameHistory?cloudData.categoryHistory.name:(localH.name||{}),
+      expenseType:hasCloudExpenseTypeHistory?cloudData.categoryHistory.expenseType:(localH.expenseType||{})
+    }
   };
   privateDataReady=true;
   writePrivateDataToLocal();
   // 홈 화면에서 처음 실행되어 로컬 데이터가 비어 있는 경우에는
   // 빈 값을 클라우드에 먼저 써서 Safari의 기존 데이터를 덮어쓰지 않습니다.
-  const hasLocalData=localF.length>0||Object.keys(localL).length>0||Object.keys(localA).length>0||Object.keys(localM).length>0;
-  if((!hasCloudFinance&&localF.length)||(!hasCloudLinks&&Object.keys(localL).length)||(!hasCloudMeta&&Object.keys(localA).length)||(!hasCloudMaturity&&Object.keys(localM).length)||(!cloudData&&hasLocalData))await savePrivateData();
+  const hasLocalData=localF.length>0||Object.keys(localL).length>0||Object.keys(localA).length>0||Object.keys(localM).length>0||Object.keys(localH.name||{}).length>0||Object.keys(localH.expenseType||{}).length>0;
+  if((!hasCloudFinance&&localF.length)||(!hasCloudLinks&&Object.keys(localL).length)||(!hasCloudMeta&&Object.keys(localA).length)||(!hasCloudMaturity&&Object.keys(localM).length)||(!hasCloudNameHistory&&Object.keys(localH.name||{}).length)||(!hasCloudExpenseTypeHistory&&Object.keys(localH.expenseType||{}).length)||(!cloudData&&hasLocalData))await savePrivateData();
 }
 function sortTransactions(list){return [...list].sort((a,b)=>{const da=String(a.transaction_date||''),db=String(b.transaction_date||'');if(db!==da)return db.localeCompare(da);return txSortTime(b)-txSortTime(a)})}
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
@@ -2018,11 +2026,11 @@ function renderBudgetEditor(){
  list.addEventListener('pointerup',finishPointerDrag);
  list.addEventListener('pointercancel',finishPointerDrag);
 }
-/* ver.2.85: 항목 이름/지출 유형은 월별 이력으로 보존하고, 거래·카테고리 ID 연결은 유지합니다. */
+/* ver.2.86: 항목 이름/지출 유형 이력을 계정 클라우드에 보존해 월별 데이터가 서로 덮어쓰이지 않도록 합니다. */
 function monthKey(year,month){return Number(year)*100+Number(month)}
 function prevMonth(year,month){const d=new Date(Number(year),Number(month)-2,1);return {year:d.getFullYear(),month:d.getMonth()+1}}
-function loadCategoryNameHistory(){try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}}
-function saveCategoryNameHistory(history){try{localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}catch(e){}}
+function loadCategoryNameHistory(){const h=moneePrivateData?.categoryHistory?.name;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}}
+function saveCategoryNameHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{}};moneePrivateData.categoryHistory.name=history||{};try{localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}catch(e){}}
 function normalizeHistoryList(list,valueKey){
   if(!Array.isArray(list))return [];
   const out=list.map(x=>({year:Number(x.year),month:Number(x.month),[valueKey]:x[valueKey]})).filter(x=>Number.isFinite(x.year)&&Number.isFinite(x.month)&&x[valueKey]!==undefined);
@@ -2046,8 +2054,8 @@ function categoryDisplayNameForMonth(categoryId,year,month,fallback='기타'){
 }
 function categoryDisplayName(categoryId,transactionDate,fallback='기타'){const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);return m?categoryDisplayNameForMonth(categoryId,Number(m[1]),Number(m[2]),fallback):fallback}
 
-function loadCategoryExpenseTypeHistory(){try{return JSON.parse(localStorage.getItem('monee_category_expense_type_history')||'{}')||{}}catch(e){return {}}}
-function saveCategoryExpenseTypeHistory(history){try{localStorage.setItem('monee_category_expense_type_history',JSON.stringify(history||{}))}catch(e){}}
+function loadCategoryExpenseTypeHistory(){const h=moneePrivateData?.categoryHistory?.expenseType;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_expense_type_history')||'{}')||{}}catch(e){return {}}}
+function saveCategoryExpenseTypeHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{}};moneePrivateData.categoryHistory.expenseType=history||{};try{localStorage.setItem('monee_category_expense_type_history',JSON.stringify(history||{}))}catch(e){}}
 function rememberCategoryExpenseTypeChange(categoryId,oldType,newType,year,month){
   if(!categoryId||!oldType||!newType||oldType===newType)return;
   const history=loadCategoryExpenseTypeHistory(),key=String(categoryId),list=normalizeHistoryList(history[key],'expense_type'),effective=monthKey(year,month);
@@ -2101,8 +2109,11 @@ async function saveBudgetCategories(){
       const {error}=await q;if(error){alert(error.message);return;}
     }
   }
-  saveLocalCategoryPrefs();closeModal('budgetEditModal');await loadAll();
+  saveLocalCategoryPrefs();
+  await savePrivateData();
+  closeModal('budgetEditModal');await loadAll();
 }
+
 function fillEditCategories(selectedId){$("editCategory").innerHTML=budgetCategories.map(c=>`<option value="${escapeText(c.id)}">${escapeText(c.name)}</option>`).join('');if(selectedId)$("editCategory").value=selectedId}
 function openTransactionEdit(id){const t=transactions.find(x=>x.id===id);if(!t||t.type!=='expense')return;$("editTransactionId").value=t.id;$("editDate").value=t.transaction_date||todayLocal();$("editAmount").value=formatCurrencyInputValue(t.amount||'');fillEditCategories(t.category_id);const link=findSavingLink(t.id);updateEditSavingLinkField(link?.assetId||'');$("editMethod").value=t.payment_method||'카드';$("editMemo").value=t.memo||'';openModal('transactionEditModal')}
 function fillIncomeEditCategories(selectedId){
@@ -2421,7 +2432,7 @@ $('addBudgetCategory').onclick=async()=>{
 };
 $('saveBudgetCategories').onclick=saveBudgetCategories;
 
-$('saveBackup').onclick=()=>{const data={transactions,assets,goals,budgetCategories,categoryPrefs:localCategoryPrefs,maturityRecords:moneePrivateData.maturityRecords||{},savingLinks:moneePrivateData.savingLinks||{},exportedAt:new Date().toISOString()};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='monee-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
+$('saveBackup').onclick=()=>{const data={transactions,assets,goals,budgetCategories,categoryPrefs:localCategoryPrefs,maturityRecords:moneePrivateData.maturityRecords||{},savingLinks:moneePrivateData.savingLinks||{},categoryHistory:moneePrivateData.categoryHistory||{},exportedAt:new Date().toISOString()};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='monee-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
 loadLocalCategoryPrefs();fillCategories();$('floatingAction').style.display='grid';
 window.addEventListener('hashchange',()=>showPage(pageFromHash(),false));
 showPage(pageFromHash(),false);
