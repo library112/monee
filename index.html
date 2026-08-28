@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.86 · 월별 항목 이력 보존</title>
+<title>monee 가계부 · ver.2.87 · 월별 항목 이력 보존</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.86">ver.2.86</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.87">ver.2.87</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -2026,7 +2026,7 @@ function renderBudgetEditor(){
  list.addEventListener('pointerup',finishPointerDrag);
  list.addEventListener('pointercancel',finishPointerDrag);
 }
-/* ver.2.86: 항목 이름/지출 유형 이력을 계정 클라우드에 보존해 월별 데이터가 서로 덮어쓰이지 않도록 합니다. */
+/* ver.2.87: 항목 이름/지출 유형은 categories 본체를 변경하지 않고 월별 이력으로만 관리해 과거 데이터와 고유키를 보호합니다. */
 function monthKey(year,month){return Number(year)*100+Number(month)}
 function prevMonth(year,month){const d=new Date(Number(year),Number(month)-2,1);return {year:d.getFullYear(),month:d.getMonth()+1}}
 function loadCategoryNameHistory(){const h=moneePrivateData?.categoryHistory?.name;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}}
@@ -2081,11 +2081,30 @@ async function saveBudgetCategories(){
     const expenseType=row.querySelector('.edit-type')?.value==='fixed'?'fixed':'variable';
     const amount=Math.max(0,Number(row.querySelector('.edit-budget').value)||0);
     if(!name)continue;
-    const categoryPatch={};
+
     const oldNameForMonth=categoryDisplayNameForMonth(id,viewYear,viewMonth+1,old.name);
     const oldExpenseTypeForMonth=categoryDisplayExpenseType(id,viewYear,viewMonth+1);
-    if(name!==oldNameForMonth){ rememberCategoryRename(id,oldNameForMonth,name,viewYear,viewMonth+1); categoryPatch.name=name; }
-    if(expenseType!==oldExpenseTypeForMonth){ rememberCategoryExpenseTypeChange(id,oldExpenseTypeForMonth,expenseType,viewYear,viewMonth+1); categoryPatch.expense_type=expenseType; }
+    const nameChanged=name!==oldNameForMonth;
+    const typeChanged=expenseType!==oldExpenseTypeForMonth;
+
+    // 이름/고정·비고정 변경은 categories 테이블의 본체(name/expense_type)를 수정하지 않습니다.
+    // 본체를 수정하면 과거 거래까지 이름/유형이 바뀌거나, 다른 카테고리와
+    // user_id + name + type 고유키가 충돌할 수 있습니다. 월별 이력만 저장합니다.
+    if(nameChanged||typeChanged){
+      const collision=budgetCategories.find(c=>String(c.id)!==String(id)
+        && categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name)===name
+        && categoryDisplayExpenseType(c.id,viewYear,viewMonth+1)===(expenseType==='fixed'?'fixed':'variable'));
+      if(collision){
+        alert(`'${name}' 항목이 이미 같은 지출 유형으로 존재해요.\n\n다른 이름을 사용해 주세요.`);
+        return;
+      }
+    }
+
+    if(nameChanged)rememberCategoryRename(id,oldNameForMonth,name,viewYear,viewMonth+1);
+    if(typeChanged)rememberCategoryExpenseTypeChange(id,oldExpenseTypeForMonth,expenseType,viewYear,viewMonth+1);
+
+    // 아이콘/순서만 categories 본체에 저장합니다. 이름과 지출 유형은 위 이력에서 관리합니다.
+    const categoryPatch={};
     if(categoryPrefsSupported){
       if(icon!==catIcon(old))categoryPatch.icon=icon;
       if(index!==catOrder(old))categoryPatch.sort_order=index;
@@ -2097,6 +2116,7 @@ async function saveBudgetCategories(){
       const {error}=await supabaseClient.from('categories').update(categoryPatch).eq('id',id).eq('user_id',currentUser.id);
       if(error){alert(error.message);return;}
     }
+
     if(Number(old.budget)!==amount){
       let q;
       if(old.budgetId){
