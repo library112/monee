@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.92 · 월별 항목·예산 승계 안정화</title>
+<title>monee 가계부 · ver.2.95 · 월별 항목·예산 승계 안정화</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.92">ver.2.92</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.95">ver.2.95</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -855,7 +855,8 @@ function txSortTime(t){const local=loadEditTimestamps()[t.id];return Number(loca
 /* ver.2.74: 브라우저/Safari 홈 화면(Web App) 간 로컬 데이터 분리 문제를 보완합니다.
    금융정보, 적금 연결, 적금 상세정보처럼 기존 localStorage에만 있던 사용자 데이터는
    로그인 계정의 Supabase user metadata에도 보관하여 같은 계정의 모든 실행환경에서 공유합니다. */
-let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{},maturityRecords:{},categoryHistory:{name:{},expenseType:{}}};
+let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{},maturityRecords:{},categoryHistory:{name:{},expenseType:{},deletedAt:{},budgetCutoffInitialized:false}};
+let budgetCutoffEnsured=false;
 let privateDataReady=false;
 let privateDataSaveQueue=Promise.resolve();
 function readJsonLocal(key,fallback){try{const v=JSON.parse(localStorage.getItem(key)||'');return v??fallback}catch(e){return fallback}}
@@ -863,8 +864,8 @@ function localFinanceNotes(){const all=readJsonLocal('monee_finance_notes',[]);r
 function localSavingLinks(){const v=readJsonLocal('monee_saving_links',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
 function localAssetMeta(){const v=readJsonLocal('monee_asset_meta',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
 function localMaturityRecords(){const v=readJsonLocal('monee_maturity_records',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{} }
-function localCategoryHistory(){return {name:readJsonLocal('monee_category_name_history',{}),expenseType:readJsonLocal('monee_category_expense_type_history',{})}}
-function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));localStorage.setItem('monee_maturity_records',JSON.stringify(moneePrivateData.maturityRecords||{}));localStorage.setItem('monee_category_name_history',JSON.stringify(moneePrivateData.categoryHistory?.name||{}));localStorage.setItem('monee_category_expense_type_history',JSON.stringify(moneePrivateData.categoryHistory?.expenseType||{}));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
+function localCategoryHistory(){return {name:readJsonLocal('monee_category_name_history',{}),expenseType:readJsonLocal('monee_category_expense_type_history',{}),deletedAt:readJsonLocal('monee_category_deleted_at',{}),budgetCutoffInitialized:readJsonLocal('monee_budget_cutoff_initialized',false)}}
+function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));localStorage.setItem('monee_maturity_records',JSON.stringify(moneePrivateData.maturityRecords||{}));localStorage.setItem('monee_category_name_history',JSON.stringify(moneePrivateData.categoryHistory?.name||{}));localStorage.setItem('monee_category_expense_type_history',JSON.stringify(moneePrivateData.categoryHistory?.expenseType||{}));localStorage.setItem('monee_category_deleted_at',JSON.stringify(moneePrivateData.categoryHistory?.deletedAt||{}));localStorage.setItem('monee_budget_cutoff_initialized',JSON.stringify(!!moneePrivateData.categoryHistory?.budgetCutoffInitialized));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
 async function savePrivateData(){
   if(!currentUser)return;
   const snapshot=JSON.parse(JSON.stringify(moneePrivateData));
@@ -891,6 +892,8 @@ async function hydratePrivateData(){
   const hasCloudCategoryHistory=cloudData?.categoryHistory&&typeof cloudData.categoryHistory==='object'&&!Array.isArray(cloudData.categoryHistory);
   const hasCloudNameHistory=hasCloudCategoryHistory&&cloudData.categoryHistory.name&&typeof cloudData.categoryHistory.name==='object'&&!Array.isArray(cloudData.categoryHistory.name);
   const hasCloudExpenseTypeHistory=hasCloudCategoryHistory&&cloudData.categoryHistory.expenseType&&typeof cloudData.categoryHistory.expenseType==='object'&&!Array.isArray(cloudData.categoryHistory.expenseType);
+  const hasCloudDeletedAt=hasCloudCategoryHistory&&cloudData.categoryHistory.deletedAt&&typeof cloudData.categoryHistory.deletedAt==='object'&&!Array.isArray(cloudData.categoryHistory.deletedAt);
+  const hasCloudBudgetCutoff=hasCloudCategoryHistory&&Object.prototype.hasOwnProperty.call(cloudData.categoryHistory,'budgetCutoffInitialized');
   const localF=localFinanceNotes(), localL=localSavingLinks(), localA=localAssetMeta(), localM=localMaturityRecords(), localH=localCategoryHistory();
   moneePrivateData={
     financeNotes:hasCloudFinance?cloudData.financeNotes:localF,
@@ -899,7 +902,9 @@ async function hydratePrivateData(){
     maturityRecords:hasCloudMaturity?cloudData.maturityRecords:localM,
     categoryHistory:{
       name:hasCloudNameHistory?cloudData.categoryHistory.name:(localH.name||{}),
-      expenseType:hasCloudExpenseTypeHistory?cloudData.categoryHistory.expenseType:(localH.expenseType||{})
+      expenseType:hasCloudExpenseTypeHistory?cloudData.categoryHistory.expenseType:(localH.expenseType||{}),
+      deletedAt:hasCloudDeletedAt?cloudData.categoryHistory.deletedAt:(localH.deletedAt||{}),
+      budgetCutoffInitialized:hasCloudBudgetCutoff?!!cloudData.categoryHistory.budgetCutoffInitialized:!!localH.budgetCutoffInitialized
     }
   };
   privateDataReady=true;
@@ -941,159 +946,27 @@ function categoryById(id){return budgetCategories.find(c=>c.id===id)}
 function currentMonthTransactions(){const prefix=`${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;return transactions.filter(t=>t.transaction_date?.startsWith(prefix))}
 function computeBudgetRows(){const spentByCategory={};currentMonthTransactions().filter(t=>t.type==='expense').forEach(t=>{spentByCategory[t.category_id]=(spentByCategory[t.category_id]||0)+Math.max(0,Number(t.amount)||0)});return budgetCategories.map(c=>({...c,spent:spentByCategory[c.id]||0}))}
 async function seedDemo(){
-  // 신규 계정에만 기본 카테고리/예산/샘플 데이터를 생성합니다. 예산을 생성할 수 있도록
-  // 카테고리와 예산을 독립적으로 확인합니다.
-  const {data:existingCats,error:catLoadErr}=await supabaseClient
+  // ver.2.95: 기존 계정의 카테고리/예산/거래/자산을 자동으로 재생성하거나
+  // 이름을 매핑하지 않습니다. 신규 계정일 때만 기본 카테고리를 한 번 생성합니다.
+  const {data:existingCats,error}=await supabaseClient
     .from('categories').select('*').eq('user_id',currentUser.id);
-  if(catLoadErr)throw catLoadErr;
+  if(error)throw error;
+  const catData=existingCats||[];
+  if(catData.length>0)return;
 
-  let catData=existingCats||[];
-  // 기존 사용자가 설정에서 삭제한 카테고리를 새로고침할 때
-  // 다시 만들어 버리지 않도록 합니다.
-  // 기본 카테고리는 카테고리가 하나도 없는 '완전 신규 계정'에서만 생성합니다.
-  const isBrandNewAccount=catData.length===0;
-  const missingCats=isBrandNewAccount ? [
+  const missingCats=[
     ...cats.map(name=>({
       user_id:currentUser.id,
       name,
       type:'expense',
-      expense_type:['고정비','주거/통신'].includes(name)?'fixed':'variable'
+      expense_type:['적금','구독','보험','통신비','기부','교통'].includes(name)?'fixed':'variable'
     })),
     ...incomeCats.map(name=>({user_id:currentUser.id,name,type:'income'}))
-  ] : [];
-
-  if(missingCats.length){
-    const {data:insertedCats,error}=await supabaseClient
-      .from('categories').insert(missingCats).select();
-    if(error)throw error;
-    catData=[...catData,...(insertedCats||[])];
-  }
-
-  // 기존 계정에서 expense_type이 아직 비어 있는 기본 카테고리는
-  // 한 번만 기본값을 넣어 고정/비고정 분류가 정상적으로 표시되도록 합니다.
-  const legacyExpenseTypes={
-    '적금':'fixed','구독':'fixed','보험':'fixed','통신비':'fixed','기부':'fixed','교통':'fixed',
-    '생활비':'variable','쇼핑':'variable','커피/음료':'variable','술/담배':'variable','식비':'variable','건강':'variable','배달음식':'variable','기타':'variable'
-  };
-  for(const cat of catData.filter(c=>c.type==='expense' && !c.expense_type && legacyExpenseTypes[c.name])){
-    const expense_type=legacyExpenseTypes[cat.name];
-    const {error}=await supabaseClient.from('categories')
-      .update({expense_type}).eq('id',cat.id).eq('user_id',currentUser.id);
-    if(!error)cat.expense_type=expense_type;
-  }
-
-  // 기존 ver.13/이전 버전 계정을 새 16개 카테고리 구조로 한 번 정리합니다.
-  // 현재는 실제 데이터가 쌓인 단계가 아니므로 기존 데모용 카테고리를 새 구조에 맞춰 이름만 매핑합니다.
-  const legacyNameMap={
-    '여가/문화':'커피/음료',
-    '주거/통신':'통신비',
-    '고정비':'적금',
-    '건강/의료':'건강'
-  };
-  for(const cat of [...catData]){
-    const nextName=legacyNameMap[cat.name];
-    if(nextName && !catData.some(x=>x.type==='expense'&&x.name===nextName)){
-      const {data,error}=await supabaseClient.from('categories')
-        .update({name:nextName,expense_type:legacyExpenseTypes[nextName]||cat.expense_type})
-        .eq('id',cat.id).eq('user_id',currentUser.id).select().single();
-      if(error)throw error;
-      cat.name=nextName;
-      cat.expense_type=data?.expense_type||cat.expense_type;
-    }
-  }
-
-  // 기존 계정에도 빠진 새 카테고리를 추가합니다. 이미 있는 카테고리는 건드리지 않습니다.
-  const existingExpenseNames=new Set(catData.filter(c=>c.type==='expense').map(c=>c.name));
-  const missingNewCats=cats.filter(name=>!existingExpenseNames.has(name)).map((name,index)=>({
-    user_id:currentUser.id,name,type:'expense',expense_type:legacyExpenseTypes[name]||'variable'
-  }));
-  if(missingNewCats.length){
-    const {data:inserted,error}=await supabaseClient.from('categories').insert(missingNewCats).select();
-    if(error)throw error;
-    catData=[...catData,...(inserted||[])];
-  }
-
-  // 기존 사용자가 설정한 아이콘·순서는 절대 기본값으로 덮어쓰지 않습니다.
-  // ver.20에서는 로그인/새로고침 때마다 기본 아이콘·순서가 다시 저장되어
-  // 설정페이지에서 변경한 값이 예산페이지에 반영되지 않는 문제가 있었습니다.
-  const iconByName=defaultCatIcons;
-  for(const cat of catData.filter(c=>c.type==='expense')){
-    const saved=localCategoryPrefs[cat.id]||{};
-    const icon=saved.icon||cat.icon||iconByName[cat.name]||'Circle';
-    const dbOrder=Number(cat.sort_order);
-    const savedOrder=Number(saved.sort_order);
-    const sort_order=Number.isFinite(savedOrder)
-      ? savedOrder
-      : (Number.isFinite(dbOrder) ? dbOrder : Math.max(0,cats.indexOf(cat.name)));
-    localCategoryPrefs[cat.id]={...saved,icon,sort_order};
-  }
-  saveLocalCategoryPrefs();
-
-  const byName=Object.fromEntries(catData.map(c=>[c.type+':'+c.name,c]));
-  const {data:existingBudgets,error:budgetLoadErr}=await supabaseClient
-    .from('budgets').select('*').eq('user_id',currentUser.id).eq('year',viewYear).eq('month',viewMonth+1);
-  if(budgetLoadErr)throw budgetLoadErr;
-
-  const budgetValues=[
-    ['적금',500000],['구독',30000],['보험',150000],['통신비',100000],['기부',20000],['교통',150000],
-    ['생활비',250000],['쇼핑',250000],['커피/음료',100000],['술/담배',100000],['식비',500000],['건강',100000],['배달음식',150000],['기타',100000],['기타1',0],['기타2',0]
   ];
-  const existingBudgetCatIds=new Set((existingBudgets||[]).map(b=>b.category_id));
-  const missingBudgets=budgetValues.filter(([name])=>byName['expense:'+name] && !existingBudgetCatIds.has(byName['expense:'+name].id))
-    .map(([name,amount])=>({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:byName['expense:'+name].id,amount}));
-  if(missingBudgets.length){
-    const {error}=await supabaseClient.from('budgets').insert(missingBudgets);
-    if(error)throw error;
-  }
-
-  // 완전히 처음 사용하는 계정일 때만 데모 거래/자산/목표를 한 번 생성합니다.
-  const [txCheck,assetCheck,goalCheck]=await Promise.all([
-    supabaseClient.from('transactions').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id),
-    supabaseClient.from('assets').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id),
-    supabaseClient.from('goals').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id)
-  ]);
-  for(const r of [txCheck,assetCheck,goalCheck])if(r.error)throw r.error;
-
-  const isFreshAccount=catData.length===cats.length+incomeCats.length &&
-    (txCheck.count||0)===0 && (assetCheck.count||0)===0 && (goalCheck.count||0)===0;
-
-  if(isFreshAccount){
-    const sampleTx=[
-      ['2026-08-15','expense',12000,'식비','카드','점심 식사'],
-      ['2026-08-15','expense',1400,'교통','현금','지하철 이용'],
-      ['2026-08-14','expense',4500,'여가/문화','카드','스타벅스 카페라떼'],
-      ['2026-08-14','expense',23000,'쇼핑','카드','올리브영'],
-      ['2026-08-14','expense',700000,'주거/통신','계좌이체','월세'],
-      ['2026-08-13','expense',18500,'식비','카드','저녁 식사'],
-      ['2026-08-12','expense',9800,'교통','카드','택시'],
-      ['2026-08-11','expense',34000,'건강/의료','카드','운동용품'],
-      ['2026-08-25','income',2850000,'월급','현금','8월 급여']
-    ];
-    const {error:txErr}=await supabaseClient.from('transactions').insert(
-      sampleTx.map(([date,type,amount,name,method,memo])=>({
-        user_id:currentUser.id,transaction_date:date,type,amount,
-        category_id:byName[type+':'+name].id,
-        payment_method:type==='income'?'현금':method,memo
-      }))
-    );
-    if(txErr)throw txErr;
-
-    const {error:assetErr}=await supabaseClient.from('assets').insert([
-      {user_id:currentUser.id,name:'생활비 계좌',asset_type:'현금성',amount:2430000},
-      {user_id:currentUser.id,name:'비상금 통장',asset_type:'현금성',amount:3000000},
-      {user_id:currentUser.id,name:'적금',asset_type:'저축',amount:5700000},
-      {user_id:currentUser.id,name:'증권 계좌',asset_type:'투자',amount:4500000},
-      {user_id:currentUser.id,name:'현금',asset_type:'현금성',amount:290000}
-    ]);
-    if(assetErr)throw assetErr;
-
-    const {error:goalErr}=await supabaseClient.from('goals').insert([
-      {user_id:currentUser.id,name:'여행자금',target_amount:3000000,current_amount:1240000},
-      {user_id:currentUser.id,name:'비상금',target_amount:5000000,current_amount:4500000},
-      {user_id:currentUser.id,name:'노트북',target_amount:2000000,current_amount:700000}
-    ]);
-    if(goalErr)throw goalErr;
-  }
+  const {error:insertError}=await supabaseClient
+    .from('categories').insert(missingCats).select();
+  if(insertError)throw insertError;
+  // 예산·거래·자산·목표는 자동 생성하지 않습니다.
 }
 async function ensureBudgetInheritance(){
   if(!currentUser||!budgetCategories.length)return;
@@ -1119,6 +992,25 @@ async function ensureBudgetInheritance(){
   if(insertError)throw insertError;
 }
 
+function loadCategoryDeletedAtHistory(){const h=moneePrivateData?.categoryHistory?.deletedAt;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_deleted_at')||'{}')||{}}catch(e){return {}}}
+function saveCategoryDeletedAtHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},deletedAt:{},budgetCutoffInitialized:false};moneePrivateData.categoryHistory.deletedAt=history||{};try{localStorage.setItem('monee_category_deleted_at',JSON.stringify(history||{}))}catch(e){}}
+function categoryDeletedAt(categoryId){const v=loadCategoryDeletedAtHistory()[String(categoryId)];if(!v)return null;return {year:Number(v.year),month:Number(v.month)};}
+function isCategoryVisibleForMonth(categoryId,year,month){const d=categoryDeletedAt(categoryId);return !d||monthKey(year,month)<monthKey(d.year,d.month);}
+async function initializeBudgetCutoff(){
+  if(!currentUser||budgetCutoffEnsured)return;
+  // ver.2.95: 예산 테스트의 기준 시작월을 2026년 7월로 고정합니다.
+  // 기존 거래/자산/카테고리는 건드리지 않고 budgets만 정리합니다.
+  const {error}=await supabaseClient.from('budgets').delete().eq('user_id',currentUser.id).lt('year',2026);
+  if(error)throw error;
+  const {error:monthError}=await supabaseClient.from('budgets').delete().eq('user_id',currentUser.id).eq('year',2026).lt('month',7);
+  if(monthError)throw monthError;
+  budgetCutoffEnsured=true;
+  if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},deletedAt:{},budgetCutoffInitialized:false};
+  if(!moneePrivateData.categoryHistory.budgetCutoffInitialized){
+    moneePrivateData.categoryHistory.budgetCutoffInitialized=true;
+    await savePrivateData();
+  }
+}
 async function loadAll(){
  const [c,t,b,a,g]=await Promise.all([
   supabaseClient.from('categories').select('*').eq('user_id',currentUser.id).order('created_at'),
@@ -1130,6 +1022,7 @@ async function loadAll(){
  for(const r of [c,t,b,a,g])if(r.error)throw r.error;
  loadLocalCategoryPrefs();
  migrateLegacyExpenseTypeHistory();
+ await initializeBudgetCutoff();
  categoryPrefsSupported=(c.data||[]).some(x=>Object.prototype.hasOwnProperty.call(x,'icon')||Object.prototype.hasOwnProperty.call(x,'sort_order'));
  if(categoryPrefsSupported){
    (c.data||[]).filter(x=>x.type==='expense').forEach(c=>{
@@ -1141,7 +1034,7 @@ async function loadAll(){
    saveLocalCategoryPrefs();
  }
  incomeCategories=(c.data||[]).filter(x=>x.type==='income');
- budgetCategories=c.data.filter(x=>x.type==='expense').map(c=>({...c,budget:0,spent:0,budgetId:null}))
+ budgetCategories=c.data.filter(x=>x.type==='expense' && isCategoryVisibleForMonth(x.id,viewYear,viewMonth+1)).map(c=>({...c,budget:0,spent:0,budgetId:null}))
    .sort((a,b)=>catOrder(a)-catOrder(b));
  let budgets=b.data||[];
  await ensureBudgetInheritance();
@@ -2048,7 +1941,8 @@ function renderBudgetEditor(){
        return;
      }
 
-     if(!confirm(`'${target.name}' 항목을 삭제할까요? 기존 거래가 있다면 '기타'로 이동합니다.`))return;
+     const targetDisplayName=categoryDisplayNameForMonth(id,viewYear,viewMonth+1,target.name);
+     if(!confirm(`'${targetDisplayName}' 항목을 삭제할까요? 기존 거래가 있다면 '기타'로 이동합니다.`))return;
 
      // 기타 카테고리 확보
      let etc=budgetCategories.find(c=>c.name==='기타');
@@ -2070,20 +1964,15 @@ function renderBudgetEditor(){
        .eq('category_id',id).eq('user_id',currentUser.id);
      if(txError){alert('기존 거래를 기타로 옮기지 못했어요.\\n\\n'+txError.message);return;}
 
-     // 해당 카테고리의 월별 예산도 함께 삭제
-     const {error:budgetError}=await supabaseClient.from('budgets')
-       .delete().eq('category_id',id).eq('user_id',currentUser.id);
-     if(budgetError){alert('예산 항목을 삭제하지 못했어요.\\n\\n'+budgetError.message);return;}
-
-     // 마지막으로 카테고리 삭제
-     const {error}=await supabaseClient.from('categories')
-       .delete().eq('id',id).eq('user_id',currentUser.id);
-     if(error){alert('카테고리를 삭제하지 못했어요.\\n\\n'+error.message);return;}
-
-     delete localCategoryPrefs[id];
-     saveLocalCategoryPrefs();
+     // ver.2.94: 카테고리 자체/과거 예산/이력은 삭제하지 않습니다.
+     // 삭제한 월부터 현재/미래 화면에서만 숨겨 과거 월의 스냅샷을 보존합니다.
+     const deletedAt=loadCategoryDeletedAtHistory();
+     deletedAt[String(id)]={year:Number(viewYear),month:Number(viewMonth+1)};
+     saveCategoryDeletedAtHistory(deletedAt);
+     await savePrivateData();
      await loadAll();
      renderBudgetEditor();
+
    };
  });
 
@@ -2161,7 +2050,7 @@ async function saveBudgetCategories(){
   const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
   const changes=[];
 
-  // ver.2.91: 먼저 화면의 모든 변경사항을 메모리에서 검증합니다.
+  // ver.2.95: 먼저 화면의 모든 변경사항을 메모리에서 검증합니다.
   // 일부 행을 먼저 저장한 뒤 뒤에서 오류가 나면 월별 이력이 반쪽만 저장되는
   // 문제가 생길 수 있으므로, 검증이 모두 끝나기 전에는 DB/localStorage를 변경하지 않습니다.
   for(let index=0;index<rows.length;index++){
