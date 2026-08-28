@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.75 · 데이터 연결 및 기기 간 동기화 강화</title>
+<title>monee 가계부 · ver.2.76 · 데이터 연결 및 기기 간 동기화 강화</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -588,7 +588,7 @@ nav.nav .icon{
   .asset-category-panel>.section-head{padding-left:10px!important}
 }
 
-/* ver.2.75: budget page recent-list trailing space — keep the same 12px card rhythm */
+/* ver.2.76: budget page recent-list trailing space — keep the same 12px card rhythm */
 #budget.active{padding-bottom:0;margin-bottom:-128px}
 
 /* ver.2.70: budget heading restored to the card inner alignment */
@@ -599,6 +599,28 @@ nav.nav .icon{
 /* ver.2.70: goals page - nudge only "나의 목표" heading right */
 .goals-page>.section-head h2{transform:translateX(10px)!important}
 
+
+.maturity-history{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.maturity-history-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.maturity-history-head h3{margin:0;color:var(--blue-dark);font-size:13px;letter-spacing:-.03em}
+.maturity-history-count{font-size:9px;color:var(--muted)}
+.maturity-history-list{display:flex;flex-direction:column;gap:7px}
+.maturity-history-item{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 0;border-bottom:1px solid #f0f3f6}
+.maturity-history-item:last-child{border-bottom:0;padding-bottom:0}
+.maturity-history-name{font-size:11px;font-weight:700;color:#374151}
+.maturity-history-meta{font-size:9px;color:var(--muted);line-height:1.5}
+.maturity-history-amount{text-align:right;font-size:11px;font-weight:700;color:#58799d;white-space:nowrap}
+.maturity-history-target{text-align:right;font-size:9px;color:#718096;white-space:nowrap}
+.maturity-transfer-modal{max-width:460px}
+.maturity-summary{background:#f7fafc;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.maturity-summary-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.maturity-summary-row+.maturity-summary-row{margin-top:7px}
+.maturity-summary-label{font-size:9px;color:var(--muted)}
+.maturity-summary-value{font-size:12px;font-weight:700;color:#40505e}
+.maturity-destination-note{font-size:9px;color:var(--muted);line-height:1.5;margin-top:7px}
+.maturity-new-asset{display:none}
+.maturity-new-asset.show{display:block}
+.maturity-history-badge{font-size:8px;color:#718096;background:#f1f5f9;border-radius:999px;padding:3px 6px;white-space:nowrap}
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -650,7 +672,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.75">ver.2.75</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.76">ver.2.76</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -754,6 +776,15 @@ const supabaseClient = window.supabase.createClient(
 
 <div class="modal-back" id="assetModal"><div class="modal"><div class="modal-head"><h3 id="assetModalTitle">자산 추가</h3><button class="x" data-close-modal="assetModal">×</button></div><form id="assetForm" class="form-grid"><input type="hidden" id="assetId"><div class="field full"><label>자산 종류</label><select id="assetType"><option value="저축">저축</option><option value="입출금">입출금</option><option value="투자">투자</option><option value="기타">기타</option></select></div><div class="field full"><label>자산 이름</label><input id="assetName" type="text" required placeholder="예: 신한은행 생활비 계좌"></div><div class="field full"><label>현재 금액 (원)</label><input id="assetAmount" type="number" min="0" step="1" inputmode="numeric" required placeholder="0"></div><div class="field full saving-only-field"><label>금리 (%)</label><input id="assetInterestRate" type="text" inputmode="decimal" autocomplete="off" placeholder="예: 3.5"></div><div class="field saving-only-field"><label>가입기간 (개월)</label><input id="assetTermMonths" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 12"></div><div class="field saving-only-field"><label>과세비율 (%)</label><input id="assetTaxRate" type="text" inputmode="decimal" autocomplete="off" placeholder="예: 15.4"></div><div class="field full saving-only-field"><label>만기일</label><input id="assetMaturityDate" type="date"></div><button class="primary full" type="submit">저장하기</button></form></div></div>
 <div class="modal-back" id="assetManageModal"><div class="modal"><div class="modal-head"><div><h3>자산 관리</h3><p class="modal-help">등록된 자산을 수정하거나 삭제할 수 있어요.</p></div><button class="x" data-close-modal="assetManageModal">×</button></div><div class="asset-manage-list" id="assetManageList"></div><div class="modal-actions"><button class="secondary-btn" data-close-modal="assetManageModal" type="button">닫기</button></div></div></div>
+
+<div class="modal-back" id="maturityTransferModal"><div class="modal maturity-transfer-modal"><div class="modal-head"><div><h3>적금 만기 처리</h3><p class="modal-help">만기된 적금의 돈을 받을 자산으로 이동해요.</p></div><button class="x" data-close-modal="maturityTransferModal">×</button></div>
+<div class="maturity-summary"><div class="maturity-summary-row"><span class="maturity-summary-label">만기 적금</span><strong class="maturity-summary-value" id="maturitySourceName">-</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">현재 적금 금액</span><strong class="maturity-summary-value" id="maturitySourceAmount">₩0</strong></div><div class="maturity-summary-row"><span class="maturity-summary-label">실제 입금 금액</span><strong class="maturity-summary-value" id="maturityTransferAmount">₩0</strong></div><div class="maturity-destination-note">이자는 실제 입금 금액에 포함해 입력할 수 있어요. 기존 자산으로 옮기면 해당 자산에 더하고, 새 예금/계좌를 만들면 새 자산으로 등록해요.</div></div>
+<form id="maturityTransferForm" class="form-grid"><input type="hidden" id="maturitySourceId">
+<div class="field full"><label>실제 입금 금액 (원)</label><input id="maturityReceivedAmount" type="text" inputmode="numeric" required></div>
+<div class="field full"><label>받을 자산</label><select id="maturityDestination"><option value="">받을 자산을 선택해 주세요</option></select></div>
+<div class="field full maturity-new-asset" id="maturityNewAssetField"><label>새 예금/계좌 이름</label><input id="maturityNewAssetName" type="text" placeholder="예: 우리은행 정기예금"></div>
+<button class="primary full" type="submit" id="maturityTransferSubmit">만기 처리하기</button>
+</form></div></div>
 <div class="modal-back" id="goalModal"><div class="modal"><div class="modal-head"><h3 id="goalModalTitle">새 목표 만들기</h3><button class="x" data-close-modal="goalModal">×</button></div><form id="goalForm" class="form-grid"><input type="hidden" id="goalId"><div class="field full"><label>목표 이름</label><input id="goalName" required placeholder="예: 유럽 여행"></div><div class="field"><label>목표 금액</label><input id="goalTarget" type="number" min="0" step="10000" required placeholder="3000000"></div><div class="field"><label>현재 모은 금액</label><input id="goalCurrent" type="number" min="0" step="10000" required placeholder="500000"></div><div class="field full"><label>추가할 금액</label><input id="goalAddAmount" type="number" min="0" step="10000" placeholder="0"></div><button class="primary full" type="submit" id="goalSubmitBtn">목표 추가하기</button></form></div></div>
 
 <script>
@@ -812,14 +843,15 @@ function txSortTime(t){const local=loadEditTimestamps()[t.id];return Number(loca
 /* ver.2.74: 브라우저/Safari 홈 화면(Web App) 간 로컬 데이터 분리 문제를 보완합니다.
    금융정보, 적금 연결, 적금 상세정보처럼 기존 localStorage에만 있던 사용자 데이터는
    로그인 계정의 Supabase user metadata에도 보관하여 같은 계정의 모든 실행환경에서 공유합니다. */
-let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{}};
+let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{},maturityRecords:{}};
 let privateDataReady=false;
 let privateDataSaveQueue=Promise.resolve();
 function readJsonLocal(key,fallback){try{const v=JSON.parse(localStorage.getItem(key)||'');return v??fallback}catch(e){return fallback}}
 function localFinanceNotes(){const all=readJsonLocal('monee_finance_notes',[]);return Array.isArray(all)?all.filter(n=>n&&n.userId===currentUser?.id):[]}
 function localSavingLinks(){const v=readJsonLocal('monee_saving_links',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
 function localAssetMeta(){const v=readJsonLocal('monee_asset_meta',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
-function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
+function localMaturityRecords(){const v=readJsonLocal('monee_maturity_records',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{} }
+function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));localStorage.setItem('monee_maturity_records',JSON.stringify(moneePrivateData.maturityRecords||{}));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
 async function savePrivateData(){
   if(!currentUser)return;
   const snapshot=JSON.parse(JSON.stringify(moneePrivateData));
@@ -842,18 +874,20 @@ async function hydratePrivateData(){
   const hasCloudFinance=Array.isArray(cloudData?.financeNotes);
   const hasCloudLinks=cloudData?.savingLinks&&typeof cloudData.savingLinks==='object'&&!Array.isArray(cloudData.savingLinks);
   const hasCloudMeta=cloudData?.assetMeta&&typeof cloudData.assetMeta==='object'&&!Array.isArray(cloudData.assetMeta);
-  const localF=localFinanceNotes(), localL=localSavingLinks(), localA=localAssetMeta();
+  const hasCloudMaturity=cloudData?.maturityRecords&&typeof cloudData.maturityRecords==='object'&&!Array.isArray(cloudData.maturityRecords);
+  const localF=localFinanceNotes(), localL=localSavingLinks(), localA=localAssetMeta(), localM=localMaturityRecords();
   moneePrivateData={
     financeNotes:hasCloudFinance?cloudData.financeNotes:localF,
     savingLinks:hasCloudLinks?cloudData.savingLinks:localL,
-    assetMeta:hasCloudMeta?cloudData.assetMeta:localA
+    assetMeta:hasCloudMeta?cloudData.assetMeta:localA,
+    maturityRecords:hasCloudMaturity?cloudData.maturityRecords:localM
   };
   privateDataReady=true;
   writePrivateDataToLocal();
   // 홈 화면에서 처음 실행되어 로컬 데이터가 비어 있는 경우에는
   // 빈 값을 클라우드에 먼저 써서 Safari의 기존 데이터를 덮어쓰지 않습니다.
-  const hasLocalData=localF.length>0||Object.keys(localL).length>0||Object.keys(localA).length>0;
-  if((!hasCloudFinance&&localF.length)||(!hasCloudLinks&&Object.keys(localL).length)||(!hasCloudMeta&&Object.keys(localA).length)||(!cloudData&&hasLocalData))await savePrivateData();
+  const hasLocalData=localF.length>0||Object.keys(localL).length>0||Object.keys(localA).length>0||Object.keys(localM).length>0;
+  if((!hasCloudFinance&&localF.length)||(!hasCloudLinks&&Object.keys(localL).length)||(!hasCloudMeta&&Object.keys(localA).length)||(!hasCloudMaturity&&Object.keys(localM).length)||(!cloudData&&hasLocalData))await savePrivateData();
 }
 function sortTransactions(list){return [...list].sort((a,b)=>{const da=String(a.transaction_date||''),db=String(b.transaction_date||'');if(db!==da)return db.localeCompare(da);return txSortTime(b)-txSortTime(a)})}
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
@@ -1312,6 +1346,19 @@ function assetTypeLabel(type){return type==='현금성'?'입출금':(type||'기�
 function savingAssetType(asset){
   return !!asset && (asset.asset_type==='저축' || asset.asset_type==='적금');
 }
+function isSavingMatured(asset){
+  if(!savingAssetType(asset))return false;
+  const meta=getAssetMeta(asset);
+  if(!meta.maturityDate)return false;
+  const maturityMs=new Date(String(meta.maturityDate)+'T23:59:59').getTime();
+  return !Number.isNaN(maturityMs)&&maturityMs<=Date.now();
+}
+function getMaturityRecord(assetId){
+  return (moneePrivateData.maturityRecords||{})[String(assetId)]||null;
+}
+function isMaturityCompleted(assetId){
+  return getMaturityRecord(assetId)?.status==='completed';
+}
 function renderAssets(){
   const total=assets.reduce((s,a)=>s+Number(a.amount),0),
         cash=assets.filter(a=>['입출금','현금성'].includes(a.asset_type)).reduce((s,a)=>s+Number(a.amount),0),
@@ -1326,11 +1373,10 @@ function renderAssets(){
     {type:'투자',label:'투자'},
     {type:'기타',label:'기타'}
   ];
-
   const normalizeType=a=>a.asset_type==='현금성'?'입출금':(a.asset_type||'기타');
 
   $('assetList').innerHTML=groups.map(group=>{
-    const items=assets.filter(a=>normalizeType(a)===group.type);
+    const items=assets.filter(a=>normalizeType(a)===group.type&&!isMaturityCompleted(a.id));
     return `<article class="asset-category-card">
       <div class="asset-category-head">
         <h3>${group.label}</h3>
@@ -1343,12 +1389,14 @@ function renderAssets(){
               const meta=saving?getAssetMeta(a):null;
               const rate=meta?.interestRate!==''&&meta?.interestRate!=null?`${escapeText(String(meta.interestRate))}%`:'-';
               const maturity=meta?.maturityDate?String(meta.maturityDate).replace(/-/g,'.'):'-';
+              const canMature=saving&&isSavingMatured(a)&&!isMaturityCompleted(a);
               return `<div class="asset-category-item${saving?' saving-item':''}" data-asset-id="${escapeText(String(a.id))}">
                 <div class="asset-category-name"><b>${escapeText(a.name)}</b></div>
                 <div class="asset-category-amount">${money(a.amount)}</div>
                 <div class="asset-category-actions">
-                  <button class="row-action" data-edit-asset="${a.id}">수정</button>
-                  <button class="row-action delete" data-delete-asset="${a.id}">삭제</button>
+                  ${canMature?`<button class="row-action" data-maturity-asset="${escapeText(String(a.id))}">만기 처리</button>`:''}
+                  <button class="row-action" data-edit-asset="${escapeText(String(a.id))}">수정</button>
+                  <button class="row-action delete" data-delete-asset="${escapeText(String(a.id))}">삭제</button>
                 </div>
                 ${saving?`<div class="asset-saving-meta"><span>금리 <strong>${rate}</strong></span><span>만기일 <strong>${maturity}</strong></span></div>`:''}
               </div>`;
@@ -1365,9 +1413,9 @@ function renderAssets(){
       if(asset&&savingAssetType(asset))openSavingDetail(asset.id);
     };
   });
-
   document.querySelectorAll('[data-edit-asset]').forEach(b=>b.onclick=()=>openAsset(b.dataset.editAsset));
   document.querySelectorAll('[data-delete-asset]').forEach(b=>b.onclick=()=>deleteAsset(b.dataset.deleteAsset));
+  document.querySelectorAll('[data-maturity-asset]').forEach(b=>b.onclick=()=>openMaturityTransfer(b.dataset.maturityAsset));
 
   $('assetManageList').innerHTML=assets.length
     ? assets.map(a=>`<div class="asset-manage-row">
@@ -1383,6 +1431,24 @@ function renderAssets(){
     openAsset(b.dataset.manageEditAsset);
   });
   document.querySelectorAll('[data-manage-delete-asset]').forEach(b=>b.onclick=()=>deleteAsset(b.dataset.manageDeleteAsset));
+
+  const completed=assets.filter(a=>savingAssetType(a)&&isMaturityCompleted(a.id));
+  let history=document.getElementById('maturityHistory');
+  if(!history){
+    history=document.createElement('div');
+    history.id='maturityHistory';
+    history.className='maturity-history';
+    const panel=document.querySelector('#assets .asset-category-panel');
+    panel?.appendChild(history);
+  }
+  history.innerHTML=completed.length?`<div class="maturity-history-head"><h3>만기된 저축</h3><span class="maturity-history-count">${completed.length}개</span></div><div class="maturity-history-list">${
+    completed.slice().sort((a,b)=>(getMaturityRecord(b.id)?.processedAt||'').localeCompare(getMaturityRecord(a.id)?.processedAt||'')).map(a=>{
+      const r=getMaturityRecord(a.id)||{};
+      const date=r.maturityDate||getAssetMeta(a).maturityDate||'';
+      const target=r.targetName||'받을 자산';
+      return `<div class="maturity-history-item"><div><div class="maturity-history-name">${escapeText(a.name)}</div><div class="maturity-history-meta">${date?escapeText(String(date).replace(/-/g,'.'))+' 만기 · '+escapeText(target):escapeText(target)}</div></div><div><div class="maturity-history-amount">${money(r.receivedAmount||0)}</div><div class="maturity-history-target"><span class="maturity-history-badge">만기 처리됨</span></div></div></div>`;
+    }).join('')
+  }</div>`:'';
 }
 function renderGoals(){$('goalList').innerHTML=goals.length?goals.map(g=>{const pct=g.target_amount?Math.min(100,Math.round(g.current_amount/g.target_amount*100)):0;const remain=Math.max(0,g.target_amount-g.current_amount);return `<div class="goal"><div class="goal-top"><b>${escapeText(g.name)}</b><div class="goal-actions"><button class="row-action" data-edit-goal="${g.id}">수정</button><button class="row-action delete" data-delete-goal="${g.id}">삭제</button></div></div><div class="goal-summary"><span>${money(g.current_amount)} / ${money(g.target_amount)}</span><em>(${money(remain)} 남음)</em></div><div class="goal-track"><i style="width:${pct}%"></i></div><div class="goal-foot"><span>${pct}% 달성</span></div></div>`}).join(''):'<div class="empty-state">아직 목표가 없어요. 오른쪽 아래 ＋ 버튼으로 추가해 주세요.</div>';document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openGoal(b.dataset.editGoal));document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal))}
 
@@ -1577,6 +1643,121 @@ function setModalLock(locked){document.body.style.overflow=locked?'hidden':''}fu
  return meta;
 }
 function setSavingFieldsVisible(type){document.querySelectorAll('.saving-only-field').forEach(el=>el.style.display=type==='저축'?'block':'none')}
+
+let maturityTransferLock=false;
+let maturitySourceAssetId='';
+function fillMaturityDestinations(){
+  const select=$('maturityDestination');
+  if(!select)return;
+  const current=maturitySourceAssetId;
+  const choices=assets.filter(a=>String(a.id)!==String(current)&&!isMaturityCompleted(a.id));
+  select.innerHTML='<option value="">받을 자산을 선택해 주세요</option>'+
+    choices.map(a=>`<option value="${escapeText(String(a.id))}">${escapeText(a.name)} · ${escapeText(assetTypeLabel(a.asset_type))}</option>`).join('')+
+    '<option value="__new__">＋ 새 예금/계좌 만들기</option>';
+}
+function openMaturityTransfer(assetId){
+  const asset=assets.find(a=>String(a.id)===String(assetId));
+  if(!asset||!savingAssetType(asset)||isMaturityCompleted(asset.id))return;
+  if(!isSavingMatured(asset)){alert('아직 만기일이 지나지 않은 적금이에요.');return;}
+  maturitySourceAssetId=String(asset.id);
+  $('maturitySourceId').value=String(asset.id);
+  $('maturitySourceName').textContent=asset.name||'적금';
+  $('maturitySourceAmount').textContent=money(asset.amount);
+  $('maturityReceivedAmount').value=formatCurrencyInputValue(asset.amount);
+  $('maturityDestination').value='';
+  $('maturityNewAssetField').classList.remove('show');
+  $('maturityNewAssetName').value='';
+  fillMaturityDestinations();
+  openModal('maturityTransferModal');
+}
+async function saveMaturityTransfer(e){
+  e.preventDefault();
+  if(maturityTransferLock)return;
+  const sourceId=String($('maturitySourceId').value||'');
+  const source=assets.find(a=>String(a.id)===sourceId);
+  if(!source||!savingAssetType(source))return;
+  if(isMaturityCompleted(source.id))return alert('이미 만기 처리된 적금이에요.');
+  const received=currencyNumber('maturityReceivedAmount');
+  if(received<0)return alert('실제 입금 금액을 확인해 주세요.');
+  const destination=$('maturityDestination').value;
+  if(!destination)return alert('받을 자산을 선택해 주세요.');
+  if(destination==='__new__'&&!$('maturityNewAssetName').value.trim())return alert('새 예금/계좌 이름을 입력해 주세요.');
+
+  maturityTransferLock=true;
+  const records={...(moneePrivateData.maturityRecords||{})};
+  if(records[sourceId]?.status==='processing'){maturityTransferLock=false;return alert('이미 처리 중인 만기 건이에요. 잠시 후 다시 확인해 주세요.');}
+  const originalSourceAmount=Number(source.amount)||0;
+  const record={
+    status:'processing',
+    sourceAssetId:sourceId,
+    sourceName:source.name||'적금',
+    maturityDate:getAssetMeta(source).maturityDate||'',
+    originalAmount:originalSourceAmount,
+    receivedAmount:received,
+    startedAt:new Date().toISOString()
+  };
+  records[sourceId]=record;
+  moneePrivateData.maturityRecords=records;
+  const marked=await savePrivateData();
+  if(!marked){
+    maturityTransferLock=false;
+    return alert('만기 처리 준비에 실패했어요. 자산 금액은 변경되지 않았어요.');
+  }
+
+  let targetId='';
+  let targetName='';
+  let targetOriginalAmount=0;
+  let createdNew=false;
+  try{
+    if(destination==='__new__'){
+      targetName=$('maturityNewAssetName').value.trim();
+      const result=await supabaseClient.from('assets').insert({
+        user_id:currentUser.id,name:targetName,asset_type:'입출금',amount:received
+      }).select('id').single();
+      if(result.error||!result.data?.id)throw result.error||new Error('새 자산을 만들지 못했어요.');
+      targetId=String(result.data.id);
+      createdNew=true;
+    }else{
+      const target=assets.find(a=>String(a.id)===String(destination));
+      if(!target)throw new Error('받을 자산을 찾을 수 없어요.');
+      targetId=String(target.id);
+      targetName=target.name||'받을 자산';
+      targetOriginalAmount=Number(target.amount)||0;
+      const {error}=await supabaseClient.from('assets').update({amount:targetOriginalAmount+received}).eq('id',target.id).eq('user_id',currentUser.id);
+      if(error)throw error;
+    }
+
+    const {error:sourceError}=await supabaseClient.from('assets').update({amount:0}).eq('id',source.id).eq('user_id',currentUser.id);
+    if(sourceError)throw sourceError;
+
+    record.status='completed';
+    record.targetAssetId=targetId;
+    record.targetName=targetName;
+    record.targetAssetType=createdNew?'입출금':(assets.find(a=>String(a.id)===targetId)?.asset_type||'입출금');
+    record.processedAt=new Date().toISOString();
+    moneePrivateData.maturityRecords[sourceId]=record;
+    const saved=await savePrivateData();
+    if(!saved)console.warn('만기 처리 완료 기록의 클라우드 저장에 실패했습니다.');
+    closeModal('maturityTransferModal');
+    maturitySourceAssetId='';
+    await loadAll();
+  }catch(err){
+    // Roll back any partial movement made during this attempt.
+    try{
+      if(createdNew&&targetId){
+        await supabaseClient.from('assets').delete().eq('id',targetId).eq('user_id',currentUser.id);
+      }else if(targetId){
+        await supabaseClient.from('assets').update({amount:targetOriginalAmount}).eq('id',targetId).eq('user_id',currentUser.id);
+      }
+      await supabaseClient.from('assets').update({amount:originalSourceAmount}).eq('id',source.id).eq('user_id',currentUser.id);
+    }catch(rollbackErr){console.error('만기 처리 롤백 실패:',rollbackErr);}
+    delete moneePrivateData.maturityRecords[sourceId];
+    await savePrivateData();
+    alert(err?.message||'만기 처리 중 문제가 발생했어요. 변경 사항을 되돌렸어요.');
+  }finally{
+    maturityTransferLock=false;
+  }
+}
 function openAsset(id){const a=assets.find(x=>x.id===id);const type=a?(a.asset_type==='현금성'?'입출금':a.asset_type):'입출금';const meta=getAssetMeta(a);$('assetId').value=a?.id||'';$('assetName').value=a?.name||'';$('assetType').value=type;$('assetAmount').value=formatCurrencyInputValue(a?.amount??'');$('assetInterestRate').value=meta.interestRate??'';$('assetTermMonths').value=meta.termMonths??'';$('assetTaxRate').value=meta.taxRate??'';$('assetMaturityDate').value=meta.maturityDate??'';setSavingFieldsVisible(type);$('assetModalTitle').textContent=a?'자산 수정':'자산 추가';openModal('assetModal')}
 async function deleteAsset(id){if(!confirm('이 자산을 삭제할까요?'))return;const {error}=await supabaseClient.from('assets').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
 function openGoal(id){const g=goals.find(x=>x.id===id);$('goalId').value=g?.id||'';$('goalName').value=g?.name||'';$('goalTarget').value=g?.target_amount||'';$('goalCurrent').value=g?.current_amount||'';$('goalAddAmount').value='';$('goalModalTitle').textContent=g?'목표 수정':'새 목표 만들기';$('goalSubmitBtn').textContent=g?'수정하기':'목표 추가하기';openModal('goalModal')}
@@ -2005,7 +2186,12 @@ function preventDoubleSubmit(handler){
   };
 }
 
-bindAllCurrencyInputs();$('loginForm').addEventListener('submit',login);$('settingsLogoutBtn').addEventListener('click',()=>supabaseClient.auth.signOut());$('openAssetsSetting').onclick=()=>{renderAssets();openModal('assetManageModal')};
+bindAllCurrencyInputs();$('loginForm').addEventListener('submit',login);$('settingsLogoutBtn').addEventListener('click',()=>supabaseClient.auth.signOut());
+$('maturityDestination').addEventListener('change',e=>{
+  $('maturityNewAssetField').classList.toggle('show',e.target.value==='__new__');
+});
+$('maturityTransferForm').addEventListener('submit',preventDoubleSubmit(saveMaturityTransfer));
+$('openAssetsSetting').onclick=()=>{renderAssets();openModal('assetManageModal')};
 function setModalLock(locked){document.body.classList.toggle('modal-open',locked)}
 function openModal(id){$(id).classList.add('show');setModalLock(true)}
 function closeModal(id){$(id).classList.remove('show');setModalLock(false)}
@@ -2047,7 +2233,7 @@ $('addBudgetCategory').onclick=async()=>{
 };
 $('saveBudgetCategories').onclick=saveBudgetCategories;
 
-$('saveBackup').onclick=()=>{const data={transactions,assets,goals,budgetCategories,categoryPrefs:localCategoryPrefs,exportedAt:new Date().toISOString()};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='monee-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
+$('saveBackup').onclick=()=>{const data={transactions,assets,goals,budgetCategories,categoryPrefs:localCategoryPrefs,maturityRecords:moneePrivateData.maturityRecords||{},savingLinks:moneePrivateData.savingLinks||{},exportedAt:new Date().toISOString()};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='monee-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
 loadLocalCategoryPrefs();fillCategories();$('floatingAction').style.display='grid';
 window.addEventListener('hashchange',()=>showPage(pageFromHash(),false));
 showPage(pageFromHash(),false);
