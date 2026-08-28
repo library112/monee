@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.98 · 변경 시점 기준 예산 승계</title>
+<title>monee 가계부 · ver.2.99 · 예산 승계 기준 재정렬</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.98">ver.2.98</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.99">ver.2.99</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -855,7 +855,7 @@ function txSortTime(t){const local=loadEditTimestamps()[t.id];return Number(loca
 /* ver.2.74: 브라우저/Safari 홈 화면(Web App) 간 로컬 데이터 분리 문제를 보완합니다.
    금융정보, 적금 연결, 적금 상세정보처럼 기존 localStorage에만 있던 사용자 데이터는
    로그인 계정의 Supabase user metadata에도 보관하여 같은 계정의 모든 실행환경에서 공유합니다. */
-let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{},maturityRecords:{},categoryHistory:{name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false}};
+let moneePrivateData={financeNotes:[],savingLinks:{},assetMeta:{},maturityRecords:{},categoryHistory:{name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false,budgetResetVersion:0}};
 let budgetCutoffEnsured=false;
 let privateDataReady=false;
 let privateDataSaveQueue=Promise.resolve();
@@ -864,8 +864,8 @@ function localFinanceNotes(){const all=readJsonLocal('monee_finance_notes',[]);r
 function localSavingLinks(){const v=readJsonLocal('monee_saving_links',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
 function localAssetMeta(){const v=readJsonLocal('monee_asset_meta',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
 function localMaturityRecords(){const v=readJsonLocal('monee_maturity_records',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{} }
-function localCategoryHistory(){return {name:readJsonLocal('monee_category_name_history',{}),expenseType:readJsonLocal('monee_category_expense_type_history',{}),budget:readJsonLocal('monee_category_budget_history',{}),deletedAt:readJsonLocal('monee_category_deleted_at',{}),budgetCutoffInitialized:readJsonLocal('monee_budget_cutoff_initialized',false)}}
-function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));localStorage.setItem('monee_maturity_records',JSON.stringify(moneePrivateData.maturityRecords||{}));localStorage.setItem('monee_category_name_history',JSON.stringify(moneePrivateData.categoryHistory?.name||{}));localStorage.setItem('monee_category_expense_type_history',JSON.stringify(moneePrivateData.categoryHistory?.expenseType||{}));localStorage.setItem('monee_category_budget_history',JSON.stringify(moneePrivateData.categoryHistory?.budget||{}));localStorage.setItem('monee_category_deleted_at',JSON.stringify(moneePrivateData.categoryHistory?.deletedAt||{}));localStorage.setItem('monee_budget_cutoff_initialized',JSON.stringify(!!moneePrivateData.categoryHistory?.budgetCutoffInitialized));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
+function localCategoryHistory(){return {name:readJsonLocal('monee_category_name_history',{}),expenseType:readJsonLocal('monee_category_expense_type_history',{}),budget:readJsonLocal('monee_category_budget_history',{}),deletedAt:readJsonLocal('monee_category_deleted_at',{}),budgetCutoffInitialized:readJsonLocal('monee_budget_cutoff_initialized',false),budgetResetVersion:Number(readJsonLocal('monee_budget_reset_version',0))||0}}
+function writePrivateDataToLocal(){try{localStorage.setItem('monee_finance_notes',JSON.stringify(moneePrivateData.financeNotes||[]));localStorage.setItem('monee_saving_links',JSON.stringify(moneePrivateData.savingLinks||{}));localStorage.setItem('monee_asset_meta',JSON.stringify(moneePrivateData.assetMeta||{}));localStorage.setItem('monee_maturity_records',JSON.stringify(moneePrivateData.maturityRecords||{}));localStorage.setItem('monee_category_name_history',JSON.stringify(moneePrivateData.categoryHistory?.name||{}));localStorage.setItem('monee_category_expense_type_history',JSON.stringify(moneePrivateData.categoryHistory?.expenseType||{}));localStorage.setItem('monee_category_budget_history',JSON.stringify(moneePrivateData.categoryHistory?.budget||{}));localStorage.setItem('monee_category_deleted_at',JSON.stringify(moneePrivateData.categoryHistory?.deletedAt||{}));localStorage.setItem('monee_budget_cutoff_initialized',JSON.stringify(!!moneePrivateData.categoryHistory?.budgetCutoffInitialized));localStorage.setItem('monee_budget_reset_version',JSON.stringify(Number(moneePrivateData.categoryHistory?.budgetResetVersion)||0));}catch(e){console.warn('로컬 데이터 동기화 실패',e)}}
 async function savePrivateData(){
   if(!currentUser)return;
   const snapshot=JSON.parse(JSON.stringify(moneePrivateData));
@@ -895,6 +895,7 @@ async function hydratePrivateData(){
   const hasCloudBudgetHistory=hasCloudCategoryHistory&&cloudData.categoryHistory.budget&&typeof cloudData.categoryHistory.budget==='object'&&!Array.isArray(cloudData.categoryHistory.budget);
   const hasCloudDeletedAt=hasCloudCategoryHistory&&cloudData.categoryHistory.deletedAt&&typeof cloudData.categoryHistory.deletedAt==='object'&&!Array.isArray(cloudData.categoryHistory.deletedAt);
   const hasCloudBudgetCutoff=hasCloudCategoryHistory&&Object.prototype.hasOwnProperty.call(cloudData.categoryHistory,'budgetCutoffInitialized');
+  const hasCloudBudgetResetVersion=hasCloudCategoryHistory&&Object.prototype.hasOwnProperty.call(cloudData.categoryHistory,'budgetResetVersion');
   const localF=localFinanceNotes(), localL=localSavingLinks(), localA=localAssetMeta(), localM=localMaturityRecords(), localH=localCategoryHistory();
   moneePrivateData={
     financeNotes:hasCloudFinance?cloudData.financeNotes:localF,
@@ -906,15 +907,16 @@ async function hydratePrivateData(){
       expenseType:hasCloudExpenseTypeHistory?cloudData.categoryHistory.expenseType:(localH.expenseType||{}),
       budget:hasCloudBudgetHistory?cloudData.categoryHistory.budget:(localH.budget||{}),
       deletedAt:hasCloudDeletedAt?cloudData.categoryHistory.deletedAt:(localH.deletedAt||{}),
-      budgetCutoffInitialized:hasCloudBudgetCutoff?!!cloudData.categoryHistory.budgetCutoffInitialized:!!localH.budgetCutoffInitialized
+      budgetCutoffInitialized:hasCloudBudgetCutoff?!!cloudData.categoryHistory.budgetCutoffInitialized:!!localH.budgetCutoffInitialized,
+      budgetResetVersion:hasCloudBudgetResetVersion?(Number(cloudData.categoryHistory.budgetResetVersion)||0):(Number(localH.budgetResetVersion)||0)
     }
   };
   privateDataReady=true;
   writePrivateDataToLocal();
   // 홈 화면에서 처음 실행되어 로컬 데이터가 비어 있는 경우에는
   // 빈 값을 클라우드에 먼저 써서 Safari의 기존 데이터를 덮어쓰지 않습니다.
-  const hasLocalData=localF.length>0||Object.keys(localL).length>0||Object.keys(localA).length>0||Object.keys(localM).length>0||Object.keys(localH.name||{}).length>0||Object.keys(localH.expenseType||{}).length>0||Object.keys(localH.budget||{}).length>0;
-  if((!hasCloudFinance&&localF.length)||(!hasCloudLinks&&Object.keys(localL).length)||(!hasCloudMeta&&Object.keys(localA).length)||(!hasCloudMaturity&&Object.keys(localM).length)||(!hasCloudNameHistory&&Object.keys(localH.name||{}).length)||(!hasCloudExpenseTypeHistory&&Object.keys(localH.expenseType||{}).length)||(!hasCloudBudgetHistory&&Object.keys(localH.budget||{}).length)||(!cloudData&&hasLocalData))await savePrivateData();
+  const hasLocalData=localF.length>0||Object.keys(localL).length>0||Object.keys(localA).length>0||Object.keys(localM).length>0||Object.keys(localH.name||{}).length>0||Object.keys(localH.expenseType||{}).length>0||Object.keys(localH.budget||{}).length>0||Number(localH.budgetResetVersion)>0;
+  if((!hasCloudFinance&&localF.length)||(!hasCloudLinks&&Object.keys(localL).length)||(!hasCloudMeta&&Object.keys(localA).length)||(!hasCloudMaturity&&Object.keys(localM).length)||(!hasCloudNameHistory&&Object.keys(localH.name||{}).length)||(!hasCloudExpenseTypeHistory&&Object.keys(localH.expenseType||{}).length)||(!hasCloudBudgetHistory&&Object.keys(localH.budget||{}).length)||(!hasCloudBudgetResetVersion&&Number(localH.budgetResetVersion)>0)||(!cloudData&&hasLocalData))await savePrivateData();
 }
 function sortTransactions(list){return [...list].sort((a,b)=>{const da=String(a.transaction_date||''),db=String(b.transaction_date||'');if(db!==da)return db.localeCompare(da);return txSortTime(b)-txSortTime(a)})}
 const escapeText=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
@@ -995,7 +997,7 @@ async function ensureBudgetInheritance(){
 }
 
 function loadCategoryDeletedAtHistory(){const h=moneePrivateData?.categoryHistory?.deletedAt;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_deleted_at')||'{}')||{}}catch(e){return {}}}
-function saveCategoryDeletedAtHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false};moneePrivateData.categoryHistory.deletedAt=history||{};try{localStorage.setItem('monee_category_deleted_at',JSON.stringify(history||{}))}catch(e){}}
+function saveCategoryDeletedAtHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false,budgetResetVersion:0};moneePrivateData.categoryHistory.deletedAt=history||{};try{localStorage.setItem('monee_category_deleted_at',JSON.stringify(history||{}))}catch(e){}}
 function categoryDeletedAt(categoryId){const v=loadCategoryDeletedAtHistory()[String(categoryId)];if(!v)return null;return {year:Number(v.year),month:Number(v.month)};}
 function isCategoryVisibleForMonth(categoryId,year,month){const d=categoryDeletedAt(categoryId);return !d||monthKey(year,month)<monthKey(d.year,d.month);}
 async function initializeBudgetCutoff(){
@@ -1007,11 +1009,23 @@ async function initializeBudgetCutoff(){
   const {error:monthError}=await supabaseClient.from('budgets').delete().eq('user_id',currentUser.id).eq('year',2026).lt('month',7);
   if(monthError)throw monthError;
   budgetCutoffEnsured=true;
-  if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false};
+  if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false,budgetResetVersion:0};
   if(!moneePrivateData.categoryHistory.budgetCutoffInitialized){
     moneePrivateData.categoryHistory.budgetCutoffInitialized=true;
     await savePrivateData();
   }
+}
+async function initializeBudgetInheritanceReset(){
+  if(!currentUser||Number(moneePrivateData.categoryHistory?.budgetResetVersion)>=299)return;
+  // ver.2.99: 2026년 7월을 기준값으로 남기고 이후 테스트 예산과 변경 시점만 한 번 정리합니다.
+  // 거래·자산·카테고리 이름/유형 이력·적금·목표 데이터는 수정하지 않습니다.
+  const {error:futureYearError}=await supabaseClient.from('budgets').delete().eq('user_id',currentUser.id).gt('year',2026);
+  if(futureYearError)throw futureYearError;
+  const {error:futureMonthError}=await supabaseClient.from('budgets').delete().eq('user_id',currentUser.id).eq('year',2026).gt('month',7);
+  if(futureMonthError)throw futureMonthError;
+  moneePrivateData.categoryHistory.budget={};
+  moneePrivateData.categoryHistory.budgetResetVersion=299;
+  await savePrivateData();
 }
 async function loadAll(){
  const [c,t,b,a,g]=await Promise.all([
@@ -1025,6 +1039,7 @@ async function loadAll(){
  loadLocalCategoryPrefs();
  migrateLegacyExpenseTypeHistory();
  await initializeBudgetCutoff();
+ await initializeBudgetInheritanceReset();
  categoryPrefsSupported=(c.data||[]).some(x=>Object.prototype.hasOwnProperty.call(x,'icon')||Object.prototype.hasOwnProperty.call(x,'sort_order'));
  if(categoryPrefsSupported){
    (c.data||[]).filter(x=>x.type==='expense').forEach(c=>{
@@ -1988,7 +2003,7 @@ function renderBudgetEditor(){
 function monthKey(year,month){return Number(year)*100+Number(month)}
 function prevMonth(year,month){const d=new Date(Number(year),Number(month)-2,1);return {year:d.getFullYear(),month:d.getMonth()+1}}
 function loadCategoryNameHistory(){const h=moneePrivateData?.categoryHistory?.name;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_name_history')||'{}')||{}}catch(e){return {}}}
-function saveCategoryNameHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false};moneePrivateData.categoryHistory.name=history||{};try{localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}catch(e){}}
+function saveCategoryNameHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false,budgetResetVersion:0};moneePrivateData.categoryHistory.name=history||{};try{localStorage.setItem('monee_category_name_history',JSON.stringify(history||{}))}catch(e){}}
 function normalizeHistoryList(list,valueKey){
   if(!Array.isArray(list))return [];
   const out=list.map(x=>({year:Number(x.year),month:Number(x.month),[valueKey]:x[valueKey]})).filter(x=>Number.isFinite(x.year)&&Number.isFinite(x.month)&&x[valueKey]!==undefined);
@@ -2013,7 +2028,7 @@ function categoryDisplayNameForMonth(categoryId,year,month,fallback='기타'){
 function categoryDisplayName(categoryId,transactionDate,fallback='기타'){const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);return m?categoryDisplayNameForMonth(categoryId,Number(m[1]),Number(m[2]),fallback):fallback}
 
 function loadCategoryExpenseTypeHistory(){const h=moneePrivateData?.categoryHistory?.expenseType;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_expense_type_history')||'{}')||{}}catch(e){return {}}}
-function saveCategoryExpenseTypeHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false};moneePrivateData.categoryHistory.expenseType=history||{};try{localStorage.setItem('monee_category_expense_type_history',JSON.stringify(history||{}))}catch(e){}}
+function saveCategoryExpenseTypeHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false,budgetResetVersion:0};moneePrivateData.categoryHistory.expenseType=history||{};try{localStorage.setItem('monee_category_expense_type_history',JSON.stringify(history||{}))}catch(e){}}
 function rememberCategoryExpenseTypeChange(categoryId,oldType,newType,year,month){
   if(!categoryId||!oldType||!newType||oldType===newType)return;
   const history=loadCategoryExpenseTypeHistory(),key=String(categoryId),list=normalizeHistoryList(history[key],'expense_type'),effective=monthKey(year,month);
@@ -2032,7 +2047,7 @@ function categoryDisplayExpenseTypeForTransaction(categoryId,transactionDate,fal
 /* ver.2.98: 예산도 이름/지출 유형과 같은 '변경 시점' 규칙을 사용합니다.
    변경 월부터 다음에 사용자가 직접 변경한 월 직전까지만 새 금액을 적용합니다. */
 function loadCategoryBudgetHistory(){const h=moneePrivateData?.categoryHistory?.budget;if(h&&typeof h==='object'&&!Array.isArray(h))return h;try{return JSON.parse(localStorage.getItem('monee_category_budget_history')||'{}')||{}}catch(e){return {}}}
-function saveCategoryBudgetHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false};moneePrivateData.categoryHistory.budget=history||{};try{localStorage.setItem('monee_category_budget_history',JSON.stringify(history||{}))}catch(e){}}
+function saveCategoryBudgetHistory(history){if(!moneePrivateData.categoryHistory)moneePrivateData.categoryHistory={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:false,budgetResetVersion:0};moneePrivateData.categoryHistory.budget=history||{};try{localStorage.setItem('monee_category_budget_history',JSON.stringify(history||{}))}catch(e){}}
 function rememberCategoryBudgetChange(categoryId,amount,year,month){
   const history=loadCategoryBudgetHistory(),key=String(categoryId),list=normalizeHistoryList(history[key],'amount');
   list.push({year:Number(year),month:Number(month),amount:Math.max(0,Number(amount)||0)});
