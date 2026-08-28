@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.95 · 월별 항목·예산 승계 안정화</title>
+<title>monee 가계부 · ver.2.96 · 월별 항목·예산 승계 안정화</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.95">ver.2.95</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.96">ver.2.96</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -2046,6 +2046,27 @@ function categoryDisplayExpenseType(categoryId,year,month,fallback='variable'){
 }
 function categoryDisplayExpenseTypeForTransaction(categoryId,transactionDate,fallback='variable'){const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);return m?categoryDisplayExpenseType(categoryId,Number(m[1]),Number(m[2]),fallback):fallback}
 
+async function propagateBudgetForward(categoryId,year,month,amount){
+  // 현재 달에서 확정한 예산 금액을 이후 월에 그대로 승계합니다.
+  // 이미 존재하는 이후 월도 이전의 오래된 값을 남기지 않고 최신 수정값으로 갱신합니다.
+  const {data:futureBudgets,error}=await supabaseClient
+    .from('budgets')
+    .select('id,year,month,category_id')
+    .eq('user_id',currentUser.id)
+    .eq('category_id',categoryId);
+  if(error)throw error;
+  const baseKey=monthKey(year,month);
+  const targets=(futureBudgets||[]).filter(b=>monthKey(Number(b.year),Number(b.month))>baseKey);
+  for(const b of targets){
+    const {error:updateError}=await supabaseClient
+      .from('budgets')
+      .update({amount:Math.max(0,Number(amount)||0)})
+      .eq('id',b.id)
+      .eq('user_id',currentUser.id);
+    if(updateError)throw updateError;
+  }
+}
+
 async function saveBudgetCategories(){
   const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
   const changes=[];
@@ -2126,6 +2147,17 @@ async function saveBudgetCategories(){
         q=existing?supabaseClient.from('budgets').update({amount}).eq('id',existing.id).eq('user_id',currentUser.id):supabaseClient.from('budgets').insert({user_id:currentUser.id,year:viewYear,month:viewMonth+1,category_id:id,amount});
       }
       const {error}=await q;if(error){alert(error.message);return;}
+    }
+
+    // 현재 달에서 수정한 예산 금액은 이후 월의 예산에도 동일하게 승계합니다.
+    // 카테고리 이름/지출 유형 이력은 위의 월별 이력 로직이 별도로 관리하므로 건드리지 않습니다.
+    if(Number(old.budget)!==amount){
+      try{
+        await propagateBudgetForward(id,viewYear,viewMonth+1,amount);
+      }catch(error){
+        alert(error?.message||'이후 월 예산 승계 중 문제가 발생했어요.');
+        return;
+      }
     }
   }
   saveLocalCategoryPrefs();
