@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.90 · 월별 항목 이력 보존</title>
+<title>monee 가계부 · ver.2.91 · 월별 항목 이력 보존</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.88">ver.2.90</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.91">ver.2.91</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1652,11 +1652,20 @@ function findSavingLink(transactionId){
 }
 async function saveSavingLink(transactionId,assetId,amount){
   const links={...(moneePrivateData.savingLinks||{})};
+  const previous=links[transactionId];
   if(assetId)links[transactionId]={assetId,amount:Number(amount)||0};
   else delete links[transactionId];
   moneePrivateData.savingLinks=links;
   writePrivateDataToLocal();
-  await savePrivateData();
+  const saved=await savePrivateData();
+  if(!saved){
+    const restored={...(moneePrivateData.savingLinks||{})};
+    if(previous)restored[transactionId]=previous;
+    else delete restored[transactionId];
+    moneePrivateData.savingLinks=restored;
+    writePrivateDataToLocal();
+    throw new Error('적금 연결 정보를 저장하지 못했어요. 변경 사항을 되돌렸어요.');
+  }
 }
 async function changeSavingAssetAmount(assetId,delta){
   if(!assetId||!delta)return;
@@ -2053,7 +2062,7 @@ function renderBudgetEditor(){
  list.addEventListener('pointerup',finishPointerDrag);
  list.addEventListener('pointercancel',finishPointerDrag);
 }
-/* ver.2.90: 항목 이름/지출 유형은 categories 본체를 변경하지 않고 월별 이력으로 관리합니다.
+/* ver.2.91: 항목 이름/지출 유형은 categories 본체를 변경하지 않고 월별 이력으로 관리합니다.
    같은 달에는 지출 유형과 관계없이 동일한 항목명이 중복되지 않도록 저장 전에 전체 행을 검증합니다. */
 function monthKey(year,month){return Number(year)*100+Number(month)}
 function prevMonth(year,month){const d=new Date(Number(year),Number(month)-2,1);return {year:d.getFullYear(),month:d.getMonth()+1}}
@@ -2103,7 +2112,7 @@ async function saveBudgetCategories(){
   const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
   const changes=[];
 
-  // ver.2.90: 먼저 화면의 모든 변경사항을 메모리에서 검증합니다.
+  // ver.2.91: 먼저 화면의 모든 변경사항을 메모리에서 검증합니다.
   // 일부 행을 먼저 저장한 뒤 뒤에서 오류가 나면 월별 이력이 반쪽만 저장되는
   // 문제가 생길 수 있으므로, 검증이 모두 끝나기 전에는 DB/localStorage를 변경하지 않습니다.
   for(let index=0;index<rows.length;index++){
@@ -2224,12 +2233,26 @@ async function deleteTransactionRecord(){
   const btn=$("deleteTransactionBtn");
   const wasDisabled=btn?.disabled;
   if(btn)btn.disabled=true;
+  const oldLink=findSavingLink(id);
   try{
+    // 적금에 연결된 거래라면 자산 반영을 먼저 되돌립니다.
+    // 거래 삭제 후 복구에 실패하면 거래는 사라지고 적금 잔액만 남는
+    // 데이터 불일치가 생길 수 있으므로 순서를 반대로 처리합니다.
+    if(oldLink)await reverseSavingLink(id);
     const {error}=await supabaseClient.from('transactions').delete().eq('id',id).eq('user_id',currentUser.id);
-    if(error){alert(error.message);return;}
-    await reverseSavingLink(id);
+    if(error){
+      if(oldLink)await applySavingLink(id,oldLink.assetId,oldLink.amount);
+      alert(error.message);
+      return;
+    }
     closeModal('transactionEditModal');
     await loadAll();
+  }catch(err){
+    try{
+      // 삭제가 실패하거나 중간 단계에서 오류가 나면 기존 적금 연결을 복구합니다.
+      if(oldLink&&!findSavingLink(id))await applySavingLink(id,oldLink.assetId,oldLink.amount);
+    }catch(rollbackErr){console.error('거래 삭제 롤백 실패:',rollbackErr);}
+    alert(err?.message||'내역 삭제 중 문제가 발생했어요. 변경 사항을 되돌렸어요.');
   }finally{
     moneeSavingLocks.delete(`delete:${id}`);
     if(btn)btn.disabled=wasDisabled;
@@ -2250,18 +2273,41 @@ async function saveTransactionEdit(e){
   if(!id||moneeSavingLocks.has(`edit:${id}`))return;
   const payload={transaction_date:$("editDate").value,amount:currencyNumber('editAmount'),category_id:$("editCategory").value||null,payment_method:$("editMethod").value,memo:$("editMemo").value.trim()};
   if(payload.amount<=0)return;
+  const original=transactions.find(t=>String(t.id)===String(id));
+  if(!original)return;
+  const oldLink=findSavingLink(id);
+  const oldPayload={transaction_date:original.transaction_date,amount:Number(original.amount)||0,category_id:original.category_id||null,payment_method:original.payment_method||'카드',memo:original.memo||''};
   moneeSavingLocks.add(`edit:${id}`);
+  let oldLinkReversed=false;
   try{
+    // 자산과 거래를 함께 바꾸는 작업은 '기존 자산 반영 취소 → 거래 수정 → 새 자산 반영' 순서로 처리합니다.
+    // 중간 단계에서 실패하면 원래 거래와 자산 연결을 복구합니다.
+    if(oldLink){await reverseSavingLink(id);oldLinkReversed=true;}
+
     const {error}=await supabaseClient.from('transactions').update(payload).eq('id',id).eq('user_id',currentUser.id);
-    if(error){alert(error.message);return;}
-    const oldLink=findSavingLink(id);
-    if(oldLink)await reverseSavingLink(id);
+    if(error)throw error;
+
     const newCat=budgetCategories.find(c=>String(c.id)===String(payload.category_id));
     const newSavingId=$("editSavingAssetSelect")?.value||'';
-    if(newCat?.name==='적금'&&newSavingId){await applySavingLink(id,newSavingId,payload.amount)}else{await saveSavingLink(id,null,0)}
+    if(newCat?.name==='적금'&&newSavingId){
+      await applySavingLink(id,newSavingId,payload.amount);
+    }else{
+      await saveSavingLink(id,null,0);
+    }
+
     saveEditTimestamp(id);
     closeModal('transactionEditModal');
     await loadAll();
+  }catch(err){
+    try{
+      // 새 적금 반영이 일부 성공했을 수 있으므로 현재 링크를 먼저 되돌립니다.
+      const currentLink=findSavingLink(id);
+      if(currentLink)await reverseSavingLink(id);
+      await supabaseClient.from('transactions').update(oldPayload).eq('id',id).eq('user_id',currentUser.id);
+      if(oldLinkReversed&&oldLink)await applySavingLink(id,oldLink.assetId,oldLink.amount);
+      else if(!oldLink)await saveSavingLink(id,null,0);
+    }catch(rollbackErr){console.error('거래 수정 롤백 실패:',rollbackErr);}
+    alert(err?.message||'내역 수정 중 문제가 발생했어요. 변경 사항을 되돌렸어요.');
   }finally{
     moneeSavingLocks.delete(`edit:${id}`);
   }
@@ -2318,12 +2364,19 @@ async function saveTransaction(e){
   const {error}=await supabaseClient.from('transactions').insert(payload);
   if(error)return alert(error.message);
 
-  // 지출을 적금에 연결한 경우에만 자산의 저축 금액에 반영
+  // 지출을 적금에 연결한 경우에는 거래 저장과 자산 반영이 모두 성공해야 완료된 것으로 봅니다.
   const savingId=$('savingAssetSelect')?.value||'';
-  if(type==='expense'&&name==='적금'&&savingId){
-    await applySavingLink(transactionId,savingId,amount);
-  }else{
-    await saveSavingLink(transactionId,null,0);
+  try{
+    if(type==='expense'&&name==='적금'&&savingId){
+      await applySavingLink(transactionId,savingId,amount);
+    }else{
+      await saveSavingLink(transactionId,null,0);
+    }
+  }catch(err){
+    // 자산 반영에 실패하면 방금 만든 거래도 함께 되돌려 데이터가 따로 남지 않게 합니다.
+    try{await supabaseClient.from('transactions').delete().eq('id',transactionId).eq('user_id',currentUser.id);}catch(rollbackErr){console.error('거래 생성 롤백 실패:',rollbackErr);}
+    alert(err?.message||'내역 저장 중 문제가 발생했어요. 변경 사항을 되돌렸어요.');
+    return;
   }
 
   closeModal('modal');
@@ -2485,11 +2538,18 @@ $('goalForm').addEventListener('submit',preventDoubleSubmit(saveGoal));
 $('editBudgetSetting').onclick=()=>{renderBudgetEditor();openModal('budgetEditModal')};
 $('addBudgetCategory').onclick=async()=>{
  const name=prompt('새 예산 항목 이름을 입력해 주세요.','새 항목');
- if(!name?.trim())return;
+ const normalizedName=name?.trim();
+ if(!normalizedName)return;
+ // categories 테이블은 같은 사용자·유형·이름을 중복으로 저장할 수 없으므로
+ // DB에 보내기 전에 현재 계정의 실제 카테고리와 먼저 확인합니다.
+ const duplicate=budgetCategories.some(c=>String(c.name||'').trim()===normalizedName);
+ if(duplicate){alert(`'${normalizedName}' 항목이 이미 있어요.
+
+기존 항목의 이름을 수정하거나 다른 이름을 사용해 주세요.`);return;}
  const nextOrder=budgetCategories.length;
  const payload={
    user_id:currentUser.id,
-   name:name.trim(),
+   name:normalizedName,
    type:'expense',
    expense_type:'variable'
  };
