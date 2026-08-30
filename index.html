@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.2.97 · 월별 예산·항목 이력 안정화</title>
+<title>monee 가계부 · ver.2.96 · 월별 항목·예산 승계 안정화</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.97">ver.2.97</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 2.96">ver.2.96</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -804,7 +804,7 @@ const supabaseClient = window.supabase.createClient(
 const cats=['적금','구독','보험','통신비','기부','교통','생활비','쇼핑','커피/음료','술/담배','식비','건강','배달음식','기타','기타1','기타2'];
 const incomeCats=['월급','기타'];
 const defaultCatIcons={'적금':'Vault','구독':'RefreshCw','보험':'ShieldCheck','통신비':'Smartphone','기부':'HeartHandshake','교통':'BusFront','생활비':'House','쇼핑':'ShoppingBag','커피/음료':'Coffee','술/담배':'Wine','식비':'Utensils','건강':'HeartPulse','배달음식':'Container','기타':'Ellipsis','기타1':'Ellipsis','기타2':'Ellipsis'};
-let entryType='expense', currentUser=null, allExpenseCategories=[], budgetCategories=[], incomeCategories=[], transactions=[], assets=[], goals=[];
+let entryType='expense', currentUser=null, budgetCategories=[], incomeCategories=[], transactions=[], assets=[], goals=[];
 let categoryPrefsSupported=false;
 const categoryPrefsKey=()=>`monee-category-prefs-${currentUser?.id||'guest'}`;
 let localCategoryPrefs={};
@@ -1033,9 +1033,8 @@ async function loadAll(){
    });
    saveLocalCategoryPrefs();
  }
- allExpenseCategories=(c.data||[]).filter(x=>x.type==='expense');
  incomeCategories=(c.data||[]).filter(x=>x.type==='income');
- budgetCategories=allExpenseCategories.filter(x=>isCategoryVisibleForMonth(x.id,viewYear,viewMonth+1)).map(c=>({...c,budget:0,spent:0,budgetId:null}))
+ budgetCategories=c.data.filter(x=>x.type==='expense' && isCategoryVisibleForMonth(x.id,viewYear,viewMonth+1)).map(c=>({...c,budget:0,spent:0,budgetId:null}))
    .sort((a,b)=>catOrder(a)-catOrder(b));
  let budgets=b.data||[];
  await ensureBudgetInheritance();
@@ -1943,10 +1942,30 @@ function renderBudgetEditor(){
      }
 
      const targetDisplayName=categoryDisplayNameForMonth(id,viewYear,viewMonth+1,target.name);
-     if(!confirm(`'${targetDisplayName}' 항목을 삭제할까요? 기존 거래는 원래 항목으로 보존됩니다.`))return;
+     if(!confirm(`'${targetDisplayName}' 항목을 삭제할까요? 기존 거래가 있다면 '기타'로 이동합니다.`))return;
 
-     // ver.2.97: 거래의 category_id, 카테고리 본체, 과거 예산과 이력은 변경하지 않습니다.
-     // 삭제한 월부터 현재/미래 예산 화면에서만 숨겨 기존 거래와 과거 월 스냅샷을 보존합니다.
+     // 기타 카테고리 확보
+     let etc=budgetCategories.find(c=>c.name==='기타');
+     if(!etc){
+       const {data,error}=await supabaseClient.from('categories')
+         .insert({
+           user_id:currentUser.id,
+           name:'기타',
+           type:'expense',
+           expense_type:'variable'
+         }).select().single();
+       if(error){alert(error.message);return;}
+       etc=data;
+     }
+
+     // 기존 거래가 있으면 기타로 이동
+     const {error:txError}=await supabaseClient.from('transactions')
+       .update({category_id:etc.id})
+       .eq('category_id',id).eq('user_id',currentUser.id);
+     if(txError){alert('기존 거래를 기타로 옮기지 못했어요.\\n\\n'+txError.message);return;}
+
+     // ver.2.94: 카테고리 자체/과거 예산/이력은 삭제하지 않습니다.
+     // 삭제한 월부터 현재/미래 화면에서만 숨겨 과거 월의 스냅샷을 보존합니다.
      const deletedAt=loadCategoryDeletedAtHistory();
      deletedAt[String(id)]={year:Number(viewYear),month:Number(viewMonth+1)};
      saveCategoryDeletedAtHistory(deletedAt);
@@ -2003,7 +2022,7 @@ function rememberCategoryRename(categoryId,oldName,newName,year,month){
   history[key]=normalizeHistoryList(list,'name');saveCategoryNameHistory(history);
 }
 function categoryDisplayNameForMonth(categoryId,year,month,fallback='기타'){
-  const cat=allExpenseCategories.find(c=>String(c.id)===String(categoryId));if(!cat)return fallback;
+  const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));if(!cat)return fallback;
   const history=normalizeHistoryList(loadCategoryNameHistory()[String(categoryId)],'name');if(!history.length)return cat.name||fallback;
   const key=monthKey(year,month);let chosen=null;for(const item of history){if(monthKey(item.year,item.month)<=key)chosen=item.name;else break}
   return chosen||history[0].name||cat.name||fallback;
@@ -2020,12 +2039,33 @@ function rememberCategoryExpenseTypeChange(categoryId,oldType,newType,year,month
   history[key]=normalizeHistoryList(list,'expense_type');saveCategoryExpenseTypeHistory(history);
 }
 function categoryDisplayExpenseType(categoryId,year,month,fallback='variable'){
-  const cat=allExpenseCategories.find(c=>String(c.id)===String(categoryId));const current=cat?.expense_type==='fixed'?'fixed':'variable';
+  const cat=budgetCategories.find(c=>String(c.id)===String(categoryId));const current=cat?.expense_type==='fixed'?'fixed':'variable';
   const history=normalizeHistoryList(loadCategoryExpenseTypeHistory()[String(categoryId)],'expense_type');if(!history.length)return current||fallback;
   const key=monthKey(year,month);let chosen=null;for(const item of history){if(monthKey(item.year,item.month)<=key)chosen=item.expense_type;else break}
   return chosen||history[0].expense_type||current||fallback;
 }
 function categoryDisplayExpenseTypeForTransaction(categoryId,transactionDate,fallback='variable'){const m=String(transactionDate||'').match(/^(\d{4})-(\d{1,2})/);return m?categoryDisplayExpenseType(categoryId,Number(m[1]),Number(m[2]),fallback):fallback}
+
+async function propagateBudgetForward(categoryId,year,month,amount){
+  // 현재 달에서 확정한 예산 금액을 이후 월에 그대로 승계합니다.
+  // 이미 존재하는 이후 월도 이전의 오래된 값을 남기지 않고 최신 수정값으로 갱신합니다.
+  const {data:futureBudgets,error}=await supabaseClient
+    .from('budgets')
+    .select('id,year,month,category_id')
+    .eq('user_id',currentUser.id)
+    .eq('category_id',categoryId);
+  if(error)throw error;
+  const baseKey=monthKey(year,month);
+  const targets=(futureBudgets||[]).filter(b=>monthKey(Number(b.year),Number(b.month))>baseKey);
+  for(const b of targets){
+    const {error:updateError}=await supabaseClient
+      .from('budgets')
+      .update({amount:Math.max(0,Number(amount)||0)})
+      .eq('id',b.id)
+      .eq('user_id',currentUser.id);
+    if(updateError)throw updateError;
+  }
+}
 
 async function saveBudgetCategories(){
   const rows=[...document.querySelectorAll('#budgetEditList .budget-edit-row')];
@@ -2109,8 +2149,16 @@ async function saveBudgetCategories(){
       const {error}=await q;if(error){alert(error.message);return;}
     }
 
-    // 이후 월은 여기서 갱신하지 않습니다. 해당 월 레코드가 없을 때만
-    // ensureBudgetInheritance()가 가장 최근 과거 예산을 상속합니다.
+    // 현재 달에서 수정한 예산 금액은 이후 월의 예산에도 동일하게 승계합니다.
+    // 카테고리 이름/지출 유형 이력은 위의 월별 이력 로직이 별도로 관리하므로 건드리지 않습니다.
+    if(Number(old.budget)!==amount){
+      try{
+        await propagateBudgetForward(id,viewYear,viewMonth+1,amount);
+      }catch(error){
+        alert(error?.message||'이후 월 예산 승계 중 문제가 발생했어요.');
+        return;
+      }
+    }
   }
   saveLocalCategoryPrefs();
   await savePrivateData();
