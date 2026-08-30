@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.3.00 · New monee 안전 이전</title>
+<title>monee 가계부 · ver.3.01 · 월별 이력 DB 저장 및 이모지 지원</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -44,7 +44,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .budget-section-name{min-width:0}
 .budget-column-heads{grid-column:3 / 7;display:grid;grid-template-columns:.65fr .95fr 1fr 1fr;align-items:center;color:#787f79;font-size:11px;font-weight:500;text-align:left}
 .budget-column-heads span{white-space:nowrap}
-.budget-table .tr{display:grid;grid-template-columns:1.05fr 1.85fr .65fr .95fr 1fr 1fr;align-items:center;padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;height:20px;display:grid;place-items:center;text-align:center}.cat-icon svg{width:17px;height:17px;stroke-width:2}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:30px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap;text-align:left}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px;text-align:left;white-space:nowrap}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
+.budget-table .tr{display:grid;grid-template-columns:1.05fr 1.85fr .65fr .95fr 1fr 1fr;align-items:center;padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;height:20px;display:grid;place-items:center;text-align:center;font-size:17px;line-height:1}.cat-icon svg{width:17px;height:17px;stroke-width:2}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:30px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap;text-align:left}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px;text-align:left;white-space:nowrap}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
 .lower-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1fr;gap:12px}.lower-card{padding:18px;min-height:300px}.mini-title{font-size:16px;margin:0 0 16px;letter-spacing:-.04em}.bars{height:170px;display:flex;align-items:flex-end;gap:12px;padding:4px 8px}.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}.month-bar-wrap{height:135px;display:flex;align-items:flex-end}.month-bar{width:24px;background:#c7d7e7;border-radius:6px 6px 2px 2px}.month-bar.current{background:#5f7fa6}.bar-label{font-size:10px;color:#7d847e}.bar-value{font-size:9px;color:#7d847e}.compare{margin-top:10px;padding:10px 11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px}
 .gauge-wrap{display:flex;justify-content:center;margin-top:2px}.gauge{width:210px;height:110px;overflow:hidden;position:relative}.gauge svg{width:100%;height:100%}.gauge-center{text-align:center;margin-top:-18px}.gauge-center b{display:block;font-size:18px}.gauge-center span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.pace-copy{text-align:center;margin:14px 0 0;font-size:11px;line-height:1.55}.good{margin-top:14px;padding:11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px;text-align:center}
 .days{text-align:center;padding-top:12px}.days-number{font-size:52px;color:#58799d;font-weight:800;letter-spacing:-.06em}.days-unit{font-size:14px;color:#58799d;font-weight:700}.days-date{font-size:11px;color:#8b918c;margin-top:-4px}.divider{height:1px;background:var(--line);margin:20px 0}.daily-label{text-align:center;color:#777e78;font-size:11px}.daily-amount{text-align:center;color:#58799d;font-size:23px;font-weight:800;margin-top:7px}.daily-note{text-align:center;color:#999f9a;font-size:10px;margin-top:6px;line-height:1.4}
@@ -635,8 +635,8 @@ nav.nav .icon{
 .maturity-allocation-status.error{color:#d05c5c}
 .maturity-history-badge{font-size:8px;color:#718096;background:#f1f5f9;border-radius:999px;padding:3px 6px;white-space:nowrap}
 </style>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@1.37.0/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
 
 <script>
 const SUPABASE_URL = "https://emrmqzblroqyboiegvhg.supabase.co";
@@ -685,7 +685,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 3.00">ver.3.00</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 3.01">ver.3.01</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -811,6 +811,12 @@ let localCategoryPrefs={};
 function loadLocalCategoryPrefs(){try{localCategoryPrefs=JSON.parse(localStorage.getItem(categoryPrefsKey())||'{}')||{}}catch(e){localCategoryPrefs={}}}
 function saveLocalCategoryPrefs(){try{localStorage.setItem(categoryPrefsKey(),JSON.stringify(localCategoryPrefs))}catch(e){}}
 function catIcon(c){return localCategoryPrefs[c?.id]?.icon||c?.icon||defaultCatIcons[c?.name]||'Circle'}
+function categoryIconHtml(c){
+ const icon=String(catIcon(c)||'Circle').trim()||'Circle';
+ return /^[A-Za-z][A-Za-z0-9-]*$/.test(icon)
+   ? `<i data-lucide="${escapeText(icon)}"></i>`
+   : escapeText(icon);
+}
 function catOrder(c){const local=localCategoryPrefs[c?.id]?.sort_order;if(Number.isFinite(Number(local)))return Number(local);const v=Number(c?.sort_order);return Number.isFinite(v)?v:999999}
 let viewYear=2026, viewMonth=7;
 const monthNames=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -1000,16 +1006,18 @@ function saveCategoryDeletedAtHistory(history){if(!moneePrivateData.categoryHist
 function categoryDeletedAt(categoryId){const v=loadCategoryDeletedAtHistory()[String(categoryId)];if(!v)return null;return {year:Number(v.year),month:Number(v.month)};}
 function isCategoryVisibleForMonth(categoryId,year,month){const d=categoryDeletedAt(categoryId);return !d||monthKey(year,month)<monthKey(d.year,d.month);}
 async function loadAll(){
- const [c,t,b,a,g]=await Promise.all([
+ const [c,t,b,a,g,h]=await Promise.all([
   supabaseClient.from('categories').select('*').eq('user_id',currentUser.id).order('created_at'),
   supabaseClient.from('transactions').select('*').eq('user_id',currentUser.id).order('transaction_date',{ascending:false}),
   supabaseClient.from('budgets').select('*').eq('user_id',currentUser.id),
   supabaseClient.from('assets').select('*').eq('user_id',currentUser.id).order('created_at'),
-  supabaseClient.from('goals').select('*').eq('user_id',currentUser.id).order('created_at')
+  supabaseClient.from('goals').select('*').eq('user_id',currentUser.id).order('created_at'),
+  supabaseClient.from('category_history').select('*').eq('user_id',currentUser.id).order('year').order('month')
  ]);
- for(const r of [c,t,b,a,g])if(r.error)throw r.error;
+ for(const r of [c,t,b,a,g,h])if(r.error)throw r.error;
  loadLocalCategoryPrefs();
  migrateLegacyExpenseTypeHistory();
+ await hydrateCategoryHistoryDatabase(c.data||[],h.data||[]);
  categoryPrefsSupported=(c.data||[]).some(x=>Object.prototype.hasOwnProperty.call(x,'icon')||Object.prototype.hasOwnProperty.call(x,'sort_order'));
  if(categoryPrefsSupported){
    (c.data||[]).filter(x=>x.type==='expense').forEach(c=>{
@@ -1092,7 +1100,7 @@ function renderBudget(){
    const barColor=rawPct>100?'#ef4444':rawPct===100?'var(--orange)':'var(--blue-dark)';
    const rateClass=rawPct>100?'over':rawPct===100?'warn':(budget===0&&spent>0?'has-spent':'');
    return `<div class="tr">
-     <div class="cat-label"><span class="cat-icon"><i data-lucide="${escapeText(catIcon(c))}"></i></span><span class="cat-name">${escapeText(categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name))}</span></div>
+     <div class="cat-label"><span class="cat-icon">${categoryIconHtml(c)}</span><span class="cat-name">${escapeText(categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name))}</span></div>
      <div class="bar-wrap">
        <div class="bar-track" aria-label="${escapeText(c.name)} 사용률 ${pctText}">
          <span class="bar-fill ${rateClass}" style="display:block!important;width:${barPct.toFixed(2)}%!important;min-width:${barPct>0?'2px':'0'};height:100%;background:${barColor};border-radius:999px;"></span>
@@ -1114,7 +1122,7 @@ function renderBudget(){
  const recent=sortTransactions(currentMonthTransactions().filter(t=>t.type==='expense')).slice(0,8);
  const recentContainer=document.querySelector('#budget .recent');
  const moreBtn=$('moreTransactions');
- const txHtml=(t,index)=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);const displayCatName=categoryDisplayName(t.category_id,t.transaction_date,'기타');const extra=index>=5?' data-extra-recent="true" style="display:none;cursor:pointer"':' style="cursor:pointer"';return `<div class="tx-row"${extra} data-transaction-id="${escapeText(t.id)}"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||displayCatName||'지출')}</div><div class="tx-cat">${escapeText(displayCatName||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`};
+ const txHtml=(t,index)=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);const displayCatName=categoryDisplayName(t.category_id,t.transaction_date,'기타');const extra=index>=5?' data-extra-recent="true" style="display:none;cursor:pointer"':' style="cursor:pointer"';return `<div class="tx-row"${extra} data-transaction-id="${escapeText(t.id)}"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon">${categoryIconHtml(cat)}</div><div class="tx-name">${escapeText(t.memo||displayCatName||'지출')}</div><div class="tx-cat">${escapeText(displayCatName||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`};
  recentContainer.querySelectorAll('.tx-row').forEach(x=>x.remove());
  if(recent.length){moreBtn.style.display=recent.length>5?'flex':'none';recent.forEach((t,i)=>moreBtn.insertAdjacentHTML('beforebegin',txHtml(t,i)));}
  else{moreBtn.style.display='none';}
@@ -1882,7 +1890,7 @@ function renderBudgetEditor(){
  list.innerHTML=budgetCategories.map(c=>{const displayName=categoryDisplayNameForMonth(c.id,viewYear,viewMonth+1,c.name);const displayType=categoryDisplayExpenseType(c.id,viewYear,viewMonth+1);return `
   <div class="budget-edit-row" data-id="${c.id}" draggable="true">
    <div class="drag-handle" title="드래그해서 순서 변경">⋮⋮</div>
-   <input class="emoji-input" maxlength="40" value="${escapeText(catIcon(c))}" aria-label="Lucide 아이콘 이름">
+   <input class="emoji-input" maxlength="40" value="${escapeText(catIcon(c))}" aria-label="Lucide 아이콘 이름 또는 이모지">
    <input class="edit-name" value="${escapeText(displayName)}" aria-label="항목명">
    <select class="edit-type" aria-label="지출 유형">
     <option value="fixed" ${displayType==='fixed'?'selected':''}>고정</option>
@@ -1937,6 +1945,7 @@ function renderBudgetEditor(){
      const deletedAt=loadCategoryDeletedAtHistory();
      deletedAt[String(id)]={year:Number(viewYear),month:Number(viewMonth+1)};
      saveCategoryDeletedAtHistory(deletedAt);
+     try{await persistCategoryHistoryForCategory(id)}catch(error){alert(error?.message||'항목 삭제 이력 저장 중 문제가 발생했어요.');return;}
      await savePrivateData();
      await loadAll();
      renderBudgetEditor();
@@ -1981,6 +1990,63 @@ function normalizeHistoryList(list,valueKey){
   const compact=[];
   for(const item of out){const last=compact[compact.length-1];if(last&&monthKey(last.year,last.month)===monthKey(item.year,item.month))compact[compact.length-1]=item;else compact.push(item)}
   return compact;
+}
+
+/* ver.3.01: 월별 이름·지출 유형·예산 변경 시점·삭제 시점을 category_history에 보관합니다.
+   기존 user_metadata/localStorage 이력은 테이블이 비어 있을 때 한 번 자동 이전합니다. */
+function categoryHistoryRowsFromMemory(validCategoryIds=null){
+  const source=moneePrivateData?.categoryHistory||{},rows=new Map();
+  const ensure=(categoryId,year,month)=>{
+    const categoryKey=String(categoryId),y=Number(year),m=Number(month);
+    if(!categoryKey||!Number.isFinite(y)||!Number.isFinite(m)||m<1||m>12)return null;
+    if(validCategoryIds&&!validCategoryIds.has(categoryKey))return null;
+    const key=`${categoryKey}-${y}-${m}`;
+    if(!rows.has(key))rows.set(key,{user_id:currentUser.id,category_id:categoryKey,year:y,month:m,name:null,expense_type:null,budget_amount:null,is_deleted:null});
+    return rows.get(key);
+  };
+  for(const [categoryId,list] of Object.entries(source.name||{}))for(const item of normalizeHistoryList(list,'name')){const row=ensure(categoryId,item.year,item.month);if(row)row.name=String(item.name)}
+  for(const [categoryId,list] of Object.entries(source.expenseType||{}))for(const item of normalizeHistoryList(list,'expense_type')){const row=ensure(categoryId,item.year,item.month);if(row)row.expense_type=item.expense_type==='fixed'?'fixed':'variable'}
+  for(const [categoryId,list] of Object.entries(source.budget||{}))for(const item of normalizeHistoryList(list,'amount')){const row=ensure(categoryId,item.year,item.month);if(row)row.budget_amount=Math.max(0,Number(item.amount)||0)}
+  for(const [categoryId,item] of Object.entries(source.deletedAt||{})){const row=ensure(categoryId,item?.year,item?.month);if(row)row.is_deleted=true}
+  return [...rows.values()];
+}
+function categoryHistoryFromDatabaseRows(rows){
+  const previous=moneePrivateData?.categoryHistory||{};
+  const history={name:{},expenseType:{},budget:{},deletedAt:{},budgetCutoffInitialized:!!previous.budgetCutoffInitialized,budgetResetVersion:Number(previous.budgetResetVersion)||0};
+  for(const row of (rows||[])){
+    const key=String(row.category_id),year=Number(row.year),month=Number(row.month);
+    if(row.name!==null&&row.name!==undefined){if(!history.name[key])history.name[key]=[];history.name[key].push({year,month,name:String(row.name)})}
+    if(row.expense_type!==null&&row.expense_type!==undefined){if(!history.expenseType[key])history.expenseType[key]=[];history.expenseType[key].push({year,month,expense_type:row.expense_type==='fixed'?'fixed':'variable'})}
+    if(row.budget_amount!==null&&row.budget_amount!==undefined){if(!history.budget[key])history.budget[key]=[];history.budget[key].push({year,month,amount:Math.max(0,Number(row.budget_amount)||0)})}
+    if(row.is_deleted===true)history.deletedAt[key]={year,month};
+  }
+  for(const [key,list] of Object.entries(history.name))history.name[key]=normalizeHistoryList(list,'name');
+  for(const [key,list] of Object.entries(history.expenseType))history.expenseType[key]=normalizeHistoryList(list,'expense_type');
+  for(const [key,list] of Object.entries(history.budget))history.budget[key]=normalizeHistoryList(list,'amount');
+  return history;
+}
+async function hydrateCategoryHistoryDatabase(categories,prefetchedRows){
+  let rows=Array.isArray(prefetchedRows)?prefetchedRows:[];
+  if(!rows.length){
+    const validIds=new Set((categories||[]).map(c=>String(c.id)));
+    const legacyRows=categoryHistoryRowsFromMemory(validIds);
+    if(legacyRows.length){
+      const {error}=await supabaseClient.from('category_history').upsert(legacyRows,{onConflict:'user_id,category_id,year,month'});
+      if(error)throw error;
+      const refreshed=await supabaseClient.from('category_history').select('*').eq('user_id',currentUser.id).order('year').order('month');
+      if(refreshed.error)throw refreshed.error;
+      rows=refreshed.data||[];
+    }
+  }
+  moneePrivateData.categoryHistory=categoryHistoryFromDatabaseRows(rows);
+  writePrivateDataToLocal();
+}
+async function persistCategoryHistoryForCategory(categoryId){
+  const rows=categoryHistoryRowsFromMemory(new Set([String(categoryId)]));
+  if(!rows.length)return;
+  const stamped=rows.map(row=>({...row,updated_at:new Date().toISOString()}));
+  const {error}=await supabaseClient.from('category_history').upsert(stamped,{onConflict:'user_id,category_id,year,month'});
+  if(error)throw error;
 }
 function rememberCategoryRename(categoryId,oldName,newName,year,month){
   if(!categoryId||!oldName||!newName||oldName===newName)return;
@@ -2093,6 +2159,9 @@ async function saveBudgetCategories(){
 
     if(nameChanged)rememberCategoryRename(id,oldNameForMonth,name,viewYear,viewMonth+1);
     if(typeChanged)rememberCategoryExpenseTypeChange(id,oldExpenseTypeForMonth,expenseType,viewYear,viewMonth+1);
+    if(nameChanged||typeChanged){
+      try{await persistCategoryHistoryForCategory(id)}catch(error){alert(error?.message||'항목 월별 이력 저장 중 문제가 발생했어요.');return;}
+    }
 
     // 아이콘/순서만 categories 본체에 저장합니다. 이름과 지출 유형은 위 이력에서 관리합니다.
     const categoryPatch={};
@@ -2125,6 +2194,7 @@ async function saveBudgetCategories(){
         // 과거 월은 수정하지 않고, 다음 별도 변경 월 직전까지 이미 존재하는 미래 월을 갱신합니다.
         await propagateBudgetForward(id,viewYear,viewMonth+1,amount);
         rememberCategoryBudgetChange(id,amount,viewYear,viewMonth+1);
+        await persistCategoryHistoryForCategory(id);
       }catch(error){
         alert(error?.message||'이후 월 예산 승계 중 문제가 발생했어요.');
         return;
@@ -2253,7 +2323,7 @@ async function saveTransactionEdit(e){
     moneeSavingLocks.delete(`edit:${id}`);
   }
 }
-function renderAllTransactions(){const list=sortTransactions(currentMonthTransactions().filter(t=>t.type==='expense'));$("allTransactionsList").innerHTML=list.length?list.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);const displayCatName=categoryDisplayName(t.category_id,t.transaction_date,'기타');return `<div class="tx-row" data-all-transaction-id="${escapeText(t.id)}" style="cursor:pointer"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon"><i data-lucide="${escapeText(catIcon(cat))}"></i></div><div class="tx-name">${escapeText(t.memo||displayCatName||'지출')}</div><div class="tx-cat">${escapeText(displayCatName||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join(''):'<div class="empty-state">등록된 내역이 없어요.</div>';document.querySelectorAll('[data-all-transaction-id]').forEach(x=>x.onclick=()=>openTransactionEdit(x.dataset.allTransactionId));renderLucideIcons($("allTransactionsList"))}
+function renderAllTransactions(){const list=sortTransactions(currentMonthTransactions().filter(t=>t.type==='expense'));$("allTransactionsList").innerHTML=list.length?list.map(t=>{const d=new Date(t.transaction_date+'T00:00:00');const cat=budgetCategories.find(c=>c.id===t.category_id);const displayCatName=categoryDisplayName(t.category_id,t.transaction_date,'기타');return `<div class="tx-row" data-all-transaction-id="${escapeText(t.id)}" style="cursor:pointer"><div class="tx-date">${d.getMonth()+1}.${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})</div><div class="tx-icon">${categoryIconHtml(cat)}</div><div class="tx-name">${escapeText(t.memo||displayCatName||'지출')}</div><div class="tx-cat">${escapeText(displayCatName||'기타')}</div><div class="tx-method">${escapeText(t.payment_method||'')}</div><div class="tx-amount">${money(t.amount)}</div></div>`}).join(''):'<div class="empty-state">등록된 내역이 없어요.</div>';document.querySelectorAll('[data-all-transaction-id]').forEach(x=>x.onclick=()=>openTransactionEdit(x.dataset.allTransactionId));renderLucideIcons($("allTransactionsList"))}
 
 async function saveIncomeEdit(e){
   e.preventDefault();
