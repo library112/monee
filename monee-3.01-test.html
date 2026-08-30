@@ -44,7 +44,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .budget-section-name{min-width:0}
 .budget-column-heads{grid-column:3 / 7;display:grid;grid-template-columns:.65fr .95fr 1fr 1fr;align-items:center;color:#787f79;font-size:11px;font-weight:500;text-align:left}
 .budget-column-heads span{white-space:nowrap}
-.budget-table .tr{display:grid;grid-template-columns:1.05fr 1.85fr .65fr .95fr 1fr 1fr;align-items:center;padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;height:20px;display:grid;place-items:center;text-align:center}.cat-icon svg{width:17px;height:17px;stroke-width:2}.category-emoji{display:inline-grid;place-items:center;font-size:17px;line-height:1;width:20px;height:20px}.tx-icon .category-emoji{width:20px;height:20px}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:30px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap;text-align:left}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px;text-align:left;white-space:nowrap}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
+.budget-table .tr{display:grid;grid-template-columns:1.05fr 1.85fr .65fr .95fr 1fr 1fr;align-items:center;padding:10px 8px;border-bottom:1px solid #edf2f6;min-height:47px}.budget-table .tr:last-child{border-bottom:0}.cat-label{display:flex;align-items:center;gap:4px;font-size:12px;min-width:0}.cat-icon{width:20px;min-width:20px;height:20px;display:grid;place-items:center;text-align:center;font-size:17px;line-height:1}.cat-icon svg{width:17px;height:17px;stroke-width:2}.cat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-wrap{padding-right:30px}.bar-track{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:var(--green)}.bar-fill.warn{background:var(--orange)}.num{font-size:12px;white-space:nowrap;text-align:left}.num.red{color:var(--red)}.num.green{color:#5f7fa6}.rate{font-size:12px;text-align:left;white-space:nowrap}.rate.warn{color:var(--orange);font-weight:700}.table-note{font-size:10px;color:#9a9f9a;margin-top:10px}
 .lower-grid{display:grid;grid-template-columns:1.05fr 1.05fr 1fr;gap:12px}.lower-card{padding:18px;min-height:300px}.mini-title{font-size:16px;margin:0 0 16px;letter-spacing:-.04em}.bars{height:170px;display:flex;align-items:flex-end;gap:12px;padding:4px 8px}.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}.month-bar-wrap{height:135px;display:flex;align-items:flex-end}.month-bar{width:24px;background:#c7d7e7;border-radius:6px 6px 2px 2px}.month-bar.current{background:#5f7fa6}.bar-label{font-size:10px;color:#7d847e}.bar-value{font-size:9px;color:#7d847e}.compare{margin-top:10px;padding:10px 11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px}
 .gauge-wrap{display:flex;justify-content:center;margin-top:2px}.gauge{width:210px;height:110px;overflow:hidden;position:relative}.gauge svg{width:100%;height:100%}.gauge-center{text-align:center;margin-top:-18px}.gauge-center b{display:block;font-size:18px}.gauge-center span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.pace-copy{text-align:center;margin:14px 0 0;font-size:11px;line-height:1.55}.good{margin-top:14px;padding:11px;border-radius:10px;background:#edf3f9;color:#58799d;font-size:10px;text-align:center}
 .days{text-align:center;padding-top:12px}.days-number{font-size:52px;color:#58799d;font-weight:800;letter-spacing:-.06em}.days-unit{font-size:14px;color:#58799d;font-weight:700}.days-date{font-size:11px;color:#8b918c;margin-top:-4px}.divider{height:1px;background:var(--line);margin:20px 0}.daily-label{text-align:center;color:#777e78;font-size:11px}.daily-amount{text-align:center;color:#58799d;font-size:23px;font-weight:800;margin-top:7px}.daily-note{text-align:center;color:#999f9a;font-size:10px;margin-top:6px;line-height:1.4}
@@ -635,7 +635,7 @@ nav.nav .icon{
 .maturity-allocation-status.error{color:#d05c5c}
 .maturity-history-badge{font-size:8px;color:#718096;background:#f1f5f9;border-radius:999px;padding:3px 6px;white-space:nowrap}
 </style>
-<script src="https://unpkg.com/lucide@1.37.0"></script>
+<script src="https://unpkg.com/lucide@1.37.0/dist/umd/lucide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
 
 <script>
@@ -815,7 +815,7 @@ function categoryIconHtml(c){
  const icon=String(catIcon(c)||'Circle').trim()||'Circle';
  return /^[A-Za-z][A-Za-z0-9-]*$/.test(icon)
    ? `<i data-lucide="${escapeText(icon)}"></i>`
-   : `<span class="category-emoji" aria-hidden="true">${escapeText(icon)}</span>`;
+   : escapeText(icon);
 }
 function catOrder(c){const local=localCategoryPrefs[c?.id]?.sort_order;if(Number.isFinite(Number(local)))return Number(local);const v=Number(c?.sort_order);return Number.isFinite(v)?v:999999}
 let viewYear=2026, viewMonth=7;
