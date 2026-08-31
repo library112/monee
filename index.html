@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.3.03 · 입출금 계좌 내역 및 계좌이체 연동</title>
+<title>monee 가계부 · ver.3.04 · 금융노트 수정 및 정기납부 이력</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -22,7 +22,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .record{margin-top:20px;background:var(--green);color:#fff;border:0;border-radius:12px;padding:13px;font-size:14px;font-weight:700;box-shadow:0 8px 16px rgba(82,112,145,.18)}
 .sidebar-summary{margin-top:auto;background:#fff;border:1px solid #e1e8f0;border-radius:14px;padding:14px}.sidebar-summary h4{margin:0 0 12px;font-size:12px}.side-metric{margin:10px 0}.side-metric span{font-size:10px;color:var(--muted);display:block}.side-metric b{display:block;font-size:16px;margin-top:4px}.side-progress{height:6px;background:#e8ece7;border-radius:999px;overflow:hidden;margin-top:9px}.side-progress i{display:block;height:100%;width:50%;background:var(--green);border-radius:999px}
 .main{padding:18px 28px 44px;max-width:1400px;width:100%;margin:0 auto;align-self:start}.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:14px;min-height:52px}.page-title{min-width:0;flex:1;padding:2px 0 0}.page-title h1{margin:0;font-size:30px;line-height:1.15;letter-spacing:-.055em;white-space:nowrap}.page-title p{margin:6px 0 0;font-size:11px;line-height:1.45;color:var(--muted);letter-spacing:-.02em}.app-version{display:none;margin-left:9px;font-size:.42em;font-weight:500;letter-spacing:-.01em;color:#9aa5b1;vertical-align:middle;white-space:nowrap}.month-control{flex-shrink:0;white-space:nowrap;margin-top:0}.month-control{display:flex;align-items:center;border:1px solid #dfe5df;background:#fff;border-radius:10px;overflow:hidden}.month-control button{width:38px;height:36px;border:0;background:#fff;color:#6c746e}.month-control span{padding:0 16px;font-size:13px;font-weight:600}
-.finance-page{min-width:0}.page-subtitle{margin:4px 0 0;color:var(--muted);font-size:10px;line-height:1.5}.finance-grid{display:grid;grid-template-columns:1fr;gap:12px}.finance-card{padding:18px}.finance-card-head{margin-bottom:12px}.finance-card-head h3{margin:0;font-size:14px;color:var(--blue-dark)}.finance-card-head p{margin:5px 0 0;font-size:10px;color:var(--muted);line-height:1.5}.finance-note-list{display:flex;flex-direction:column;gap:8px}.finance-note{border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:#fff;cursor:pointer}.finance-note-main{display:flex;align-items:center;justify-content:space-between;gap:10px}.finance-note-title{font-size:12px;font-weight:700;color:#38434e;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.finance-note-amount{font-size:11px;font-weight:700;color:#58799d;white-space:nowrap}.finance-note-meta{display:flex;gap:9px;margin-top:6px;color:#8996a3;font-size:9px}.finance-note-memo{margin-top:6px;font-size:10px;color:#697581;line-height:1.45;white-space:pre-wrap}.finance-empty{padding:10px 2px 2px;color:#a0a8b0;font-size:10px}.page{display:none}.page.active{display:block}
+.finance-page{min-width:0}.page-subtitle{margin:4px 0 0;color:var(--muted);font-size:10px;line-height:1.5}.finance-grid{display:grid;grid-template-columns:1fr;gap:12px}.finance-card{padding:18px}.finance-card-head{margin-bottom:12px}.finance-card-head h3{margin:0;font-size:14px;color:var(--blue-dark)}.finance-card-head p{margin:5px 0 0;font-size:10px;color:var(--muted);line-height:1.5}.finance-note-list{display:flex;flex-direction:column;gap:8px}.finance-note{border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:#fff;cursor:pointer}.finance-note-main{display:flex;align-items:center;justify-content:space-between;gap:10px}.finance-note-title{font-size:12px;font-weight:700;color:#38434e;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.finance-note-amount{font-size:11px;font-weight:700;color:#58799d;white-space:nowrap}.finance-note-meta{display:flex;gap:9px;margin-top:6px;color:#8996a3;font-size:9px}.finance-note-memo{margin-top:6px;font-size:10px;color:#697581;line-height:1.45;white-space:pre-wrap}.finance-empty{padding:10px 2px 2px;color:#a0a8b0;font-size:10px}.finance-note-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}.finance-note-action{border:0;border-radius:8px;padding:6px 9px;background:#edf3f8;color:#58799d;font-size:9px;font-weight:700;cursor:pointer}.finance-note-action.end{background:#fff3e8;color:#b36d33}.finance-note-action.delete{background:#fff0f0;color:#c85b58}.finance-payment-status{color:#b36d33;font-weight:700}.page{display:none}.page.active{display:block}
 .card{background:var(--card);border:1px solid #e1e8f0;border-radius:16px;box-shadow:var(--shadow)}
 .budget-overview{padding:20px;margin-bottom:12px}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.section-head h2{margin:0;font-size:18px;letter-spacing:-.04em}.section-head .hint{font-size:11px;color:var(--muted)}
  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
@@ -502,6 +502,7 @@ nav.nav .icon{
   grid-column:1/-1;
   margin-top:2px;
 }
+.finance-note-help{display:block;margin:5px 2px 0;color:var(--muted);font-size:9px;line-height:1.45}
 @media(max-width:600px){
   .finance-note-form{
     grid-template-columns:1fr;
@@ -687,7 +688,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 3.03">ver.3.03</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 3.04">ver.3.04</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1595,6 +1596,51 @@ function financeDate(v){
   return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
 }
 
+function financeViewMonthKey(){
+  return `${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;
+}
+function financeMonthLabel(key){
+  if(!/^\d{4}-\d{2}$/.test(key||''))return '';
+  const [year,month]=key.split('-').map(Number);
+  return `${year}년 ${month}월`;
+}
+function financePaymentSnapshot(n){
+  return {title:n?.title||'',amount:n?.amount??'',date:n?.date||'',memo:n?.memo||''};
+}
+function financePaymentForMonth(n,monthKey=financeViewMonthKey()){
+  if(!n||n.type!=='payment')return n;
+  if(n.startMonth&&monthKey<n.startMonth)return null;
+  if(n.endMonth&&monthKey>=n.endMonth)return null;
+  const versions=Array.isArray(n.paymentVersions)?n.paymentVersions:[];
+  const eligible=versions
+    .filter(v=>v&&v.effectiveMonth&&v.effectiveMonth<=monthKey)
+    .sort((a,b)=>a.effectiveMonth.localeCompare(b.effectiveMonth));
+  const latest=eligible[eligible.length-1];
+  return {...n,...(latest||{}),id:n.id,userId:n.userId,type:'payment',_source:n};
+}
+function ensureFinancePaymentFields(){
+  if($('financeNoteEndMonthField'))return;
+  const memo=$('financeNoteMemo')?.closest('.field');
+  if(!memo)return;
+  const field=document.createElement('div');
+  field.className='field full';
+  field.id='financeNoteEndMonthField';
+  field.style.display='none';
+  field.innerHTML='<label>해지월</label><input id="financeNoteEndMonth" type="month"><small class="finance-note-help">선택한 해지월부터 미래 월에는 표시되지 않아요. 비워두면 계속 유지됩니다.</small>';
+  memo.before(field);
+}
+function updateFinancePaymentFields(){
+  ensureFinancePaymentFields();
+  const isPayment=$('financeNoteType')?.value==='payment';
+  if($('financeNoteEndMonthField'))$('financeNoteEndMonthField').style.display=isPayment?'block':'none';
+  const help=$('financeNoteModalHelp')||$('financeNoteModal')?.querySelector('.modal-help');
+  if(help){
+    help.textContent=isPayment
+      ?`${financeMonthLabel(financeViewMonthKey())}의 변경 내용부터 미래 월에 적용돼요.`
+      :'나중에 다시 확인하고 싶은 금융 정보를 기록해 보세요.';
+  }
+}
+
 
 function setCurrentPageState(page){
   try{localStorage.setItem('monee_current_page',page)}catch(e){}
@@ -1611,6 +1657,7 @@ function activateFinancePage(){setCurrentPageState('finance');
 
 function renderFinanceNotes(){
   loadFinanceNotes();
+  const monthKey=financeViewMonthKey();
   const groups=[
     ['info','financeInfoList'],
     ['schedule','financeScheduleList'],
@@ -1619,6 +1666,8 @@ function renderFinanceNotes(){
   groups.forEach(([type,id])=>{
     const list=financeNotes
       .filter(n=>n.type===type)
+      .map(n=>type==='payment'?financePaymentForMonth(n,monthKey):n)
+      .filter(Boolean)
       .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     const target=$(id);
     if(!target)return;
@@ -1633,43 +1682,100 @@ function renderFinanceNotes(){
         ?`<div class="finance-note-meta"><span>${financeDate(n.date)}</span>${n.type==='payment'?'<span>정기 납부</span>':''}</div>`:'';
       const memo=n.memo
         ?`<div class="finance-note-memo">${escapeText(n.memo)}</div>`:'';
-      return `<div class="finance-note" data-finance-id="${escapeText(n.id)}"><div class="finance-note-main"><span class="finance-note-title">${escapeText(n.title)}</span>${amount}</div>${meta}${memo}</div>`;
+      const source=n._source||n;
+      const endStatus=type==='payment'&&source.endMonth&&monthKey<source.endMonth
+        ?`<span class="finance-payment-status">${escapeText(financeMonthLabel(source.endMonth))}부터 해지</span>`:'';
+      const endButton=type==='payment'
+        ?`<button type="button" class="finance-note-action end" data-end-finance="${escapeText(source.id)}">해지</button>`:'';
+      const actions=`<div class="finance-note-actions"><button type="button" class="finance-note-action" data-edit-finance="${escapeText(source.id)}">수정</button>${endButton}<button type="button" class="finance-note-action delete" data-delete-finance="${escapeText(source.id)}">삭제</button></div>`;
+      return `<div class="finance-note" data-finance-id="${escapeText(source.id)}"><div class="finance-note-main"><span class="finance-note-title">${escapeText(n.title)}</span>${amount}</div>${meta}${memo}${endStatus}${actions}</div>`;
     }).join('');
   });
   document.querySelectorAll('[data-finance-id]').forEach(el=>{
     el.onclick=()=>openFinanceNote(el.dataset.financeId);
   });
+  document.querySelectorAll('[data-edit-finance]').forEach(btn=>{
+    btn.onclick=e=>{e.stopPropagation();openFinanceNote(btn.dataset.editFinance)};
+  });
+  document.querySelectorAll('[data-end-finance]').forEach(btn=>{
+    btn.onclick=e=>{e.stopPropagation();endFinancePayment(btn.dataset.endFinance)};
+  });
+  document.querySelectorAll('[data-delete-finance]').forEach(btn=>{
+    btn.onclick=e=>{e.stopPropagation();deleteFinanceNote(btn.dataset.deleteFinance)};
+  });
 }
 function openFinanceNote(id){
-  const n=financeNotes.find(x=>x.id===id);
-  $('financeNoteId').value=n?.id||'';
-  $('financeNoteType').value=n?.type||'info';
+  ensureFinancePaymentFields();
+  const source=financeNotes.find(x=>x.id===id);
+  const n=source?.type==='payment'?(financePaymentForMonth(source)||financePaymentSnapshot(source)):source;
+  $('financeNoteId').value=source?.id||'';
+  $('financeNoteType').value=source?.type||'info';
+  $('financeNoteType').disabled=!!source;
   $('financeNoteTitle').value=n?.title||'';
   $('financeNoteAmount').value=formatCurrencyInputValue(n?.amount??'');
   $('financeNoteDate').value=n?.date||'';
   $('financeNoteMemo').value=n?.memo||'';
-  $('financeNoteModalTitle').textContent=n?'금융정보 수정':'금융정보 추가';
+  $('financeNoteEndMonth').value=source?.endMonth||'';
+  $('financeNoteModalTitle').textContent=source?'금융정보 수정':'금융정보 추가';
+  updateFinancePaymentFields();
   openModal('financeNoteModal');
 }
 async function saveFinanceNoteForm(e){
   e.preventDefault();
   const id=$('financeNoteId').value;
-  const note={
-    id:id||crypto.randomUUID(),
-    userId:currentUser.id,
-    type:$('financeNoteType').value,
+  const old=financeNotes.find(n=>n.id===id);
+  const type=$('financeNoteType').value;
+  const values={
     title:$('financeNoteTitle').value.trim(),
     amount:currencyNumber('financeNoteAmount'),
     date:$('financeNoteDate').value,
     memo:$('financeNoteMemo').value.trim()
   };
-  if(!note.title)return alert('제목을 입력해 주세요.');
+  if(!values.title)return alert('제목을 입력해 주세요.');
+  let note;
+  if(old?.type==='payment'){
+    const effectiveMonth=financeViewMonthKey();
+    const versions=Array.isArray(old.paymentVersions)?[...old.paymentVersions]:[];
+    const version={effectiveMonth,...values};
+    const index=versions.findIndex(v=>v?.effectiveMonth===effectiveMonth);
+    if(index>=0)versions[index]=version;else versions.push(version);
+    versions.sort((a,b)=>a.effectiveMonth.localeCompare(b.effectiveMonth));
+    note={...old,paymentVersions:versions,endMonth:$('financeNoteEndMonth').value||''};
+  }else{
+    note={id:id||crypto.randomUUID(),userId:currentUser.id,type,...values};
+    if(type==='payment'){
+      note.startMonth=financeViewMonthKey();
+      note.endMonth=$('financeNoteEndMonth').value||'';
+      note.paymentVersions=[];
+    }
+  }
   if(id)financeNotes=financeNotes.map(n=>n.id===id?note:n);
   else financeNotes.push(note);
   await saveFinanceNotes();
   closeModal('financeNoteModal');
   e.target.reset();
   $('financeNoteId').value='';
+  $('financeNoteType').disabled=false;
+  renderFinanceNotes();
+}
+async function endFinancePayment(id){
+  const note=financeNotes.find(n=>n.id===id&&n.type==='payment');
+  if(!note)return;
+  const monthKey=financeViewMonthKey();
+  if(!confirm(`${financeMonthLabel(monthKey)}부터 “${note.title}” 정기납부를 해지할까요?\n과거 월의 기록은 유지됩니다.`))return;
+  financeNotes=financeNotes.map(n=>n.id===id?{...n,endMonth:monthKey}:n);
+  await saveFinanceNotes();
+  renderFinanceNotes();
+}
+async function deleteFinanceNote(id){
+  const note=financeNotes.find(n=>n.id===id);
+  if(!note)return;
+  const message=note.type==='payment'
+    ?`“${note.title}”의 과거·미래 정기납부 기록을 모두 삭제할까요?\n구독을 중단한 경우에는 삭제 대신 해지를 사용해 주세요.`
+    :`“${note.title}” 기록을 삭제할까요?`;
+  if(!confirm(message))return;
+  financeNotes=financeNotes.filter(n=>n.id!==id);
+  await saveFinanceNotes();
   renderFinanceNotes();
 }
 
@@ -2683,7 +2789,7 @@ $('incomeEditForm').addEventListener('submit',preventDoubleSubmit(saveIncomeEdit
 $('transactionEditForm').addEventListener('submit',preventDoubleSubmit(saveTransactionEdit));$('editCategory').addEventListener('change',()=>updateEditSavingLinkField());$('editMethod').addEventListener('change',()=>updateEditAccountTransferField());
 $('closeModal').onclick=()=>closeModal('modal');document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));document.querySelectorAll('.modal-back').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)closeModal(back.id)}));
 $('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField();updateAccountTransferField()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories();updateSavingLinkField();updateAccountTransferField()};
-$('method').addEventListener('change',()=>updateAccountTransferField());$('category').addEventListener('change',()=>updateSavingLinkField());$('entryForm').addEventListener('submit',preventDoubleSubmit(saveTransaction));$('financeNoteForm').addEventListener('submit',preventDoubleSubmit(saveFinanceNoteForm));$('assetForm').addEventListener('submit',preventDoubleSubmit(saveAsset));$('assetType').addEventListener('change',e=>setSavingFieldsVisible(e.target.value));
+$('method').addEventListener('change',()=>updateAccountTransferField());$('category').addEventListener('change',()=>updateSavingLinkField());$('entryForm').addEventListener('submit',preventDoubleSubmit(saveTransaction));$('financeNoteType').addEventListener('change',updateFinancePaymentFields);$('financeNoteForm').addEventListener('submit',preventDoubleSubmit(saveFinanceNoteForm));$('assetForm').addEventListener('submit',preventDoubleSubmit(saveAsset));$('assetType').addEventListener('change',e=>setSavingFieldsVisible(e.target.value));
 $('accountMovementForm').addEventListener('submit',preventDoubleSubmit(saveAccountMovement));$('accountDepositBtn').onclick=()=>openAccountMovement('in');$('accountWithdrawBtn').onclick=()=>openAccountMovement('out');
 ['assetMonthlyAmount','assetInterestRate','assetTermMonths','assetTaxRate'].forEach(id=>{
  const el=$(id);
