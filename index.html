@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.3.06 · 소비 페이스 동적 그래프</title>
+<title>monee 가계부 · ver.3.07 · 자산 연동 목표</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -221,6 +221,7 @@ button,input,select{font:inherit}button{cursor:pointer}
   .asset-manage-actions .row-action{padding:5px 7px;font-size:10px}
 }
 .goal{position:relative}.goal-actions{position:absolute;right:12px;top:12px;display:flex;gap:6px;align-items:center;z-index:1}.goal-actions .row-action{flex:0 0 auto;white-space:nowrap}.goal-top{padding-right:90px}.more{cursor:pointer}
+.goal-meta{display:flex;flex-wrap:wrap;gap:5px 10px;margin-top:7px;font-size:9px;color:var(--muted)}.goal-meta strong{color:#58799d}.goal-link-note{grid-column:1/-1;margin-top:-5px;padding:10px 12px;border-radius:10px;background:#f4f7fa;color:#65788d;font-size:10px;line-height:1.45}.goal-link-note b{color:#58799d}.goal-field-hidden{display:none!important}
 
 /* ver.2 UI refinements */
 .topbar{min-height:36px}
@@ -689,7 +690,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 3.06">ver.3.06</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 3.07">ver.3.07</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -801,7 +802,7 @@ const supabaseClient = window.supabase.createClient(
 <div class="field full maturity-allocation-field"><label>받을 자산</label><div id="maturityAllocations" class="maturity-allocations"></div><button type="button" id="addMaturityAllocation" class="maturity-add-allocation">＋ 받을 자산 추가</button><div id="maturityAllocationStatus" class="maturity-allocation-status"></div></div>
 <button class="primary full" type="submit" id="maturityTransferSubmit">만기 처리하기</button>
 </form></div></div>
-<div class="modal-back" id="goalModal"><div class="modal"><div class="modal-head"><h3 id="goalModalTitle">새 목표 만들기</h3><button class="x" data-close-modal="goalModal">×</button></div><form id="goalForm" class="form-grid"><input type="hidden" id="goalId"><div class="field full"><label>목표 이름</label><input id="goalName" required placeholder="예: 유럽 여행"></div><div class="field"><label>목표 금액</label><input id="goalTarget" type="number" min="0" step="10000" required placeholder="3000000"></div><div class="field"><label>현재 모은 금액</label><input id="goalCurrent" type="number" min="0" step="10000" required placeholder="500000"></div><div class="field full"><label>추가할 금액</label><input id="goalAddAmount" type="number" min="0" step="10000" placeholder="0"></div><button class="primary full" type="submit" id="goalSubmitBtn">목표 추가하기</button></form></div></div>
+<div class="modal-back" id="goalModal"><div class="modal"><div class="modal-head"><h3 id="goalModalTitle">새 목표 만들기</h3><button class="x" data-close-modal="goalModal">×</button></div><form id="goalForm" class="form-grid"><input type="hidden" id="goalId"><div class="field full"><label>목표 이름</label><input id="goalName" required placeholder="예: 유럽 여행"></div><div class="field"><label>목표 금액</label><input id="goalTarget" type="number" min="0" step="10000" required placeholder="3000000"></div><div class="field"><label>목표일</label><input id="goalTargetDate" type="date"></div><div class="field full"><label>현재 금액 반영 방식</label><select id="goalLinkedAsset"><option value="">직접 입력</option></select></div><div class="goal-link-note" id="goalLinkNote">자산을 선택하면 해당 자산의 현재 잔액이 목표에 자동 반영돼요.</div><div class="field" id="goalManualCurrentField"><label>현재 모은 금액</label><input id="goalCurrent" type="number" min="0" step="10000" required placeholder="500000"></div><div class="field full" id="goalManualAddField"><label>추가할 금액</label><input id="goalAddAmount" type="number" min="0" step="10000" placeholder="0"></div><button class="primary full" type="submit" id="goalSubmitBtn">목표 추가하기</button></form></div></div>
 
 <script>
 (function(){
@@ -852,7 +853,7 @@ function currencyNumber(id){
   return Number(String(el?.value??'').replace(/[^\d]/g,''))||0;
 }
 function bindAllCurrencyInputs(){
-  ["amount","editAmount","editIncomeAmount","assetAmount","assetMonthlyAmount","accountMovementAmount","goalTarget","goalCurrent","goalAdd","financeNoteAmount"].forEach(bindCurrencyInput);
+  ["amount","editAmount","editIncomeAmount","assetAmount","assetMonthlyAmount","accountMovementAmount","goalTarget","goalCurrent","goalAddAmount","financeNoteAmount"].forEach(bindCurrencyInput);
 }
 function ensureAssetMonthlyAmountField(){
   if($('assetMonthlyAmount'))return;
@@ -1634,7 +1635,52 @@ async function restoreMaturityHistory(assetId){
   }
   renderAssets();
 }
-function renderGoals(){$('goalList').innerHTML=goals.length?goals.map(g=>{const pct=g.target_amount?Math.min(100,Math.round(g.current_amount/g.target_amount*100)):0;const remain=Math.max(0,g.target_amount-g.current_amount);return `<div class="goal"><div class="goal-top"><b>${escapeText(g.name)}</b><div class="goal-actions"><button class="row-action" data-edit-goal="${g.id}">수정</button><button class="row-action delete" data-delete-goal="${g.id}">삭제</button></div></div><div class="goal-summary"><span>${money(g.current_amount)} / ${money(g.target_amount)}</span><em>(${money(remain)} 남음)</em></div><div class="goal-track"><i style="width:${pct}%"></i></div><div class="goal-foot"><span>${pct}% 달성</span></div></div>`}).join(''):'<div class="empty-state">아직 목표가 없어요. 오른쪽 아래 ＋ 버튼으로 추가해 주세요.</div>';document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openGoal(b.dataset.editGoal));document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal))}
+function goalLinkedAsset(goal){return goal?.linked_asset_id?assets.find(a=>String(a.id)===String(goal.linked_asset_id)):null}
+function goalCurrentAmount(goal){const linked=goalLinkedAsset(goal);return linked?Number(linked.amount)||0:Number(goal?.current_amount)||0}
+function goalMonthsRemaining(targetDate){
+ if(!targetDate)return null;
+ const target=new Date(String(targetDate)+'T23:59:59');
+ if(Number.isNaN(target.getTime()))return null;
+ const days=Math.ceil((target.getTime()-Date.now())/86400000);
+ return days<0?0:Math.max(1,Math.ceil(days/30.4375));
+}
+function goalTargetDateText(value){return value?String(value).replace(/-/g,'.'):''}
+function activeGoalAssets(){return assets.filter(a=>!isMaturityCompleted(a.id))}
+function fillGoalAssetOptions(selectedId=''){
+ const select=$('goalLinkedAsset');if(!select)return;
+ select.innerHTML='<option value="">직접 입력</option>'+activeGoalAssets().map(a=>`<option value="${escapeText(String(a.id))}">${escapeText(a.name)} · ${escapeText(assetTypeLabel(a.asset_type))} · ${money(a.amount)}</option>`).join('');
+ select.value=selectedId&&activeGoalAssets().some(a=>String(a.id)===String(selectedId))?String(selectedId):'';
+}
+function updateGoalLinkFields(){
+ const asset=assets.find(a=>String(a.id)===String($('goalLinkedAsset')?.value||''));
+ const linked=!!asset;
+ $('goalManualCurrentField')?.classList.toggle('goal-field-hidden',linked);
+ $('goalManualAddField')?.classList.toggle('goal-field-hidden',linked);
+ if($('goalCurrent'))$('goalCurrent').required=!linked;
+ if($('goalLinkNote'))$('goalLinkNote').innerHTML=linked
+   ? `<b>${escapeText(asset.name)}</b>의 현재 잔액 ${money(asset.amount)}이 자동 반영돼요.<br>금액 변경은 자산 페이지에서 입금·출금으로 기록해 주세요.`
+   : '직접 입력 목표예요. 현재 모은 금액과 추가 금액을 이 화면에서 관리할 수 있어요.';
+}
+function renderGoals(){
+ $('goalList').innerHTML=goals.length?goals.map(g=>{
+   const current=goalCurrentAmount(g);
+   const target=Number(g.target_amount)||0;
+   const pct=target?Math.min(100,Math.round(current/target*100)):0;
+   const remain=Math.max(0,target-current);
+   const linked=goalLinkedAsset(g);
+   const months=goalMonthsRemaining(g.target_date);
+   let monthlyText='';
+   if(g.target_date){
+     if(remain<=0)monthlyText='<strong>목표 달성</strong>';
+     else if(months===0)monthlyText='<strong>목표일 지남</strong>';
+     else monthlyText=`월 ${money(Math.ceil(remain/months))} 필요`;
+   }
+   const meta=[linked?`<strong>자산 연동 · ${escapeText(linked.name)}</strong>`:'직접 입력',g.target_date?`목표일 ${escapeText(goalTargetDateText(g.target_date))}`:'',monthlyText].filter(Boolean).map(v=>`<span>${v}</span>`).join('');
+   return `<div class="goal"><div class="goal-top"><b>${escapeText(g.name)}</b><div class="goal-actions"><button class="row-action" data-edit-goal="${g.id}">수정</button><button class="row-action delete" data-delete-goal="${g.id}">삭제</button></div></div><div class="goal-summary"><span>${money(current)} / ${money(target)}</span><em>(${money(remain)} 남음)</em></div><div class="goal-track"><i style="width:${pct}%"></i></div><div class="goal-foot"><span>${pct}% 달성</span></div><div class="goal-meta">${meta}</div></div>`;
+ }).join(''):'<div class="empty-state">아직 목표가 없어요. 오른쪽 아래 ＋ 버튼으로 추가해 주세요.</div>';
+ document.querySelectorAll('[data-edit-goal]').forEach(b=>b.onclick=()=>openGoal(b.dataset.editGoal));
+ document.querySelectorAll('[data-delete-goal]').forEach(b=>b.onclick=()=>deleteGoal(b.dataset.deleteGoal));
+}
 
 let financeNotes=[];
 function loadFinanceNotes(){
@@ -2168,7 +2214,20 @@ async function saveMaturityTransfer(e){
 
 function openAsset(id){const a=assets.find(x=>x.id===id);const type=a?(a.asset_type==='현금성'?'입출금':a.asset_type):'입출금';const meta=getAssetMeta(a);$('assetId').value=a?.id||'';$('assetName').value=a?.name||'';$('assetType').value=type;$('assetAmount').value=formatCurrencyInputValue(a?.amount??'');$('assetMonthlyAmount').value=formatCurrencyInputValue(meta.monthlyAmount??'');$('assetInterestRate').value=meta.interestRate??'';$('assetTermMonths').value=meta.termMonths??'';$('assetTaxRate').value=meta.taxRate??'';$('assetMaturityDate').value=meta.maturityDate??'';setSavingFieldsVisible(type);$('assetModalTitle').textContent=a?'자산 수정':'자산 추가';openModal('assetModal')}
 async function deleteAsset(id){if(!confirm('이 자산을 삭제할까요?'))return;const {error}=await supabaseClient.from('assets').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
-function openGoal(id){const g=goals.find(x=>x.id===id);$('goalId').value=g?.id||'';$('goalName').value=g?.name||'';$('goalTarget').value=g?.target_amount||'';$('goalCurrent').value=g?.current_amount||'';$('goalAddAmount').value='';$('goalModalTitle').textContent=g?'목표 수정':'새 목표 만들기';$('goalSubmitBtn').textContent=g?'수정하기':'목표 추가하기';openModal('goalModal')}
+function openGoal(id){
+ const g=goals.find(x=>x.id===id);
+ $('goalId').value=g?.id||'';
+ $('goalName').value=g?.name||'';
+ $('goalTarget').value=g?.target_amount||'';
+ $('goalTargetDate').value=g?.target_date||'';
+ fillGoalAssetOptions(g?.linked_asset_id||'');
+ $('goalCurrent').value=g?goalCurrentAmount(g):'';
+ $('goalAddAmount').value='';
+ $('goalModalTitle').textContent=g?'목표 수정':'새 목표 만들기';
+ $('goalSubmitBtn').textContent=g?'수정하기':'목표 추가하기';
+ updateGoalLinkFields();
+ openModal('goalModal');
+}
 async function deleteGoal(id){if(!confirm('이 목표를 삭제할까요?'))return;const {error}=await supabaseClient.from('goals').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
 function renderBudgetEditor(){
  const list=$('budgetEditList');
@@ -2767,7 +2826,38 @@ async function saveAsset(e){
  setSavingFieldsVisible('입출금');
  await loadAll();
 }
-async function saveGoal(e){e.preventDefault();const id=$('goalId').value;const name=$('goalName').value.trim();const targetAmount=currencyNumber('goalTarget');const currentAmount=currencyNumber('goalCurrent');const addAmount=Math.max(0,Number($('goalAddAmount').value)||0);if(!name)return alert('목표 이름을 입력해 주세요.');if(id){const payload={name,target_amount:targetAmount,current_amount:currentAmount+addAmount};const {error}=await supabaseClient.from('goals').update(payload).eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message)}else{const payload={user_id:currentUser.id,name,target_amount:targetAmount,current_amount:currentAmount};const {error}=await supabaseClient.from('goals').insert(payload);if(error)return alert(error.message)}closeModal('goalModal');e.target.reset();$('goalId').value='';$('goalAddAmount').value='';$('goalSubmitBtn').textContent='목표 추가하기';await loadAll()}
+async function saveGoal(e){
+ e.preventDefault();
+ const id=$('goalId').value;
+ const name=$('goalName').value.trim();
+ const targetAmount=currencyNumber('goalTarget');
+ const targetDate=$('goalTargetDate').value||null;
+ const linkedAssetId=$('goalLinkedAsset').value||null;
+ const linkedAsset=linkedAssetId?activeGoalAssets().find(a=>String(a.id)===String(linkedAssetId)):null;
+ const currentAmount=currencyNumber('goalCurrent');
+ const addAmount=Math.max(0,Number(String($('goalAddAmount').value||'').replace(/,/g,''))||0);
+ if(!name)return alert('목표 이름을 입력해 주세요.');
+ if(targetAmount<=0)return alert('목표 금액을 입력해 주세요.');
+ if(linkedAssetId&&!linkedAsset)return alert('연결할 수 없는 자산이에요. 자산을 다시 선택해 주세요.');
+ if(linkedAssetId&&goals.some(g=>String(g.id)!==String(id)&&String(g.linked_asset_id||'')===String(linkedAssetId))){
+   return alert('이 자산은 이미 다른 목표에 연결되어 있어요. 한 자산은 하나의 목표에만 연결할 수 있어요.');
+ }
+ const savedCurrent=linkedAsset?(Number(linkedAsset.amount)||0):(currentAmount+(id?addAmount:0));
+ const payload={name,target_amount:targetAmount,current_amount:savedCurrent,target_date:targetDate,linked_asset_id:linkedAssetId};
+ if(id){
+   const {error}=await supabaseClient.from('goals').update(payload).eq('id',id).eq('user_id',currentUser.id);
+   if(error)return alert(error.message);
+ }else{
+   const {error}=await supabaseClient.from('goals').insert({user_id:currentUser.id,...payload});
+   if(error)return alert(error.message);
+ }
+ closeModal('goalModal');
+ e.target.reset();
+ $('goalId').value='';
+ $('goalAddAmount').value='';
+ $('goalSubmitBtn').textContent='목표 추가하기';
+ await loadAll();
+}
 async function login(e){e.preventDefault();$('loginMessage').textContent='';$('loginBtn').disabled=true;const {error}=await supabaseClient.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error)$('loginMessage').textContent='로그인에 실패했어요. 이메일 또는 비밀번호를 확인해 주세요.';$('loginBtn').disabled=false}
 let appStarting=false;
 async function startApp(user){
@@ -2850,6 +2940,7 @@ $('accountMovementForm').addEventListener('submit',preventDoubleSubmit(saveAccou
  const el=$(id);
  if(el)el.addEventListener('focus',()=>{el.style.fontSize='16px';});
 });
+$('goalLinkedAsset').addEventListener('change',updateGoalLinkFields);
 $('goalForm').addEventListener('submit',preventDoubleSubmit(saveGoal));
 $('editBudgetSetting').onclick=()=>{renderBudgetEditor();openModal('budgetEditModal')};
 $('addBudgetCategory').onclick=async()=>{
