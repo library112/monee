@@ -848,7 +848,16 @@ function currencyNumber(id){
   return Number(String(el?.value??'').replace(/[^\d]/g,''))||0;
 }
 function bindAllCurrencyInputs(){
-  ["amount","editAmount","editIncomeAmount","assetAmount","goalTarget","goalCurrent","goalAdd","financeNoteAmount"].forEach(bindCurrencyInput);
+  ["amount","editAmount","editIncomeAmount","assetAmount","assetMonthlyAmount","goalTarget","goalCurrent","goalAdd","financeNoteAmount"].forEach(bindCurrencyInput);
+}
+function ensureAssetMonthlyAmountField(){
+  if($('assetMonthlyAmount'))return;
+  const rateField=$('assetInterestRate')?.closest('.field');
+  if(!rateField)return;
+  const field=document.createElement('div');
+  field.className='field full saving-only-field';
+  field.innerHTML='<label>월 납입액 (원)</label><input id="assetMonthlyAmount" type="text" inputmode="numeric" autocomplete="off" placeholder="예: 300,000">';
+  rateField.before(field);
 }
 
 const money=n=>'₩'+Math.round(Number(n)||0).toLocaleString('ko-KR');
@@ -1204,6 +1213,15 @@ function calculateSavingMaturityEstimate(asset,meta=getAssetMeta(asset)){
        grossInterest += amount*(rate/100)*(days/365);
      }
    });
+ }else if(rate>0&&maturityDate&&Number(asset?.amount)>0){
+   // 이전 프로젝트의 적금-거래 연결 이력이 없어도 현재 잔액을 기준으로
+   // 오늘부터 만기일까지 남은 기간의 예상 이자를 계산합니다.
+   const todayMs=new Date(todayLocal()+'T00:00:00').getTime();
+   const maturityMs=new Date(maturityDate+'T00:00:00').getTime();
+   if(!Number.isNaN(todayMs)&&!Number.isNaN(maturityMs)){
+     const days=Math.max(0,Math.round((maturityMs-todayMs)/86400000));
+     grossInterest=(Number(asset.amount)||0)*(rate/100)*(days/365);
+   }
  }
  const interest=Math.round(grossInterest);
  const tax=Math.round(interest*(taxRate/100));
@@ -1252,7 +1270,8 @@ async function openSavingDetail(assetId){
  //    현재 적금에 연결된 입금내역 중 가장 최근 금액을 월 납입액으로 보고,
  //    가입기간만큼 매월 납입한다고 가정한다.
  //    예: 300,000원 × 12개월 = 원금 3,600,000원.
- const monthlyAmount=list.length?Number(list[0].amount)||0:0;
+ // 직접 저장한 월 납입액을 우선 사용하고, 없을 때만 최근 연결 입금액을 사용합니다.
+ const monthlyAmount=Number(meta.monthlyAmount)||((list.length?Number(list[0].amount):0)||0);
  const scheduledPrincipal=monthlyAmount*termMonths;
  let scheduledInterest=0;
  if(rate>0&&termMonths>0&&scheduledPrincipal>0){
@@ -1283,9 +1302,10 @@ async function openSavingDetail(assetId){
  const scheduledTax=Math.round(scheduledInterestRounded*(taxRate/100));
  const scheduledTotal=scheduledPrincipal+scheduledInterestRounded-scheduledTax;
 
- $('savingDetailInterest').textContent=(rate&&maturityDate&&list.length)?`+${money(interest)}`:'-';
- $('savingDetailTax').textContent=(rate&&maturityDate&&list.length&&taxRate)?`-${money(tax)}`:'₩0';
- $('savingDetailExpectedTotal').textContent=(rate&&maturityDate&&list.length)?money(expectedTotal):'-';
+ const currentEstimateReady=!!(rate&&maturityDate&&(list.length||Number(asset.amount)>0));
+ $('savingDetailInterest').textContent=currentEstimateReady?`+${money(interest)}`:'-';
+ $('savingDetailTax').textContent=(currentEstimateReady&&taxRate)?`-${money(tax)}`:'₩0';
+ $('savingDetailExpectedTotal').textContent=currentEstimateReady?money(expectedTotal):'-';
  $('savingDetailScheduledTotal').textContent=(rate&&termMonths&&monthlyAmount)?money(scheduledTotal):'-';
 
  const maturityEvents=[];
@@ -1668,12 +1688,13 @@ function fillCategories(){
   $('methodBox').style.display=entryType==='income'?'none':'block';
 }
 function setModalLock(locked){document.body.style.overflow=locked?'hidden':''}function getAssetMeta(a){
- let meta={interestRate:a?.interest_rate??'',maturityDate:a?.maturity_date??'',termMonths:a?.term_months??'',taxRate:a?.tax_rate??''};
+ let meta={interestRate:a?.interest_rate??'',maturityDate:a?.maturity_date??'',termMonths:a?.term_months??'',taxRate:a?.tax_rate??'',monthlyAmount:a?.monthly_amount??''};
  const saved=(moneePrivateData.assetMeta||{})[a?.id]||{};
  if(meta.interestRate===''&&saved.interestRate!==undefined)meta.interestRate=saved.interestRate;
  if(meta.maturityDate===''&&saved.maturityDate!==undefined)meta.maturityDate=saved.maturityDate;
  if(meta.termMonths===''&&saved.termMonths!==undefined)meta.termMonths=saved.termMonths;
  if(meta.taxRate===''&&saved.taxRate!==undefined)meta.taxRate=saved.taxRate;
+ if(meta.monthlyAmount===''&&saved.monthlyAmount!==undefined)meta.monthlyAmount=saved.monthlyAmount;
  return meta;
 }
 function setSavingFieldsVisible(type){document.querySelectorAll('.saving-only-field').forEach(el=>el.style.display=type==='저축'?'block':'none')}
@@ -1881,7 +1902,7 @@ async function saveMaturityTransfer(e){
   }
 }
 
-function openAsset(id){const a=assets.find(x=>x.id===id);const type=a?(a.asset_type==='현금성'?'입출금':a.asset_type):'입출금';const meta=getAssetMeta(a);$('assetId').value=a?.id||'';$('assetName').value=a?.name||'';$('assetType').value=type;$('assetAmount').value=formatCurrencyInputValue(a?.amount??'');$('assetInterestRate').value=meta.interestRate??'';$('assetTermMonths').value=meta.termMonths??'';$('assetTaxRate').value=meta.taxRate??'';$('assetMaturityDate').value=meta.maturityDate??'';setSavingFieldsVisible(type);$('assetModalTitle').textContent=a?'자산 수정':'자산 추가';openModal('assetModal')}
+function openAsset(id){const a=assets.find(x=>x.id===id);const type=a?(a.asset_type==='현금성'?'입출금':a.asset_type):'입출금';const meta=getAssetMeta(a);$('assetId').value=a?.id||'';$('assetName').value=a?.name||'';$('assetType').value=type;$('assetAmount').value=formatCurrencyInputValue(a?.amount??'');$('assetMonthlyAmount').value=formatCurrencyInputValue(meta.monthlyAmount??'');$('assetInterestRate').value=meta.interestRate??'';$('assetTermMonths').value=meta.termMonths??'';$('assetTaxRate').value=meta.taxRate??'';$('assetMaturityDate').value=meta.maturityDate??'';setSavingFieldsVisible(type);$('assetModalTitle').textContent=a?'자산 수정':'자산 추가';openModal('assetModal')}
 async function deleteAsset(id){if(!confirm('이 자산을 삭제할까요?'))return;const {error}=await supabaseClient.from('assets').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
 function openGoal(id){const g=goals.find(x=>x.id===id);$('goalId').value=g?.id||'';$('goalName').value=g?.name||'';$('goalTarget').value=g?.target_amount||'';$('goalCurrent').value=g?.current_amount||'';$('goalAddAmount').value='';$('goalModalTitle').textContent=g?'목표 수정':'새 목표 만들기';$('goalSubmitBtn').textContent=g?'수정하기':'목표 추가하기';openModal('goalModal')}
 async function deleteGoal(id){if(!confirm('이 목표를 삭제할까요?'))return;const {error}=await supabaseClient.from('goals').delete().eq('id',id).eq('user_id',currentUser.id);if(error)return alert(error.message);await loadAll()}
@@ -2404,6 +2425,7 @@ async function saveAsset(e){
  const name=$('assetName').value.trim();
  const type=$('assetType').value;
  const amountValue=$('assetAmount').value;
+ const monthlyValue=$('assetMonthlyAmount').value;
  const interestValue=$('assetInterestRate').value;
  const termValue=$('assetTermMonths').value;
  const taxValue=$('assetTaxRate').value;
@@ -2411,6 +2433,7 @@ async function saveAsset(e){
 
  if(!name)return alert('자산 이름을 입력해 주세요.');
  if(amountValue===''||currencyNumber('assetAmount')<0)return alert('현재 금액을 확인해 주세요.');
+ if(type==='저축'&&monthlyValue!==''&&currencyNumber('assetMonthlyAmount')<=0)return alert('월 납입액을 확인해 주세요.');
  if(type==='저축'&&interestValue!==''&&Number(interestValue)<0)return alert('금리를 확인해 주세요.');
  if(type==='저축'&&termValue!==''&&Number(termValue)<=0)return alert('가입기간을 확인해 주세요.');
  if(type==='저축'&&taxValue!==''&&(Number(taxValue)<0||Number(taxValue)>100))return alert('과세비율을 확인해 주세요.');
@@ -2449,7 +2472,7 @@ async function saveAsset(e){
  // 적금 상세정보도 계정 데이터로 저장하여 Safari와 홈 화면에서 공유합니다.
  const allMeta={...(moneePrivateData.assetMeta||{})};
  if(type==='저축'){
-   allMeta[savedId]={interestRate:interestValue,maturityDate,termMonths:termValue,taxRate:taxValue};
+   allMeta[savedId]={interestRate:interestValue,maturityDate,termMonths:termValue,taxRate:taxValue,monthlyAmount:currencyNumber('assetMonthlyAmount')||''};
  }else{
    delete allMeta[savedId];
  }
@@ -2521,7 +2544,7 @@ function preventDoubleSubmit(handler){
   };
 }
 
-bindAllCurrencyInputs();$('loginForm').addEventListener('submit',login);$('settingsLogoutBtn').addEventListener('click',()=>supabaseClient.auth.signOut());
+ensureAssetMonthlyAmountField();bindAllCurrencyInputs();$('loginForm').addEventListener('submit',login);$('settingsLogoutBtn').addEventListener('click',()=>supabaseClient.auth.signOut());
 $('addMaturityAllocation').addEventListener('click',()=>addMaturityAllocationRow(0));
 $('maturityReceivedAmount').addEventListener('input',()=>{ $('maturityTransferAmount').textContent=money(currencyNumber('maturityReceivedAmount')); updateMaturityAllocationStatus(); });
 $('maturityTransferForm').addEventListener('submit',preventDoubleSubmit(saveMaturityTransfer));
@@ -2541,7 +2564,7 @@ $('transactionEditForm').addEventListener('submit',preventDoubleSubmit(saveTrans
 $('closeModal').onclick=()=>closeModal('modal');document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));document.querySelectorAll('.modal-back').forEach(back=>back.addEventListener('click',e=>{if(e.target===back)closeModal(back.id)}));
 $('expenseTab').onclick=()=>{entryType='expense';$('expenseTab').classList.add('active');$('incomeTab').classList.remove('active');fillCategories();updateSavingLinkField()};$('incomeTab').onclick=()=>{entryType='income';$('incomeTab').classList.add('active');$('expenseTab').classList.remove('active');fillCategories();updateSavingLinkField()};
 $('category').addEventListener('change',()=>updateSavingLinkField());$('entryForm').addEventListener('submit',preventDoubleSubmit(saveTransaction));$('financeNoteForm').addEventListener('submit',preventDoubleSubmit(saveFinanceNoteForm));$('assetForm').addEventListener('submit',preventDoubleSubmit(saveAsset));$('assetType').addEventListener('change',e=>setSavingFieldsVisible(e.target.value));
-['assetInterestRate','assetTermMonths','assetTaxRate'].forEach(id=>{
+['assetMonthlyAmount','assetInterestRate','assetTermMonths','assetTaxRate'].forEach(id=>{
  const el=$(id);
  if(el)el.addEventListener('focus',()=>{el.style.fontSize='16px';});
 });
