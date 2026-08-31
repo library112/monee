@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f8fc">
-<title>monee 가계부 · ver.3.04 · 금융노트 수정 및 정기납부 이력</title>
+<title>monee 가계부 · ver.3.05 · 숨긴 만기 적금 복구</title>
 <style>
 :root{
   --bg:#f5f8fc;--sidebar:#eef3f9;--card:#fff;--ink:#1f2937;--muted:#7b8794;
@@ -616,6 +616,7 @@ nav.nav .icon{
 .maturity-history-amount{text-align:right;font-size:11px;font-weight:700;color:#58799d;white-space:nowrap}
 .maturity-history-target{text-align:right;font-size:9px;color:#718096;white-space:nowrap}
 .maturity-history-hide{margin-left:6px;border:0;background:transparent;color:#9aa6b2;font-size:8px;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.maturity-hidden-tools{display:flex;justify-content:flex-end;margin-top:10px}.maturity-hidden-toggle{border:0;border-radius:9px;padding:8px 10px;background:#eef3f8;color:#58799d;font-size:9px;font-weight:700;cursor:pointer}.maturity-hidden-list{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:7px}.maturity-hidden-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px;background:#f8fafc;border-radius:9px}.maturity-hidden-main{min-width:0}.maturity-hidden-name{font-size:10px;font-weight:700;color:#4b5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.maturity-hidden-meta{margin-top:3px;font-size:8px;color:var(--muted)}.maturity-hidden-restore{border:0;border-radius:8px;padding:6px 8px;background:#e7eef6;color:#58799d;font-size:8px;font-weight:700;white-space:nowrap;cursor:pointer}
 .maturity-transfer-modal{max-width:460px}
 .maturity-summary{background:#f7fafc;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
 .maturity-summary-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -688,7 +689,7 @@ const supabaseClient = window.supabase.createClient(
 
   <main class="main">
     <div class="topbar">
-      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 3.04">ver.3.04</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
+      <div class="page-title"><h1 id="pageTitle">예산<span id="appVersion" class="app-version" aria-label="버전 3.05">ver.3.05</span></h1><p id="pageSubtitle">이번 달 예산과 지출 현황을 한눈에 확인해요.</p></div>
       <div class="month-control"><button id="prevMonth" aria-label="이전 달">‹</button><span id="monthLabel">2026년 8월</span><button id="nextMonth" aria-label="다음 달">›</button></div>
     </div>
 
@@ -1547,7 +1548,9 @@ function renderAssets(){
   });
   document.querySelectorAll('[data-manage-delete-asset]').forEach(b=>b.onclick=()=>deleteAsset(b.dataset.manageDeleteAsset));
 
-  const completed=assets.filter(a=>savingAssetType(a)&&isMaturityCompleted(a.id)&&!getMaturityRecord(a.id)?.hidden);
+  const completedAll=assets.filter(a=>savingAssetType(a)&&isMaturityCompleted(a.id));
+  const completed=completedAll.filter(a=>!getMaturityRecord(a.id)?.hidden);
+  const hiddenCompleted=completedAll.filter(a=>getMaturityRecord(a.id)?.hidden);
   let history=document.getElementById('maturityHistory');
   if(!history){
     history=document.createElement('div');
@@ -1556,7 +1559,7 @@ function renderAssets(){
     const panel=document.querySelector('#assets .asset-category-panel');
     panel?.appendChild(history);
   }
-  history.innerHTML=completed.length?`<div class="maturity-history-head"><h3>만기된 저축</h3><span class="maturity-history-count">${completed.length}개</span></div><div class="maturity-history-list">${
+  const visibleHistory=completed.length?`<div class="maturity-history-head"><h3>만기된 저축</h3><span class="maturity-history-count">${completed.length}개</span></div><div class="maturity-history-list">${
     completed.slice().sort((a,b)=>(getMaturityRecord(b.id)?.processedAt||'').localeCompare(getMaturityRecord(a.id)?.processedAt||'')).map(a=>{
       const r=getMaturityRecord(a.id)||{};
       const date=r.maturityDate||getAssetMeta(a).maturityDate||'';
@@ -1564,8 +1567,17 @@ function renderAssets(){
       return `<div class="maturity-history-item"><div><div class="maturity-history-name">${escapeText(a.name)}</div><div class="maturity-history-meta">${date?escapeText(String(date).replace(/-/g,'.'))+' 만기 · '+escapeText(target):escapeText(target)}</div></div><div><div class="maturity-history-amount">${money(r.receivedAmount||0)}</div><div class="maturity-history-target"><span class="maturity-history-badge">만기 처리됨</span><button type="button" class="maturity-history-hide" data-hide-maturity="${escapeText(String(a.id))}">숨기기</button></div></div></div>`;
     }).join('')
   }</div>`:'';
+  const hiddenHistory=hiddenCompleted.length?`<div class="maturity-hidden-tools"><button type="button" class="maturity-hidden-toggle" id="toggleHiddenMaturity">숨긴 만기 내역 ${hiddenCompleted.length}개 ${hiddenMaturityExpanded?'접기':'보기'}</button></div>${hiddenMaturityExpanded?`<div class="maturity-hidden-list">${hiddenCompleted.slice().sort((a,b)=>(getMaturityRecord(b.id)?.hiddenAt||'').localeCompare(getMaturityRecord(a.id)?.hiddenAt||'')).map(a=>{
+    const r=getMaturityRecord(a.id)||{};
+    const date=r.maturityDate||getAssetMeta(a).maturityDate||'';
+    return `<div class="maturity-hidden-item"><div class="maturity-hidden-main"><div class="maturity-hidden-name">${escapeText(a.name)}</div><div class="maturity-hidden-meta">${date?escapeText(String(date).replace(/-/g,'.'))+' 만기 · ':''}${money(r.receivedAmount||0)}</div></div><button type="button" class="maturity-hidden-restore" data-restore-maturity="${escapeText(String(a.id))}">다시 표시</button></div>`;
+  }).join('')}</div>`:''}`:'';
+  history.innerHTML=visibleHistory+hiddenHistory;
   document.querySelectorAll('[data-hide-maturity]').forEach(b=>b.onclick=()=>hideMaturityHistory(b.dataset.hideMaturity));
+  document.getElementById('toggleHiddenMaturity')?.addEventListener('click',()=>{hiddenMaturityExpanded=!hiddenMaturityExpanded;renderAssets()});
+  document.querySelectorAll('[data-restore-maturity]').forEach(b=>b.onclick=()=>restoreMaturityHistory(b.dataset.restoreMaturity));
 }
+let hiddenMaturityExpanded=false;
 async function hideMaturityHistory(assetId){
   const id=String(assetId||'');
   const record=getMaturityRecord(id);
@@ -1576,6 +1588,20 @@ async function hideMaturityHistory(assetId){
   if(!saved){
     moneePrivateData.maturityRecords[id]=record;
     return alert('숨김 처리에 실패했어요. 데이터는 변경되지 않았어요.');
+  }
+  renderAssets();
+}
+async function restoreMaturityHistory(assetId){
+  const id=String(assetId||'');
+  const record=getMaturityRecord(id);
+  if(!record||record.status!=='completed'||!record.hidden)return;
+  const restored={...record,hidden:false};
+  delete restored.hiddenAt;
+  moneePrivateData.maturityRecords[id]=restored;
+  const saved=await savePrivateData();
+  if(!saved){
+    moneePrivateData.maturityRecords[id]=record;
+    return alert('다시 표시에 실패했어요. 데이터는 변경되지 않았어요.');
   }
   renderAssets();
 }
